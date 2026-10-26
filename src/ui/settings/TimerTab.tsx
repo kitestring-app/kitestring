@@ -252,6 +252,12 @@ export function TimerTab() {
           ]}
         />
       </div>
+      <div className="card" role="group" aria-label="Time display">
+        <h3>Time display</h3>
+        <Choices<Settings["timer"]["display"]> value={t.display} onChange={(display) => set({ display })}
+          options={[{ id: "remaining", label: "Remaining" }, { id: "elapsed", label: "Elapsed" }, { id: "hidden", label: "Hidden" }]} />
+        <p className="help">Tap the timer face to switch these choices. Hidden keeps time and progress out of view everywhere. You can still ask a screen reader for the time.</p>
+      </div>
     </>
   );
 }

@@ -88,7 +88,7 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
   </div>;
   // The pinned action, why and cue already sit just above the controls; the card only names what is not on screen.
   const showContext = !!context?.action && context.action !== pin.action;
-  const showSpent = offer !== "gap-return" && spent >= 60_000;
+  const showSpent = !view.hiddenTime && offer !== "gap-return" && spent >= 60_000;
   const body = offer === "gap-return" || (offer && (showContext || showSpent)) || message ? <>
     {offer === "gap-return" && <p className="recovery-action">{pin.action || "Choose a next action whenever you’re ready."}</p>}
     {offer && offer !== "gap-return" && showContext && <>

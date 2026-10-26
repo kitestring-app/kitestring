@@ -1,3 +1,4 @@
+import { timerDisplay } from "./timerDisplay";
 import { intent, updateIntent } from "./intent";
 import { longerOfferAvailable, recordTinyFinish, settleLongerOffer, tinyStarts } from "./tinyStarts";
 import { answerParkingReview, chooseReviewBoundary, closeParkingReview, deferParkingReview, openParkingReview, parkingReview, queueParkingReview, registerReviewOwner, type ReviewBoundary } from "./parkingReview";
@@ -673,7 +674,7 @@ export function useTimerView() {
     elapsed: el,
     remaining: left,
     progress: total ? Math.min(1, el / total) : (el % STOPWATCH_LAP) / STOPWATCH_LAP,
-    display: total === null ? E.fmt(el, false, true) : E.fmt(left),
+    ...timerDisplay(t.display, el, left, total),
     mode: t.mode,
     longEvery: t.longEvery,
     hardLocked: hardModeLocked(s),

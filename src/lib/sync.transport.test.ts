@@ -161,7 +161,7 @@ it('1: fresh sign-in syncs without a choice, pulls remote settings and rederives
   vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
     if (url === '/api/me') return Response.json({}, { status: 401 });
     if (url === '/api/auth/login') return Response.json({ email: 'test@example.invalid' });
-    if (init.method === 'GET') return Response.json({ entries: [{ key: 'settings', value: { timer: { ...s.STRONG_PATCH, lengths: { pomodoro: 47 } } }, updatedAt: 100 }] });
+    if (init.method === 'GET') return Response.json({ entries: [{ key: 'settings', value: { timer: { ...s.STRONG_PATCH, display: "hidden", lengths: { pomodoro: 47 } } }, updatedAt: 100 }] });
     if (url === '/api/sync' && init.method === 'PUT') puts.push(JSON.parse(init.body as string)); return Response.json({ ok: true });
   }));
   vi.useFakeTimers({ toFake: ['setInterval'] });
@@ -169,7 +169,7 @@ it('1: fresh sign-in syncs without a choice, pulls remote settings and rederives
   const off = sync.syncStatus.subscribe(() => states.push(sync.syncStatus.get().state));
   await sync.startSync(); await sync.signIn('test@example.invalid', crypto.randomUUID());
   expect(states).toContain('syncing'); expect(states).not.toContain('choice');
-  expect(s.settings.get().timer).toMatchObject({ ...s.STRONG_PATCH, lengths: { pomodoro: 47 } });
+  expect(s.settings.get().timer).toMatchObject({ ...s.STRONG_PATCH, display: "hidden", lengths: { pomodoro: 47 } });
   expect(s.supportPresetLabel()).toBe('Strong'); expect(s.presetState.get().provisional).toBe(false);
   expect(puts).toEqual([]); off(); await sync.signOut();
 });

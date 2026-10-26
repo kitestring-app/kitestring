@@ -26,6 +26,7 @@ export interface Settings {
     flipPalette: "midnight" | "porcelain" | "mulberry" | "lagoon" | "fern" | "slate" | "ember" | "sandstone";
     taskEta: boolean; // timer follows the current task's estimate
     style: TimerStyle;
+    display: "remaining" | "elapsed" | "hidden";
     showNumbers: boolean;
     progressBar: boolean;
     alertSound: "signature" | "bell" | "chime" | "digital" | "wood" | "none";
@@ -86,6 +87,7 @@ export const DEFAULT_SETTINGS: Settings = {
     flipPalette: "midnight",
     taskEta: false,
     style: "default",
+    display: "remaining",
     showNumbers: true,
     progressBar: false,
     alertSound: "signature",
@@ -162,6 +164,7 @@ export function sanitizeSettings(stored: unknown): Settings {
         countdown: clamp(t.lengths.countdown, 1, 600, d.timer.lengths.countdown),
       },
       longEvery: clamp(t.longEvery, 1, 12, d.timer.longEvery),
+      display: oneOf(t.display, ["remaining", "elapsed", "hidden"] as const, "remaining"),
       style: oneOf(t.style, ["default", "flip", "bar", "gauge", "dots", "pie"] as const, d.timer.style),
       alertSound: oneOf(t.alertSound, ["signature", "bell", "chime", "digital", "wood", "none"] as const, d.timer.alertSound),
       focusDoneSound: oneOf(rawTimer?.focusDoneSound ?? oldSound, sounds, oldSound),

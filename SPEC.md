@@ -69,3 +69,8 @@ Minimal runtime deps (react, react-dom). Persistence: IndexedDB via a ~60-line w
 - Import pauses sync and uses the existing atomic transaction, metadata stamps and live-store rollback. Images retain raster validation, 5 MB each / 10 MB total within a 20 MB file, decode/resize and merging without deleting unrelated uploads.
 - `STORE_CLASS` in `src/lib/backup.ts` classifies every persistent store as shared, device, content or internal and assigns its section. Source enumeration fails for an unclassified store. A generated every-leaf settings test checks export/import persistence against defaults; schema-shaped merging rejects unknown input fields while sanitizer overrides retain future default-defined fields.
 - Web and Mac use the same picker, preview, validation and transaction code. Native powers remain native; this adds no runtime dependency or network request.
+
+## Timer display (slice 3)
+- Remaining is the default. Elapsed counts active time up, including overtime; Stopwatch stays a count-up. Timer settings offers Remaining / Elapsed / Hidden. Tapping the timer face cycles the same setting.
+- Hidden removes the timer digits and progress faces from Focus, Ambient, Document PiP, the native floating timer, tab title, menu bar and transition reminders. Segment and running/paused status remain visible. Automatic screen-reader time updates stop; a manual timer query remains available. Recovery cards keep their choices without showing the current recorded duration.
+- The choice is part of shared settings, syncs, persists and travels in settings exports and backups. Existing profiles and v1 files without it use Remaining. All five looks share the same controls; hidden faces unmount their animations.

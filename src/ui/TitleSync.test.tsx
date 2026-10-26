@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const hooks = vi.hoisted(() => ({ effects: [] as (() => void)[], view: { mode: "pomodoro", state: { segment: "focus" }, display: "04:32", running: true, elapsed: 28_000 } }));
+const hooks = vi.hoisted(() => ({ effects: [] as (() => void)[], view: { hiddenTime: false, mode: "pomodoro", state: { segment: "focus" }, display: "04:32", running: true, elapsed: 28_000 } }));
 vi.mock("react", async original => ({ ...await original<typeof import("react")>(), useEffect: (fn: () => void) => hooks.effects.push(fn), useSyncExternalStore: (_: unknown, get: () => unknown) => get() }));
 vi.mock("../state/timer", () => ({ useTimerView: () => hooks.view }));
 import { TitleSync } from "./TitleSync";
@@ -9,7 +9,7 @@ const setStatus = vi.fn(), publishTimerState = vi.fn();
 beforeEach(async () => {
   await settings.ready; settings.set(DEFAULT_SETTINGS); hooks.effects = []; vi.clearAllMocks();
   vi.stubGlobal("document", {}); vi.stubGlobal("window", { desktop: { setStatus, publishTimerState } });
-  hooks.view.state.segment = "focus"; hooks.view.running = true; hooks.view.elapsed = 28_000;
+  hooks.view.hiddenTime = false; hooks.view.state.segment = "focus"; hooks.view.running = true; hooks.view.elapsed = 28_000;
 });
 function render() { hooks.effects = []; TitleSync(); hooks.effects.forEach(fn => fn()); }
 it.each(["focus", "short", "long"])("publishes the running %s segment and its time", segment => {
@@ -27,4 +27,14 @@ it("removes menu-bar time when numbers are hidden and reports a paused break", (
 it.each(["focus", "short", "long"])("keeps the idle %s tray icon free of text", segment => {
   hooks.view.state.segment = segment; hooks.view.running = false; hooks.view.elapsed = 0;
   render(); expect(setStatus).toHaveBeenLastCalledWith("");
+});
+
+it.each(["focus", "short", "long"])("hidden %s time keeps segment and status in title and menu bar, even idle", segment => {
+  hooks.view.hiddenTime = true; hooks.view.state.segment = segment;
+  for (const running of [true, false]) for (const elapsed of [0, 28000]) {
+    hooks.view.running = running; hooks.view.elapsed = elapsed; render();
+    const label = { focus: "Focus", short: "Short break", long: "Long break" }[segment as "focus" | "short" | "long"];
+    const text = `${label} · ${running ? "Running" : "Paused"}`;
+    expect(document.title).toBe(text); expect(setStatus).toHaveBeenLastCalledWith(text);
+  }
 });
