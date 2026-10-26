@@ -1,0 +1,76 @@
+.timer-face {
+  --face-size: clamp(80px, 15vw, 210px);
+  color: var(--on-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1em;
+  max-width: 100%;
+  font-family: var(--user-timer-font, var(--timer-font));
+  font-weight: var(--user-timer-weight, var(--timer-weight));
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.size-small .timer-face { --face-size: clamp(64px, 11vw, 150px); }
+.size-huge .timer-face { --face-size: clamp(100px, 22vw, 320px); }
+.timer-face.is-big { font-size: var(--face-size); }
+/* Compact faces sit on panels (settings previews, floating timer), never on the wallpaper. Flip faces keep their palette ink. */
+.timer-face.is-compact:not(.face-flip) { color: var(--fg); font-size: 22px; height: 64px; width: 100%; }
+.face-time { letter-spacing: -0.03em; white-space: nowrap; }
+.is-big .face-time { text-shadow: var(--on-bg-shadow); }
+
+/* Both clipped halves share the same glyph baseline. */
+.face-flip.is-big { font-size: min(var(--face-size), calc((100vw - 48px) / var(--flip-width))); }
+.face-flip.is-compact { font-size: 22px; }
+.flip-digits { display: flex; align-items: center; gap: 0.045em; }
+.flip-card { position: relative; display: block; width: 0.64em; height: 1.1em; perspective: 5em; border-radius: 0.065em; box-shadow: 0 0.04em 0.12em rgb(0 0 0 / 24%); }
+.flip-half { position: absolute; left: 0; width: 100%; height: 50%; overflow: hidden; background: var(--flip-tile, #171c31); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flip-half > span { position: absolute; inset: 0; height: 200%; display: grid; place-items: center; }
+.flip-top { top: 0; border-radius: 0.065em 0.065em 0 0; box-shadow: inset 0 -1px rgb(0 0 0 / 45%); transform-origin: bottom; }
+.flip-bottom { bottom: 0; border-radius: 0 0 0.065em 0.065em; background: color-mix(in srgb, var(--flip-tile, #171c31), white 4%); transform-origin: top; }
+.flip-bottom > span { top: -100%; }
+.flip-colon { width: 0.2em; text-align: center; padding-bottom: 0.1em; }
+.flip-old-top { animation: face-fold-top 400ms ease-in-out both; }
+.flip-new-bottom { animation: face-fold-bottom 400ms ease-in-out both; }
+.flip-old-bottom { animation: face-fold-hide 400ms step-end both; }
+@keyframes face-fold-top { from { transform: rotateX(0); } to { transform: rotateX(-180deg); } }
+@keyframes face-fold-bottom { from { transform: rotateX(180deg); } to { transform: rotateX(0); } }
+@keyframes face-fold-hide { 0% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+.face-bar .face-time { font-size: 0.8em; }
+.face-bar.is-big .face-time { font-size: min(0.8em, 12vw); }
+.face-bar-track { display: block; width: 3em; max-width: calc(100vw - 48px); height: 0.1em; min-height: 4px; border-radius: 1em; overflow: hidden; background: var(--track); }
+.face-bar-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: currentColor; transform-origin: left; transition: transform 400ms linear; }
+.face-bar.is-compact { gap: 8px; }
+.face-bar.is-compact .face-bar-track { width: 112px; max-width: 100%; height: 6px; }
+
+.face-round { display: block; width: 1.4em; height: 1.4em; overflow: visible; }
+.face-track { fill: var(--track); }
+.face-gauge .face-track { fill: none; stroke: var(--track); }
+.face-gauge { position: relative; }
+.face-gauge-fill { stroke: currentColor; transition: stroke-dashoffset 400ms linear, opacity 150ms; }
+.face-gauge .face-time { position: absolute; font-size: 0.27em; }
+.face-gauge.is-compact .face-round { width: 60px; height: 60px; }
+.face-gauge.is-compact .face-time { font-size: 13px; }
+.face-pie-fill { fill: currentColor; transition: d 400ms linear; }
+.face-pie .face-time, .face-dots .face-time { font-size: 0.35em; }
+.face-pie.is-compact, .face-dots.is-compact { gap: 5px; }
+.face-pie.is-compact .face-round { width: 40px; height: 40px; }
+.face-pie.is-compact .face-time, .face-dots.is-compact .face-time { font-size: 13px; }
+
+.face-dot-grid { display: grid; grid-template-columns: repeat(6, 0.15em); gap: 0.075em; padding: 0.06em; }
+.face-dot { width: 0.15em; height: 0.15em; border-radius: 50%; background: currentColor; opacity: 0.14; transition: opacity 400ms ease; }
+.face-dot.is-lit { opacity: 1; }
+.face-dots.is-compact .face-dot-grid { grid-template-columns: repeat(6, 6px); gap: 3px; padding: 0; }
+.face-dots.is-compact .face-dot { width: 6px; height: 6px; }
+
+.reduce-motion .timer-face *, .reduce-motion .timer-face *::before, .reduce-motion .timer-face *::after { animation: none; transition: none; }
+.reduce-motion .flip-fold { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .timer-face *, .timer-face *::before, .timer-face *::after { animation: none !important; transition: none !important; }
+  .flip-fold { display: none; }
+}
+
+.face-flip { color: var(--flip-ink, #f2f4ff); }
+.flip-palette-picker { margin-top: 16px; }

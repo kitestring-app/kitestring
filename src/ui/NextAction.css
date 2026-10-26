@@ -1,0 +1,12 @@
+.next-action { width: min(460px, 90vw); margin: 12px auto 0; display: grid; gap: 8px; text-align: center; }
+.next-action label { display: grid; gap: 5px; font-size: 13px; text-align: left; }
+.next-action .btn { justify-self: center; }
+.next-action p { margin: 0; overflow-wrap: anywhere; }
+.next-action-text { font-size: 16px; }
+.next-action-buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+
+.next-action-cue { font-style: italic; }
+.next-action-buttons .btn { border-radius: var(--r-pill); }
+
+.next-action-copy { display: grid; gap: 4px; max-height: 70px; overflow: auto; overscroll-behavior: contain; }
+.next-action-copy:empty { display: none; }

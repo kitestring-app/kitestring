@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Same code, a Mac app · Inside Kitestring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="lesson.css">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the lesson</a>
+<header class="bar"><div class="bar-in">
+  <a class="home" href="index.html">Inside Kitestring</a>
+  <nav aria-label="Lessons"><ol>
+    <li><a href="stack.html">1 Stack</a></li>
+    <li><a href="shape.html">2 Shape</a></li>
+    <li><a href="data.html">3 Data</a></li>
+    <li><a href="cloudflare.html">4 Cloudflare</a></li>
+    <li><a href="zero-trust.html">5 Zero Trust</a></li>
+    <li><a href="mac-app.html" aria-current="page">6 Mac app</a></li>
+  </ol></nav>
+</div></header>
+<main id="main"><div class="col">
+<p class="eyebrow">Lesson 6 of 6</p>
+<h1>Same code, a Mac app</h1>
+<p class="lede">The DMG doesn't contain a rewrite. It contains the exact <code>dist/</code> folder that Cloudflare serves, plus a small Chromium-based shell that serves it from inside the app.</p>
+
+<h2>What Electron is</h2>
+<p><strong>Electron</strong> bundles two things into a <code>.app</code>: <strong>Chromium</strong> (the engine inside Chrome, which draws pages) and <strong>Node.js</strong> (which can touch the Mac: menus, files, notifications). Slack, VS Code, Discord and Obsidian are built the same way. That's why the DMG is about 115 MB even though our own code is small: most of it is a private copy of Chromium.</p>
+<p>An Electron app has two kinds of process, and the split is the key to its security:</p>
+<figure>
+  <div class="diagram">
+    <svg viewBox="0 0 700 300" role="img" aria-labelledby="elT elD">
+      <title id="elT">Electron main process, preload bridge and renderer</title>
+      <desc id="elD">The main process runs Node with full Mac access: tray, windows, DNS, YouTube rules and the app protocol. The renderer is a sandboxed Chromium page running our dist folder with no Node access. Between them the preload script exposes exactly three functions: setStatus, attention and release.</desc>
+      <defs><marker id="ela" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="head-a"/></marker></defs>
+      <rect x="20" y="30" width="250" height="240" rx="10" class="b-mac"/>
+      <text x="36" y="58" font-weight="700" class="t-mac">MAIN · desktop/main.cjs</text>
+      <text x="36" y="84" font-size="13">Node.js, full Mac access</text>
+      <text x="36" y="116" font-size="13" class="dim">• menu-bar countdown (Tray)</text>
+      <text x="36" y="138" font-size="13" class="dim">• close hides; quit is separate</text>
+      <text x="36" y="160" font-size="13" class="dim">• app:// file server</text>
+      <text x="36" y="182" font-size="13" class="dim">• DNS over HTTPS (NextDNS)</text>
+      <text x="36" y="204" font-size="13" class="dim">• YouTube allowlist</text>
+      <text x="36" y="226" font-size="13" class="dim">• bring window to front</text>
+      <rect x="290" y="95" width="130" height="110" rx="8" class="b-accent"/>
+      <text x="355" y="120" text-anchor="middle" font-weight="700" class="t-accent" font-size="13">PRELOAD</text>
+      <text x="355" y="144" text-anchor="middle" font-size="12" class="mono">setStatus()</text>
+      <text x="355" y="164" text-anchor="middle" font-size="12" class="mono">attention()</text>
+      <text x="355" y="184" text-anchor="middle" font-size="12" class="mono">release()</text>
+      <line x1="290" y1="150" x2="272" y2="150" class="arrow-a" marker-end="url(#ela)"/>
+      <line x1="420" y1="150" x2="438" y2="150" class="arrow-a" marker-end="url(#ela)"/>
+      <rect x="440" y="30" width="240" height="240" rx="10" class="b-browser"/>
+      <text x="456" y="58" font-weight="700" class="t-browser">RENDERER · sandboxed</text>
+      <text x="456" y="84" font-size="13">Chromium page running dist/</text>
+      <text x="456" y="116" font-size="13" class="dim">• React app, timer, audio</text>
+      <text x="456" y="138" font-size="13" class="dim">• its own IndexedDB</text>
+      <text x="456" y="160" font-size="13" class="dim">• no Node, no require()</text>
+      <text x="456" y="182" font-size="13" class="dim">• sees window.desktop only</text>
+    </svg>
+  </div>
+  <figcaption>The page can ask main for three things and nothing else. Main checks every message came from our own page.</figcaption>
+</figure>
+<p>Why so strict? The page loads YouTube embeds and radio streams from the internet. If the page could call Node directly, a bad script could read your files. <code>contextIsolation</code>, <code>sandbox</code> and no <code>nodeIntegration</code> keep Node out of the page. A YouTube embed is a cross-origin frame. It does not see <code>window.desktop</code>. This app does not set <code>nodeIntegrationInSubFrames</code>, so the embed does not get the preload either. The app's own page can call <code>setStatus</code>, <code>attention</code> and <code>release</code>. <code>setStatus</code> is cut to 64 characters in the preload. Main strips control characters and bidi characters and cuts it to 64 again.</p>
+
+<h2>How dist/ gets into the app</h2>
+<ol>
+  <li><code>npm run dist</code> in <code>desktop/</code> first runs the normal web build, producing <code>dist/</code>, the same folder Cloudflare gets.</li>
+  <li><strong>electron-builder</strong> copies <code>dist/</code> into <code>Kitestring.app/Contents/Resources/web/</code>, packs our <code>.cjs</code> files into an archive, adds the icon, and wraps it all in a DMG.</li>
+  <li>At launch, <code>main.cjs</code> registers a private web address, <code>app://custom-pomodoro/</code>, and answers it from that <code>web/</code> folder (<code>desktop/protocol.cjs</code>). It reads security headers from the same <code>_headers</code> file. It sends the content security policy and <code>X-Content-Type-Options</code>. When the file has them, it also sends <code>X-Frame-Options</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code> and <code>Cross-Origin-Opener-Policy</code>. It leaves out <code>Strict-Transport-Security</code> and both <code>Cache-Control</code> rules.</li>
+</ol>
+
+<h3>Why a made-up <code>app://</code> address and not just opening the file?</h3>
+<p><code>file://</code> can count as a secure context, the same family as <code>https</code>. This app still does not open its files that way. <code>main.cjs</code> registers <code>app://</code> as a standard, secure scheme, with fetch, CORS and streams. The page then behaves like a real site, with no network and no server.</p>
+
+<h2>The same code, aware of where it runs</h2>
+<p>There's one codebase and no "Mac version" of the React app. Instead the page checks what's around it and switches extras on:</p>
+<div class="tbl"><table>
+  <thead><tr><th>The page asks</th><th>If yes</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>Is <code>window.desktop</code> there?</td><td>Send the timer to the menu bar. Bring the window forward when a focus or a break ends, if that setting is on. Skip and the segment buttons do not.</td><td><span class="tag mac">MAC APP</span></td></tr>
+    <tr><td>Am I on localhost and does <code>/api/health</code> answer?</td><td>Hand the alarm to the companion so it rings with Chrome closed</td><td><span class="tag mac">CHROME + COMPANION</span></td></tr>
+    <tr><td>Does <code>syncAllowedAt()</code> allow this page, and does <code>/api/me</code> say I'm signed in?</td><td>Turn on cloud sync. Localhost and <code>app://</code> fail that check, so they never ask.</td><td><span class="tag cloud">HOSTED</span></td></tr>
+  </tbody>
+</table></div>
+<p>This is called <em>feature detection</em>: test for a capability, then use it, instead of shipping three builds.</p>
+
+<h2>Why it doesn't die when Chrome closes</h2>
+<ul>
+  <li><strong>It isn't Chrome.</strong> It has its own Chromium, so quitting Chrome doesn't touch it.</li>
+  <li><strong>Closing the window only hides it.</strong> <code>main.cjs</code> catches the window's close event and calls <code>hide()</code> unless a quit is already underway. ⌘Q, Quit in the app menu, Quit in the Dock, and Quit on the tray icon all quit for real.</li>
+  <li><strong>Hidden doesn't mean slowed down.</strong> <code>backgroundThrottling: false</code> stops Chromium from slowing timers in a hidden window, so the countdown and the alert stay on time. The sound is your alert sound. The default is the signature chime.</li>
+</ul>
+
+<h2>Its own DNS, so YouTube stations play</h2>
+<p>The app uses system DNS by default. Settings &gt; Extras can save a user-supplied HTTPS DNS endpoint on this Mac only. That option stays out of sync and exports. YouTube Music frames pass. Claude FM is allowed as a live channel. Lofi Girl and Chillhop are allowed as a live channel and as one pinned video each. Any other YouTube frame is cancelled before it loads. The filter only looks at frame loads. Scripts, XHR, images and media are left alone. The rule lives in <code>desktop/youtube-policy.cjs</code> with its own tests.</p>
+
+<div class="note limit"><span class="k">Trade-offs</span>
+  <p>About 115 MB for a timer is heavy. A native Swift app would be a few MB, and it would mean rewriting the whole UI. A lighter shell like Tauri uses the Mac's built-in Safari engine, which is smaller but behaves differently from Chrome for audio and YouTube embeds. Electron won because the exact same <code>dist/</code> runs unchanged. Another trade-off: the app is signed "ad hoc" (no paid Apple developer certificate), so macOS may ask you to right-click → Open the first time.</p>
+</div>
+
+<section class="check" aria-labelledby="c6">
+  <h2 id="c6">Check yourself</h2>
+  <p>A YouTube embed inside the app runs a script that tries <code>window.desktop.attention("focus-done")</code> a hundred times a second to keep stealing focus. Name two things that stop it.</p>
+  <details><summary>Show the answer</summary>
+    <p>First, the embed runs in its own cross-origin frame and does not share <code>window.desktop</code>. The bridge exists only on our top page, and the embed does not get the preload. Second, main checks every message came from the app's own main frame at an <code>app://</code> address and drops anything else. <code>attention</code> on the real page is limited to at most about once a minute, and a later reminder can replace one that is still up. The embed never reaches that limit.</p>
+  </details>
+</section>
+
+<nav class="pager" aria-label="Previous and next lesson"><a href="zero-trust.html">← Zero Trust</a><a href="index.html">Back to the overview →</a></nav>
+</div></main>
+<footer class="foot"><div class="col">Written from the code in <code>the repository</code> on 24 Oct 2026.</div></footer>
+</body>
+</html>

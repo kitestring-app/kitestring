@@ -1,0 +1,123 @@
+<title>Inside Kitestring</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="lesson.css">
+
+<a class="skip" href="#main">Skip to the lesson</a>
+<header class="bar"><div class="bar-in">
+  <a class="home" href="index.html" aria-current="page">Inside Kitestring</a>
+  <nav aria-label="Lessons"><ol>
+    <li><a href="stack.html">1 Stack</a></li>
+    <li><a href="shape.html">2 Shape</a></li>
+    <li><a href="data.html">3 Data</a></li>
+    <li><a href="cloudflare.html">4 Cloudflare</a></li>
+    <li><a href="zero-trust.html">5 Zero Trust</a></li>
+    <li><a href="mac-app.html">6 Mac app</a></li>
+  </ol></nav>
+</div></header>
+
+<main id="main">
+  <div class="col">
+    <p class="eyebrow">A six-part walkthrough of your own app</p>
+    <h1>Inside Kitestring</h1>
+    <p class="lede">You use it every day. These pages show what it's made of, where each piece runs, where your data lives, and why it was built this way and not some other way.</p>
+    <p>The whole lesson hangs on one picture. Learn this one and every page after it is a zoom into one box.</p>
+  </div>
+
+  <figure class="wide">
+    <div class="diagram">
+      <svg viewBox="0 0 1000 430" role="img" aria-labelledby="bigT bigD">
+        <title id="bigT">One build, three homes, one optional cloud database</title>
+        <desc id="bigD">The source code in src is built once by Vite into a dist folder of plain HTML, JavaScript and CSS. Three different hosts serve that same folder: the companion server on the Mac at localhost:4747 for Chrome, Cloudflare on the internet with Access as the login and the Worker as the sync API, and the Electron Mac app through its app:// protocol. Each copy keeps data in IndexedDB inside its own browser engine. Only the hosted https copy syncs to the D1 database. Localhost and the Mac app do not.</desc>
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker>
+          <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="head-a"/></marker>
+        </defs>
+        <!-- source + build -->
+        <rect x="20" y="160" width="150" height="74" rx="8" class="box"/>
+        <text x="95" y="190" text-anchor="middle" font-weight="700">src/</text>
+        <text x="95" y="212" text-anchor="middle" class="dim" font-size="13">React + TypeScript</text>
+        <line x1="170" y1="197" x2="226" y2="197" class="arrow" marker-end="url(#ah)"/>
+        <text x="198" y="186" text-anchor="middle" class="dim mono" font-size="11">vite build</text>
+        <rect x="230" y="150" width="150" height="94" rx="8" class="b-accent"/>
+        <text x="305" y="182" text-anchor="middle" font-weight="700" class="t-accent">dist/</text>
+        <text x="305" y="204" text-anchor="middle" font-size="13">plain HTML, JS,</text>
+        <text x="305" y="222" text-anchor="middle" font-size="13">CSS, sounds</text>
+        <!-- three hosts -->
+        <line x1="380" y1="180" x2="470" y2="70" class="arrow-a" marker-end="url(#aa)"/>
+        <line x1="380" y1="197" x2="470" y2="197" class="arrow-a" marker-end="url(#aa)"/>
+        <line x1="380" y1="214" x2="470" y2="330" class="arrow-a" marker-end="url(#aa)"/>
+        <text x="425" y="140" text-anchor="middle" class="dim" font-size="12">same files</text>
+
+        <rect x="475" y="30" width="250" height="84" rx="8" class="b-mac"/>
+        <text x="490" y="56" font-weight="700" class="t-mac">ON YOUR MAC</text>
+        <text x="490" y="78" font-size="14">Companion server, Node</text>
+        <text x="490" y="98" font-size="13" class="dim mono">localhost:4747 → Chrome</text>
+
+        <rect x="475" y="155" width="250" height="84" rx="8" class="b-cloud"/>
+        <text x="490" y="181" font-weight="700" class="t-cloud">AT CLOUDFLARE</text>
+        <text x="490" y="203" font-size="14">Access, then the Worker</text>
+        <text x="490" y="223" font-size="13" class="dim mono">*.workers.dev → any browser</text>
+
+        <rect x="475" y="290" width="250" height="84" rx="8" class="b-mac"/>
+        <text x="490" y="316" font-weight="700" class="t-mac">ON YOUR MAC</text>
+        <text x="490" y="338" font-size="14">Electron app (the DMG)</text>
+        <text x="490" y="358" font-size="13" class="dim mono">app://custom-pomodoro</text>
+
+        <!-- storage -->
+        <rect x="790" y="30" width="190" height="84" rx="8" class="b-browser"/>
+        <text x="805" y="56" font-weight="700" class="t-browser">IN THE BROWSER</text>
+        <text x="805" y="80" font-size="14">IndexedDB</text>
+        <text x="805" y="100" font-size="13" class="dim">Chrome's own copy</text>
+        <line x1="725" y1="72" x2="786" y2="72" class="arrow" marker-end="url(#ah)"/>
+
+        <rect x="790" y="155" width="190" height="84" rx="8" class="b-browser"/>
+        <text x="805" y="181" font-weight="700" class="t-browser">IN THE BROWSER</text>
+        <text x="805" y="205" font-size="14">IndexedDB</text>
+        <text x="805" y="225" font-size="13" class="dim">syncs to D1 ↓</text>
+        <line x1="725" y1="197" x2="786" y2="197" class="arrow" marker-end="url(#ah)"/>
+
+        <rect x="790" y="290" width="190" height="84" rx="8" class="b-browser"/>
+        <text x="805" y="316" font-weight="700" class="t-browser">IN THE APP</text>
+        <text x="805" y="340" font-size="14">IndexedDB</text>
+        <text x="805" y="360" font-size="13" class="dim">the app's own copy</text>
+        <line x1="725" y1="332" x2="786" y2="332" class="arrow" marker-end="url(#ah)"/>
+
+        <rect x="790" y="250" width="190" height="30" rx="6" class="b-cloud"/>
+        <text x="885" y="270" text-anchor="middle" font-size="13" font-weight="700" class="t-cloud">D1 database (cloud)</text>
+        <line x1="885" y1="239" x2="885" y2="248" class="arrow" />
+
+        <text x="20" y="410" font-size="13" class="dim">Colour is backed by the words in capitals: MAC, CLOUDFLARE, BROWSER.</text>
+      </svg>
+    </div>
+    <figcaption>Build once, serve three ways. Each copy remembers your stuff in its own browser storage. Only the cloud copy syncs.</figcaption>
+  </figure>
+
+  <div class="col">
+    <h2>Three ideas to carry through every page</h2>
+    <ol>
+      <li><strong>The app is just files.</strong> After the build there's no "server program" running your timer. The timer, tasks, sounds and stats are JavaScript running inside a browser engine.</li>
+      <li><strong>The browser is the main computer.</strong> Your data's first home is the browser's built-in database, IndexedDB. The cloud is an extra copy for syncing, not the boss. People call this <em>local-first</em>.</li>
+      <li><strong>Everything else is a thin helper.</strong> Each helper does more than one extra. The companion serves the files on this Mac and can ring when Chrome is closed. Access signs you in. The Worker checks that token and reads and writes the sync database. The shell stays in the menu bar, serves the files at <code>app://</code>, sets DNS-over-HTTPS, and filters YouTube frames.</li>
+    </ol>
+
+    <h2>The six lessons</h2>
+  </div>
+  <ol class="map wide" style="max-width:68ch">
+    <li><a href="stack.html"><span class="n">LESSON 1</span><b>The stack</b><span>React, TypeScript, Vite, Web Audio. What frontend and backend mean here.</span></a></li>
+    <li><a href="shape.html"><span class="n">LESSON 2</span><b>Monolith or microservices?</b><span>Why it's one modular monolith, and when that would change.</span></a></li>
+    <li><a href="data.html"><span class="n">LESSON 3</span><b>Where your data lives</b><span>IndexedDB, D1, and how two copies agree.</span></a></li>
+    <li><a href="cloudflare.html"><span class="n">LESSON 4</span><b>Cloudflare, not Vercel</b><span>What Workers, static assets and D1 are, and why we picked them.</span></a></li>
+    <li><a href="zero-trust.html"><span class="n">LESSON 5</span><b>Zero Trust</b><span>The login wall, the signed token, and the screen you just closed.</span></a></li>
+    <li><a href="mac-app.html"><span class="n">LESSON 6</span><b>Same code, a Mac app</b><span>How dist/ becomes a DMG, and why it doesn't die with Chrome.</span></a></li>
+  </ol>
+
+  <div class="col">
+    <div class="note"><span class="k">How to read these</span>
+      <p>Each page goes picture first, then how it works, then why. Every page ends with one optional question. Try it in your head before opening the answer. Opening the answer early is fine; it just tells you less.</p>
+    </div>
+  </div>
+</main>
+<footer class="foot"><div class="col">Written from the code in <code>the repository</code> on 24 Oct 2026. Lesson source lives in <code>docs/learn/</code>.</div></footer>

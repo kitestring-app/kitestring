@@ -1,0 +1,23 @@
+.park-capture { width: min(460px, 90vw); margin: 12px auto 0; }
+.park-capture:empty { display: none; }
+.park-capture input { width: 100%; }
+.park-confirm { display: inline-block; animation: parked-fade 1.8s ease forwards; }
+@keyframes parked-fade { 0%, 65% { opacity: 1; } 100% { opacity: 0; } }
+.park-chip { margin-top: 10px; }
+.parking-lot { text-align: left; width: 100%; margin-top: 18px; }
+.parking-lot > .row { justify-content: space-between; gap: 16px; }
+.parking-lot h3 { margin: 0; font-size: 16px; }
+.parked-list { list-style: none; margin: 12px 0 0; padding: 0; max-height: 210px; overflow-y: auto; overscroll-behavior: contain; }
+.parked-list li { padding: 10px 2px; border-top: 1px solid var(--line); }
+.parked-list p { margin: 0 0 8px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.parked-actions { flex-wrap: wrap; gap: 6px; }
+.parked-actions .parked-delete { margin-left: auto; width: 32px; height: 32px; }
+.parked-delete:focus-visible, .parked-clear:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.parked-clear { margin-top: 10px; }
+.center > .parking-lot { max-width: 460px; }
+.transition-screen .parking-lot { max-width: 520px; margin-inline: auto; }
+.transition-screen .parked-list { max-height: min(180px, 24vh); }
+.reduce-motion .park-confirm { animation: none; }
+@media (prefers-reduced-motion: reduce) { .park-confirm { animation: none; } }
+
+.parking-lot p:last-child { margin-bottom: 0; }

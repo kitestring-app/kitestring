@@ -1,0 +1,30 @@
+import { afterEach, expect, it, vi } from "vitest";
+import { localPreferences, localPreferencesUpdate, localPreferencesReady, settingsUpdate } from "../state/settings";
+import { connectFloatingSettings } from "./floatingDesktop";
+afterEach(() => vi.unstubAllGlobals());
+it("restores persisted preferences and mirrors tray changes into the same settings", async () => {
+  await localPreferencesReady;
+  localPreferencesUpdate({ floatingTimer: true, floatingOnTop: false });
+  let change!: (value: FloatingPreferences) => void;
+  const send = vi.fn(async () => true), off = vi.fn();
+  vi.stubGlobal("window", { desktop: { setFloatingPreferences: send, onFloatingPreferences: (fn: typeof change) => { change = fn; return off; } } });
+  const disconnect = await connectFloatingSettings();
+  expect(send).toHaveBeenLastCalledWith({ floatingTimer: true, floatingOnTop: false, menuBarTime: true, showMenuBar: true });
+  change({ floatingTimer: false, floatingOnTop: true, menuBarTime: false, showMenuBar: false });
+  expect(localPreferences.get()).toMatchObject({ floatingTimer: false, floatingOnTop: true, menuBarTime: false, showMenuBar: false });
+  expect(send).toHaveBeenCalledTimes(2);
+  settingsUpdate("extras", { displayName: "" });
+  expect(send).toHaveBeenCalledTimes(2);
+  disconnect();
+  localPreferencesUpdate({ floatingTimer: true });
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(off).toHaveBeenCalledOnce();
+});
+it("does not expose desktop preferences on web or in a mini renderer", async () => {
+  vi.stubGlobal("window", {});
+  await connectFloatingSettings();
+  const send = vi.fn();
+  vi.stubGlobal("window", { desktop: { mini: true, setFloatingPreferences: send } });
+  await connectFloatingSettings();
+  expect(send).not.toHaveBeenCalled();
+});

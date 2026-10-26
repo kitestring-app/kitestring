@@ -1,0 +1,23 @@
+// Cloudflare Worker: static app + /api sync (D1), with account sessions. Access protects only /account/reset*.
+// Deployment: follow worker/AUTH.md. ALLOWED_EMAILS is a Worker secret (wrangler secret put ALLOWED_EMAILS), never a var in this file.
+// Copy wrangler.example.jsonc to wrangler.local.jsonc, fill placeholders, and deploy with --config deploy/wrangler.local.jsonc.
+// Never deploy this template or commit the local configuration.
+{
+  "name": "kitestring",
+  "main": "../worker/index.ts",
+  "compatibility_date": "2026-10-19",
+  "assets": {
+    "directory": "../dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/account/reset", "/account/reset/*", "/reset", "/reset/*", "/reset.html"]
+  },
+  "d1_databases": [{ "binding": "DB", "database_name": "custom-pomodoro-sync", "migrations_dir": "migrations", "database_id": "REPLACE_WITH_D1_DATABASE_ID" }],
+  "vars": {
+    "TEAM_DOMAIN": "REPLACE_WITH_ACCESS_TEAM_DOMAIN",
+    "POLICY_AUD": "REPLACE_WITH_ACCESS_POLICY_AUD"
+  },
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": false }
+}

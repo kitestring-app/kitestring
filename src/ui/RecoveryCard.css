@@ -1,0 +1,28 @@
+.focus-card-slot { width: min(460px, 100%); min-height: 0; flex: 0 1 auto; display: flex; flex-direction: column; overflow: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; margin-top: 12px; border-radius: var(--radius); }
+.focus-card-slot:empty { display: none; }
+.recovery-card {
+  width: 100%; min-height: 0; flex: 0 1 auto; overflow: hidden; padding: 14px; color: var(--fg); background: var(--surface-strong);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+  -webkit-backdrop-filter: var(--blur-strong); backdrop-filter: var(--blur-strong);
+  text-align: left; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 8px;
+}
+.recovery-heading { display: flex; align-items: center; gap: 10px; color: var(--accent); }
+.recovery-heading h2 { color: var(--fg); font: inherit; font-size: 16px; font-weight: 600; margin: 0; flex: 1; }
+.recovery-heading .iconbtn { width: 30px; height: 30px; flex: none; }
+.recovery-card p { margin: 0; }
+.recovery-action { font-size: 16px; line-height: 1.4; }
+.recovery-cue { font-style: italic; }
+.focus-card-body { min-height: 0; overflow: auto; overscroll-behavior: contain; display: grid; gap: 8px; }
+.recovery-card > :not(.focus-card-body) { flex-shrink: 0; }
+.recovery-buttons { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.recovery-short { justify-self: start; }
+.recovery-card .btn { white-space: normal; padding: 7px 12px; font-size: 13px; }
+:root[data-look="sketch"] .focus-card-slot .recovery-card button, :root[data-look="sketch"] .focus-card-slot .recovery-card button svg { filter: none; }
+
+/* Header/footer stay in the grid; DashboardFit provides last-resort middle scrolling. */
+.focus-center { overflow: hidden; padding-block: 12px; gap: 0; }
+.focus-center > :not(.focus-card-slot) { flex-shrink: 0; }
+.focus-center .quote { width: min(460px, 100%); max-width: 460px; margin: 12px 0 0; }
+.focus-center:has(.recovery-card) > .quote { display: none; }
+.focus-center .next-action { max-height: 25%; overflow: auto; flex-shrink: 0; min-height: 40px; }
+.focus-center .next-action:has(input) { max-height: 45%; }

@@ -1,0 +1,4 @@
+.delete-undo-stack { position: fixed; z-index: 10000; bottom: 24px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; width: max-content; max-width: calc(100% - 32px); max-height: 40vh; overflow-y: auto; }
+.delete-undo-toast { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); color: var(--fg); box-shadow: var(--shadow-lg); font-size: 14px; }
+.delete-undo-toast button { flex-shrink: 0; }
+.delete-undo-toast button:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }

@@ -1,0 +1,15 @@
+.session-log-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.session-log-filters label { display: grid; gap: 6px; min-width: 0; color: var(--fg-dim); font-size: 13px; }
+.session-log-filters label:last-child { grid-column: 1 / -1; }
+.session-log-filters .input { width: 100%; min-width: 0; box-sizing: border-box; }
+.session-log-day { margin-top: 18px; }
+.session-log-day h2 { font-size: 16px; color: var(--fg); }
+.session-log-scroll { overflow-x: auto; }
+.session-log table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+.session-log caption { text-align: left; padding-bottom: 10px; }
+.session-log th, .session-log td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.session-log th { color: var(--fg-dim); font-weight: 500; }
+.session-log td:nth-child(4) { min-width: 100px; max-width: 220px; overflow-wrap: anywhere; }
+.session-log td:first-child, .session-log td:nth-child(2) { white-space: nowrap; }
+.session-log :is(button, input, select, [tabindex]):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+@media (max-width: 380px) { .session-log-filters { grid-template-columns: 1fr; } }

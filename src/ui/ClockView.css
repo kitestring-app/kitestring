@@ -1,0 +1,13 @@
+.dashboard-streak {
+  position: absolute;
+  right: 28px;
+  bottom: 30px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--fg-dim);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 480px) { .dashboard-streak { right: 16px; bottom: 32px; padding: 8px; font-size: 12px; } }

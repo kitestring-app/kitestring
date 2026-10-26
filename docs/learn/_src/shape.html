@@ -1,0 +1,80 @@
+<h1>Monolith or microservices?</h1>
+<p class="lede">Short answer: a <strong>modular monolith</strong>. One codebase and one web build, cut into clean modules inside. Three programs serve that build. The companion serves <code>dist/</code> on this Mac. Wrangler uploads it. electron-builder packs the same <code>dist/</code> into the app. Those three are adapters. They don't count as services in the microservice sense.</p>
+
+<h2>The two words</h2>
+<p>A <strong>monolith</strong> is one program that does everything. You build it once and ship it once. Parts talk to each other by calling functions, which is instant and can't fail because of the network.</p>
+<p><strong>Microservices</strong> split the app into many small programs, each with its own deploy and often its own database: a "timer service", a "tasks service", a "stats service". They talk over the network with HTTP or queues.</p>
+
+<figure>
+  <div class="diagram">
+    <svg viewBox="0 0 680 300" role="img" aria-labelledby="m1T m1D">
+      <title id="m1T">Function calls versus network calls</title>
+      <desc id="m1D">Left: a monolith where timer, tasks and stats are modules in one box and call each other directly. Right: microservices where timer, tasks and stats are separate boxes with separate databases, joined by network arrows that can fail.</desc>
+      <defs><marker id="m1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker></defs>
+      <text x="20" y="24" font-weight="700">Modular monolith (what we built)</text>
+      <rect x="20" y="40" width="290" height="210" rx="10" class="b-accent"/>
+      <rect x="40" y="62" width="110" height="44" rx="6" class="box"/><text x="95" y="89" text-anchor="middle" font-size="14">timer</text>
+      <rect x="180" y="62" width="110" height="44" rx="6" class="box"/><text x="235" y="89" text-anchor="middle" font-size="14">tasks</text>
+      <rect x="40" y="140" width="110" height="44" rx="6" class="box"/><text x="95" y="167" text-anchor="middle" font-size="14">stats</text>
+      <rect x="180" y="140" width="110" height="44" rx="6" class="box"/><text x="235" y="167" text-anchor="middle" font-size="14">audio</text>
+      <line x1="150" y1="84" x2="178" y2="84" class="arrow" marker-end="url(#m1a)"/>
+      <line x1="95" y1="106" x2="95" y2="138" class="arrow" marker-end="url(#m1a)"/>
+      <line x1="150" y1="100" x2="180" y2="146" class="arrow" marker-end="url(#m1a)"/>
+      <text x="165" y="226" text-anchor="middle" font-size="13" class="dim">function calls: instant, never "down"</text>
+
+      <text x="370" y="24" font-weight="700">Microservices (what we didn't)</text>
+      <rect x="370" y="50" width="120" height="50" rx="6" class="box"/><text x="430" y="80" text-anchor="middle" font-size="14">timer svc</text>
+      <rect x="540" y="50" width="120" height="50" rx="6" class="box"/><text x="600" y="80" text-anchor="middle" font-size="14">tasks svc</text>
+      <rect x="455" y="160" width="120" height="50" rx="6" class="box"/><text x="515" y="190" text-anchor="middle" font-size="14">stats svc</text>
+      <line x1="490" y1="75" x2="538" y2="75" class="bad"/>
+      <line x1="440" y1="100" x2="490" y2="158" class="bad"/>
+      <line x1="590" y1="100" x2="545" y2="158" class="bad"/>
+      <text x="515" y="240" text-anchor="middle" font-size="13" class="dim">dashed = network hop that can time out</text>
+      <text x="515" y="260" text-anchor="middle" font-size="13" class="dim">+ 3 deploys, 3 databases, 3 sets of logs</text>
+    </svg>
+  </div>
+</figure>
+
+<h2>Why a monolith fits this app</h2>
+<ul>
+  <li><strong>One developer, one user.</strong> Microservices solve a people problem: 50 engineers stepping on each other in one codebase. You don't have that problem.</li>
+  <li><strong>The timer can't wait for a network.</strong> If "start timer" had to ask a tasks service which task is current, a slow Wi-Fi moment could delay your session. In one program the answer comes back in microseconds.</li>
+  <li><strong>It works offline.</strong> A plane, a dead café Wi-Fi, a NextDNS block: the app keeps working because nothing it needs is on the other side of a network.</li>
+  <li><strong>It costs nothing.</strong> One static bundle plus one tiny Worker stays inside every free tier. Ten services would each want hosting, logs and monitoring.</li>
+</ul>
+
+<h2>"Modular" is the part that matters</h2>
+<p>A monolith can still be tidy. Inside <code>src/</code> the code is cut by job, and the cuts are real:</p>
+<div class="tbl"><table>
+  <thead><tr><th>Folder</th><th>Job</th><th>Rule it follows</th></tr></thead>
+  <tbody>
+    <tr><td><code>src/state/timerEngine.ts</code></td><td>Timer maths</td><td>Pure functions. Time goes in, a new state comes out. No React, no audio, no storage, which is why it's easy to test.</td></tr>
+    <tr><td><code>src/state/</code></td><td>The app's facts</td><td>Stores for settings, timer, tasks, stats. Most facts change here. Notes, mixes, radio and custom backgrounds live elsewhere.</td></tr>
+    <tr><td><code>src/lib/</code></td><td>Plumbing</td><td>IndexedDB, the store, backup checking, cloud sync. Backup checking does know task shape, including <code>etaMin</code>, timer segments, and stats chunks named focus, short and long. The rest of the folder is not about how a Pomodoro runs.</td></tr>
+    <tr><td><code>src/audio/</code></td><td>Sound</td><td>Web Audio graph, noises, alerts, radio. Mixes live in <code>mixer.ts</code>. Radio favourites live in <code>radio.ts</code>.</td></tr>
+    <tr><td><code>src/ui/</code></td><td>The screen</td><td>React components. They read stores and call actions. Notes are the exception: <code>NotepadPanel.tsx</code> writes them.</td></tr>
+  </tbody>
+</table></div>
+<p>Custom background images live in <code>src/data/themes.ts</code>. The image bytes sit in their own IndexedDB keys, named <code>custom-bg:&lt;id&gt;</code>.</p>
+<p>These cuts are why two Codex jobs could work in parallel today: one owned <code>src/</code>, the other <code>desktop/</code>. They met at <code>window.desktop</code>, which has three calls: <code>setStatus</code>, <code>attention</code> and <code>release</code>. Main also sends <code>desktop:prepare-toggle</code> into the page, so a menu click can press Space.</p>
+
+<h2>So what are the companion, Worker and Electron?</h2>
+<p>They're separate programs, so a strict person could call this "a monolith plus three services". The difference from microservices is that none of them owns a slice of the business logic. Each one is an <strong>adapter</strong>: it gives the same frontend a capability from its surroundings.</p>
+<ul>
+  <li><span class="tag mac">MAC</span> <strong>Companion</strong>: hands out the files on localhost and rings native alarms.</li>
+  <li><span class="tag cloud">CLOUDFLARE</span> <strong>Worker</strong>: answers <code>/api/me</code> and <code>/api/sync</code>, and stores sync copies. With <code>run_worker_first</code> set to <code>["/api/*"]</code>, HTML, JS and sounds are served by the assets layer. The script does not run for those paths.</li>
+  <li><span class="tag mac">MAC</span> <strong>Electron shell</strong>: hands out the files inside an app window and adds the menu bar.</li>
+</ul>
+<p>Take any adapter away and the app still runs; you just lose that one extra. That's the test: in microservices, losing the "tasks service" means you have no tasks.</p>
+
+<div class="note limit"><span class="k">When this would change</span>
+  <p>If the app grew into a product with thousands of users, shared team rooms and payments, you'd probably split off the parts with different scaling or security needs (billing, realtime rooms) first. Even then most teams start with a modular monolith and pull out services only when a real pain shows up.</p>
+</div>
+
+<section class="check" aria-labelledby="c2">
+  <h2 id="c2">Check yourself</h2>
+  <p>Cloudflare goes down for an hour. Using the "adapter" test above, say exactly what still works in the Mac app and in Chrome on localhost, and what doesn't.</p>
+  <details><summary>Show the answer</summary>
+    <p>Everything in both local copies keeps working: timer, tasks, sounds, stats, alarms. They never talk to Cloudflare. Only the hosted copy at workers.dev stops loading, and cloud sync pauses. Internet radio and YouTube stations depend on their own servers, not Cloudflare, so they keep playing if the internet is up.</p>
+  </details>
+</section>

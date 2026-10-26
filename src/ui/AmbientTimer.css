@@ -1,0 +1,19 @@
+.ambient-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 26px auto 0;
+  padding: 8px 10px 8px 18px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--fg);
+}
+.ambient-timer-reading { display: grid; gap: 3px; min-width: 92px; text-align: left; }
+.ambient-timer-segment { color: var(--fg-dim); font-size: 12px; }
+.ambient-timer-time { font-size: 24px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.ambient-timer .iconbtn { width: 44px; height: 44px; }
+.ambient-timer .iconbtn:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .ambient-timer { transition: none; } }
+.reduce-motion .ambient-timer { transition: none; }

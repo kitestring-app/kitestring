@@ -1,0 +1,9 @@
+.start-support { width: min(460px, 100%); margin: 8px auto 0; color: var(--fg); flex: none; }
+.tiny-start { display: grid; justify-items: center; gap: 8px; }
+.tiny-chip { display: inline-flex; }
+.tiny-chip .btn:first-child { border-radius: var(--r-pill) 0 0 var(--r-pill); }
+.tiny-chip .tiny-menu-toggle { border-radius: 0 var(--r-pill) var(--r-pill) 0; border-left: 0; padding-inline: 8px; }
+.tiny-menu-toggle svg { width: 14px; height: 14px; }
+.tiny-options { display: flex; justify-content: center; gap: 6px; }
+.tiny-custom { display: flex; align-items: center; gap: 8px; color: var(--fg-dim); }
+.tiny-custom .input { width: 76px; padding: 5px 8px; }

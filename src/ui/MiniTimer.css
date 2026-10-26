@@ -1,0 +1,60 @@
+/* Floating timer: a glance at time, segment and volume. Glass in every look; --mini-alpha sets how solid it is. */
+.native-mini, .native-mini body, .native-mini #root { width: 100%; height: 100%; min-width: 0; margin: 0; overflow: hidden; background: transparent; }
+
+.mini-timer {
+  --state: var(--state-focus);
+  position: relative; width: 100%; min-height: 100%; box-sizing: border-box; padding: 12px 16px 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  text-align: center; color: var(--fg); -webkit-app-region: drag; overflow: hidden;
+}
+.mini-timer.is-short { --state: var(--state-break); }
+.mini-timer.is-long { --state: var(--state-long); }
+.mini-timer :is(button, input) { -webkit-app-region: no-drag; }
+
+/* Glass: a tinted frost whose solidity comes from the setting, with a soft glow in the segment's colour. */
+.native-mini .mini-timer {
+  height: 100%; min-height: 0; border-radius: 18px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--state) 22%, transparent), transparent 70%),
+    color-mix(in srgb, var(--surface-solid) calc(var(--mini-alpha, 0.12) * 100%), transparent);
+  /* Liquid-glass edges: bright top rim, soft inner light, darker lower edge. The blur itself is the system's. */
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%), inset 0 -1px 0 rgb(0 0 0 / 18%), inset 0 0 0 1px rgb(255 255 255 / 14%), inset 0 0 24px color-mix(in srgb, var(--state) 16%, transparent);
+}
+
+.mini-state { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border-radius: 99px; font-size: 12px; font-weight: 650; letter-spacing: 0.01em; color: var(--fg); background: color-mix(in srgb, var(--state) 16%, transparent); }
+.mini-state-icon { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--state); color: var(--state-ink, #ffffff); }
+.mini-lock { display: inline-grid; color: var(--fg-dim); }
+.mini-paused { color: var(--fg-dim); font-weight: 500; }
+.mini-paused::before { content: "·"; margin-right: 6px; }
+
+.mini-timer .mini-digits {
+  display: block; padding: 0; border: 0; background: transparent; cursor: pointer;
+  color: var(--fg); font-family: var(--user-timer-font, var(--timer-font)); font-weight: var(--user-timer-weight, var(--timer-weight));
+  font-size: clamp(38px, 21vw, 60px); line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: var(--timer-track);
+}
+.mini-timer:not(.is-running) .mini-digits { opacity: 0.88; }
+.mini-progress { width: 72%; height: 3px; border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--fg) 14%, transparent); }
+.mini-progress i { display: block; height: 100%; border-radius: inherit; background: var(--state); transition: width 0.3s linear; }
+
+.mini-volume { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 6px; }
+.mini-volume .range { flex: 1; min-width: 0; width: 0; margin: 0; }
+.mini-mute { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--fg-dim); background: transparent; }
+.mini-mute[aria-pressed="true"] { color: var(--state); }
+.mini-mute svg { width: 16px; height: 16px; }
+@media (hover: hover) { .mini-mute:hover { background: color-mix(in srgb, var(--fg) 10%, transparent); color: var(--fg); } }
+
+/* Close only appears when the pointer is over the window or it has focus. */
+.mini-close { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--fg-dim); background: color-mix(in srgb, var(--fg) 10%, transparent); font-size: 16px; line-height: 1; opacity: 0; transition: opacity 0.15s; }
+.mini-timer:hover .mini-close, .mini-close:focus-visible { opacity: 1; }
+.mini-timer button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+@media (max-height: 200px) {
+  .mini-timer { padding: 8px 14px 6px; gap: 2px; }
+  .mini-timer .mini-digits { font-size: 38px; }
+  .mini-volume { margin-top: 2px; }
+}
+@media (prefers-reduced-transparency: reduce) { .native-mini .mini-timer { background: var(--surface-solid); } }
+.reduce-transparency.native-mini .mini-timer { background: var(--surface-solid); }
+
+/* Over the system blur, type needs its own lift to stay crisp. */
+.native-mini .mini-timer :is(.mini-digits, .mini-state, .mini-paused) { text-shadow: 0 1px 2px rgb(0 0 0 / 30%); }

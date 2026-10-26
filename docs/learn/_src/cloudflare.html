@@ -1,0 +1,60 @@
+<h1>Cloudflare, not Vercel</h1>
+<p class="lede">Both companies put your site on computers all over the world. For this app Cloudflare won on three things: a free login wall, a free database next to the code, and no surprise public deploys.</p>
+
+<h2>What these companies actually are</h2>
+<p>When someone types a web address, a computer somewhere has to answer with your files. Running that computer yourself means keeping it patched, online and fast for people far away. Hosting platforms rent you a share of thousands of machines instead.</p>
+<ul>
+  <li><strong>Cloudflare</strong> started as a network in front of other people's websites: it speeds them up and blocks attacks. It runs data centres in many cities. Later it let you run your own code on those same machines.</li>
+  <li><strong>Vercel</strong> started as the home for Next.js apps. It's built around git: push a branch, get a preview URL, merge, get production. It's very good for teams shipping React sites.</li>
+</ul>
+
+<h2>The three Cloudflare pieces we use</h2>
+<figure>
+  <div class="diagram">
+    <svg viewBox="0 0 700 290" role="img" aria-labelledby="cfT cfD">
+      <title id="cfT">A request through Cloudflare</title>
+      <desc id="cfD">A browser request first hits Cloudflare Access, which checks the login. Paths under /api run the Worker, which reads and writes D1. Every other path is answered from static assets, the dist folder, and the Worker script does not run for it.</desc>
+      <defs><marker id="cfa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="head"/></marker></defs>
+      <rect x="10" y="110" width="110" height="60" rx="8" class="b-browser"/><text x="65" y="136" text-anchor="middle" font-weight="700" class="t-browser" font-size="13">BROWSER</text><text x="65" y="156" text-anchor="middle" font-size="12" class="dim">any device</text>
+      <line x1="120" y1="140" x2="168" y2="140" class="arrow" marker-end="url(#cfa)"/>
+      <rect x="170" y="100" width="130" height="80" rx="8" class="b-cloud"/><text x="235" y="128" text-anchor="middle" font-weight="700" font-size="14">Access</text><text x="235" y="148" text-anchor="middle" font-size="12" class="dim">logged in?</text><text x="235" y="166" text-anchor="middle" font-size="12" class="dim">no → login page</text>
+      <line x1="300" y1="140" x2="348" y2="140" class="arrow" marker-end="url(#cfa)"/>
+      <rect x="350" y="80" width="140" height="120" rx="8" class="b-cloud"/><text x="420" y="108" text-anchor="middle" font-weight="700" font-size="14">Worker</text><text x="420" y="130" text-anchor="middle" font-size="12" class="dim">worker/index.ts</text><text x="420" y="160" text-anchor="middle" font-size="12" class="mono">/api/* → code</text><text x="420" y="180" text-anchor="middle" font-size="12" class="mono">files skip this</text>
+      <line x1="490" y1="110" x2="548" y2="70" class="arrow" marker-end="url(#cfa)"/>
+      <line x1="490" y1="170" x2="548" y2="210" class="arrow" marker-end="url(#cfa)"/>
+      <rect x="550" y="35" width="140" height="64" rx="8" class="b-cloud"/><text x="620" y="62" text-anchor="middle" font-weight="700" font-size="14">D1</text><text x="620" y="82" text-anchor="middle" font-size="12" class="dim">SQLite, your rows</text>
+      <rect x="550" y="180" width="140" height="64" rx="8" class="b-accent"/><text x="620" y="207" text-anchor="middle" font-weight="700" font-size="14" class="t-accent">Static assets</text><text x="620" y="227" text-anchor="middle" font-size="12" class="dim">the dist/ folder</text>
+    </svg>
+  </div>
+</figure>
+<h3>Workers</h3>
+<p>A Worker is a small function Cloudflare runs for a request, in whichever city is closest to the visitor. It isn't a server you keep switched on. A cold start is fast, on the order of milliseconds. After that, one instance can handle more than one request, including several at once, on one event loop. Ours is <code>worker/index.ts</code>, about 130 lines. <code>run_worker_first</code> in <code>deploy/wrangler.jsonc</code> is <code>["/api/*"]</code>, so every <code>/api</code> path runs the script. <code>/api/me</code> is GET. <code>/api/sync</code> is GET and PUT. Any other <code>/api/</code> path returns 404 JSON. Paths outside <code>/api/</code> do not run the script. The assets layer serves those files. <code>env.ASSETS.fetch</code> at the bottom of the Worker is only a fallback if the script is invoked anyway.</p>
+<h3>Static assets</h3>
+<p>The same Worker project carries the <code>dist/</code> folder. Requests for <code>/</code>, the JS or the sounds are answered straight from Cloudflare's file store without running any of our code. That's both fast and free.</p>
+<h3>D1</h3>
+<p>The database from lesson 3. The Worker reaches it through a <em>binding</em> named <code>DB</code>: a direct handle Cloudflare wires in, so there's no database password in the code at all.</p>
+<p>Deploying is the build, then one pinned command: <code>npm run build &amp;&amp; npx wrangler@4.152.0 deploy -c deploy/wrangler.jsonc</code>. Wrangler is Cloudflare's command-line tool. It uploads the Worker code and the <code>dist/</code> files and connects the D1 binding. It does not build <code>dist/</code>. The pin is Wrangler 4.152.0.</p>
+
+<h2>Why not Vercel</h2>
+<div class="tbl"><table>
+  <thead><tr><th>Need</th><th>Cloudflare (free)</th><th>Vercel Hobby (free)</th></tr></thead>
+  <tbody>
+    <tr><td>Keep the site private behind your own login</td><td>Access is free for up to 50 users and covers production</td><td>Preview links are covered on Hobby. Password Protection for production is not on Hobby. On Pro it is 20 dollars per protected project. Hobby can still require a Vercel account login on production. That login is a team account. Access is an email allow-list.</td></tr>
+    <tr><td>A database for sync</td><td>D1 sits in the same account, reached by binding</td><td>Vercel no longer runs its own Postgres or KV; you'd add a third-party database from the Marketplace</td></tr>
+    <tr><td>What happened in practice</td><td>From memory, deploys were checked with an anonymous request, and that request landed on the login page.</td><td>From memory, the first deploy of a new project went straight to public production, twice, even when a preview was asked for. Both had to be deleted.</td></tr>
+    <tr><td>Commercial use</td><td>This app uses the free Workers plan. Check Cloudflare's current terms before treating commercial use as allowed.</td><td>Hobby is for personal, non-commercial use</td></tr>
+  </tbody>
+</table></div>
+<p>None of this makes Vercel bad. For a team shipping a public Next.js site with preview links per pull request, it's often the nicer tool. This app needed private-by-default and a free database, and Cloudflare had both in one place.</p>
+
+<div class="note limit"><span class="k">What we gave up</span>
+  <p>Vercel's git integration (automatic preview per branch) is smoother. On Cloudflare the deploy is by hand. Build with <code>npm run build</code>, then run <code>npx wrangler@4.152.0 deploy -c deploy/wrangler.jsonc</code>. Wrangler uploads <code>dist/</code> and does not build it. For a one-person app that's fine. With a team you'd wire it into GitHub Actions.</p>
+</div>
+
+<section class="check" aria-labelledby="c4">
+  <h2 id="c4">Check yourself</h2>
+  <p>Someone opens <code>https://kitestring.custom-pomodoro.workers.dev/sounds/rain.ogg</code>. Does our Worker code (<code>worker/index.ts</code>) run for that request? Does Access run?</p>
+  <details><summary>Show the answer</summary>
+    <p>Access runs first and bounces them to the login page if they aren't signed in. Access sits in front of everything on that hostname. If they are signed in, our Worker code does <em>not</em> run: the path doesn't start with <code>/api/</code>, so Cloudflare answers straight from static assets.</p>
+  </details>
+</section>

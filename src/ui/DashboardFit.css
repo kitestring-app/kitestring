@@ -1,0 +1,35 @@
+/* The face always takes the smaller of its width size and the height left after chrome.
+   Grow out of the former short-window cap continuously, retaining the accepted 820/900 layouts. */
+.center { --fit-height: 100dvh; --width-size: clamp(80px, 15vw, 210px); scrollbar-width: none; overscroll-behavior: contain; justify-content: safe center; }
+.center[data-fit-scroll="true"] { overflow-y: auto; overflow-x: hidden; }
+.center::-webkit-scrollbar { display: none; }
+.center.size-small { --width-size: clamp(64px, 11vw, 150px); }
+.center.size-huge { --width-size: clamp(100px, 22vw, 320px); }
+.center .timer.big, .center .timer-face.is-big { font-size: min(var(--width-size), var(--fit-height)); }
+.center .face-flip.is-big { font-size: min(var(--width-size), var(--fit-height), calc((100vw - 48px) / var(--flip-width))); }
+.center > *, .clock-row { flex-shrink: 0; }
+.focus-center { --short-cap: calc(clamp(64px, 13dvh, 110px) + max(0px, 100dvh - 820px) * 3); }
+.focus-center:has(.recovery-card) { --short-cap: calc(clamp(64px, 11dvh, 90px) + max(0px, 100dvh - 820px) * 3); }
+.focus-center .timer.big, .focus-center .timer-face.is-big { font-size: min(var(--width-size), var(--short-cap), var(--fit-height)); }
+.focus-center .face-flip.is-big { font-size: min(var(--width-size), var(--short-cap), var(--fit-height), calc((100vw - 48px) / var(--flip-width))); }
+.focus-center .headline { font-size: clamp(24px, calc(24px + (100dvh - 820px) * .175), 38px); margin-bottom: clamp(10px, calc(10px + (100dvh - 820px) * .1), 18px); }
+.focus-center:has(.recovery-card) .headline { font-size: clamp(20px, calc(20px + (100dvh - 820px) * .225), 38px); margin-bottom: clamp(8px, calc(8px + (100dvh - 820px) * .125), 18px); }
+.focus-center .tallies { margin-block: clamp(8px, calc(8px + (100dvh - 820px) * .05), 12px) 4px; }
+.focus-center .controls { margin-top: clamp(10px, calc(10px + (100dvh - 820px) * .1), 18px); }
+.focus-center .next-action { margin-top: clamp(8px, calc(8px + (100dvh - 820px) * .05), 12px); gap: clamp(4px, calc(4px + (100dvh - 820px) * .05), 8px); }
+.focus-center:has(.recovery-card) .controls .iconbtn { width: clamp(48px, calc(48px + (100dvh - 820px) * .1), 56px); height: clamp(44px, calc(44px + (100dvh - 820px) * .1), 52px); }
+.focus-center:has(.recovery-card) .controls .iconbtn.primary { width: clamp(56px, calc(56px + (100dvh - 820px) * .1), 64px); }
+/* Keep actions reachable; long copy scrolls within the pin/card. The middle scrolls last. */
+.focus-center .next-action:not(:has(input)) { max-height: none; }
+.focus-center .focus-card-slot { flex: none; max-height: max(150px, 30dvh); }
+@media (max-height: 740px) { .center > .quote { display: none; } }
+@media (max-height: 640px) { .focus-center > .tallies { display: none; } }
+@media (max-height: 600px) {
+  .center .headline { font-size: 20px; white-space: nowrap; text-wrap: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+}
+.focus-center .next-action-copy { max-height: clamp(24px, calc(24px + (100dvh - 540px) * .5), 70px); }
+@media (pointer: coarse) and (max-width: 600px) {
+  /* Touch targets can wrap into two rows. Let their card grow; only copy scrolls. */
+  :root:not([data-desktop="true"]) .focus-center .focus-card-slot { max-height: none; }
+  :root:not([data-desktop="true"]) .focus-center .focus-card-body { max-height: 30dvh; }
+}

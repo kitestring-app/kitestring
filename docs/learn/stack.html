@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>The stack · Inside Kitestring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="lesson.css">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the lesson</a>
+<header class="bar"><div class="bar-in">
+  <a class="home" href="index.html">Inside Kitestring</a>
+  <nav aria-label="Lessons"><ol>
+    <li><a href="stack.html" aria-current="page">1 Stack</a></li>
+    <li><a href="shape.html">2 Shape</a></li>
+    <li><a href="data.html">3 Data</a></li>
+    <li><a href="cloudflare.html">4 Cloudflare</a></li>
+    <li><a href="zero-trust.html">5 Zero Trust</a></li>
+    <li><a href="mac-app.html">6 Mac app</a></li>
+  </ol></nav>
+</div></header>
+<main id="main"><div class="col">
+<p class="eyebrow">Lesson 1 of 6</p>
+<h1>The stack</h1>
+<p class="lede">"Stack" just means the list of tools the app is built from. Kitestring's list is short on purpose: two runtime libraries and a handful of build tools.</p>
+
+<h2>Start with what you see</h2>
+<p>When you press Start, a ring fills and a clock counts down. Rain stays off until you turn it on. When the session ends, your alert sound plays and a notification pops up. The default sound is the signature chime. Bell is one of the other voices. 25 minutes is the default length only in pomodoro mode. Every one of those things is <strong>frontend</strong> code: code that runs on your machine, inside the browser engine, and draws the screen.</p>
+<p><strong>Backend</strong> means code that runs on some other computer and answers requests over the network. Most apps you know (Notion, Gmail) are mostly backend: the real work and the real data live on their servers, and the page is a window onto them.</p>
+<p>Kitestring is the other way round. Nearly everything is frontend. The backend is <code>worker/index.ts</code>, about 130 lines. Much of that file checks the login token and answers <code>/api/me</code>. The sync routes are the part that keeps a copy of your data.</p>
+
+<figure>
+  <div class="diagram">
+    <svg viewBox="0 0 640 300" role="img" aria-labelledby="s1T s1D">
+      <title id="s1T">How much of the app is frontend</title>
+      <desc id="s1D">About 6,400 lines of TypeScript in src run in the browser, tests excluded. About 130 lines in worker run at Cloudflare. About 180 lines in the companion and about 390 in the desktop shell run on the Mac. The browser box is about 49 times the worker.</desc>
+      <rect x="20" y="30" width="600" height="56" rx="6" class="b-browser"/>
+      <text x="36" y="56" font-weight="700" class="t-browser">BROWSER · src/ · ~6,400 lines</text>
+      <text x="36" y="76" font-size="13" class="dim">timer, tasks, sounds, radio, stats, themes, settings, storage, sync client</text>
+      <rect x="20" y="110" width="150" height="56" rx="6" class="b-cloud"/>
+      <text x="32" y="136" font-weight="700" class="t-cloud" font-size="14">CLOUDFLARE</text>
+      <text x="32" y="156" font-size="13" class="dim">worker/ · ~130</text>
+      <rect x="190" y="110" width="150" height="56" rx="6" class="b-mac"/>
+      <text x="202" y="136" font-weight="700" class="t-mac" font-size="14">MAC · companion</text>
+      <text x="202" y="156" font-size="13" class="dim">scripts/ · ~180</text>
+      <rect x="360" y="110" width="150" height="56" rx="6" class="b-mac"/>
+      <text x="372" y="136" font-weight="700" class="t-mac" font-size="14">MAC · Electron</text>
+      <text x="372" y="156" font-size="13" class="dim">desktop/ · ~390</text>
+      <text x="20" y="210" font-size="14">Not to scale. At true scale the browser box would be about</text>
+      <text x="20" y="232" font-size="14" class="dim">49 times wider than the Cloudflare box. The small boxes are</text>
+      <text x="20" y="254" font-size="14" class="dim">drawn bigger so their labels fit.</text>
+    </svg>
+  </div>
+  <figcaption>Line counts from the repo on 24 Oct 2026, rounded. The browser box leaves out tests under <code>src</code>. Those files do not run in the browser. The desktop count is the six shell files, without tests or <code>desktop/scripts</code>.</figcaption>
+</figure>
+
+<h2>The tools, one by one</h2>
+<div class="tbl"><table>
+  <thead><tr><th>Tool</th><th>What it is</th><th>What it does here</th></tr></thead>
+  <tbody>
+    <tr><td><strong>TypeScript</strong></td><td>JavaScript with types</td><td>Catches many mistakes before the app runs, such as passing the wrong kind of value into a function. Minutes and milliseconds are both plain numbers here, so that mix-up gets through. The browser never sees TypeScript. The build turns it into plain JavaScript.</td></tr>
+    <tr><td><strong>React 19</strong></td><td>A UI library</td><td>You describe what the screen should look like for a given state ("timer running, 12:04 left"), and React updates only the parts that changed. It and <code>react-dom</code> are the only two runtime dependencies.</td></tr>
+    <tr><td><strong>Vite 8</strong></td><td>A build tool and dev server</td><td>In development it reloads instantly as code changes. <code>npm run build</code> bundles everything into the <code>dist/</code> folder: two HTML files (the Vite entry <code>index.html</code>, and <code>research.html</code> copied from <code>public/</code>), a few hashed JS and CSS files, plus sounds and images.</td></tr>
+    <tr><td><strong>Web Audio API</strong></td><td>Built into every browser</td><td>Makes the noise generators, the 16 Hz focus modulation, the mixer and the end-of-session alert. No audio library, just the browser.</td></tr>
+    <tr><td><strong>IndexedDB</strong></td><td>A database built into every browser</td><td>Stores tasks, stats, notes and settings on your machine. Lesson 3 covers it.</td></tr>
+    <tr><td><strong>Vitest</strong></td><td>A test runner</td><td>282 tests check the timer maths, the Focus Score, backup validation, store saving and so on. Run them with <code>npx vitest run</code>. The root <code>package.json</code> has no <code>test</code> script.</td></tr>
+  </tbody>
+</table></div>
+
+<h3>What's deliberately missing</h3>
+<p>No UI kit (Material, Tailwind components), no state library (Redux, Zustand), no router, no analytics. Each would add code you don't control and data you might not want sent anywhere. State lives in a small homemade store, <code>src/lib/store.ts</code>, about 200 lines. It saves to IndexedDB and keeps open tabs in step.</p>
+
+<h2>How a click becomes a sound</h2>
+<p>Here's the real path when you press Start, so the words above have something to hang on.</p>
+<ol>
+  <li><code>FocusView.tsx</code> (React) calls <code>timerActions.toggle()</code>. <code>start()</code> runs inside <code>timer.ts</code> when the timer was not already going.</li>
+  <li><code>timer.ts</code> stores a start time (<code>startedAt</code>), time already elapsed (<code>elapsedBefore</code>), and the session length. Elapsed time is <code>elapsedBefore</code> plus, while running, now minus <code>startedAt</code>. Remaining time is the length minus that. A sleeping tab can't lose time, because nothing is counting ticks. After a pause, <code>startedAt</code> is empty, so remaining time stays at length minus <code>elapsedBefore</code>. The clock can move while you are paused, and that gap is not subtracted.</li>
+  <li>The store saves itself to IndexedDB and tells other open tabs.</li>
+  <li><code>syncAudio()</code> asks Web Audio to play your alert sound when the seconds left run out, on the sound card's own clock. The sound is <code>settings.timer.alertSound</code>. The default is <code>"signature"</code>. If the companion is up, the page cancels its own chime so you hear the alert once.</li>
+  <li>Every 250 ms a ticker redraws the digits. If that ticker gets throttled, the display lags but the alert still plays on time.</li>
+</ol>
+
+<div class="note limit"><span class="k">Where "no backend" stops being true</span>
+  <p>Three jobs can't be done from inside a browser tab: ringing after Chrome is quit, proving who you are to a server, and living in the menu bar. Each of those got a small helper outside the browser. The next lessons are about those helpers.</p>
+</div>
+
+<section class="check" aria-labelledby="c1">
+  <h2 id="c1">Check yourself</h2>
+  <p>The timer stores a start time, time already elapsed, and a length. It does not store "seconds left". Suppose you start a fresh 25-minute session, close the laptop lid for 10 minutes, and open it again. What does the screen show, and why would a "seconds left" counter get it wrong?</p>
+  <details><summary>Show the answer</summary>
+    <p>It shows about 15 minutes left. On wake the app computes <em>start + 25:00 − now</em>, and "now" is 10 minutes later. A "seconds left" counter that subtracts 1 each tick would have been frozen while the Mac slept, so it would still say about 25 minutes. Storing a timestamp makes sleep, throttled tabs and reloads harmless.</p>
+  </details>
+</section>
+
+<nav class="pager" aria-label="Previous and next lesson"><a href="index.html">← Overview</a><a href="shape.html">Monolith or microservices →</a></nav>
+</div></main>
+<footer class="foot"><div class="col">Written from the code in <code>the repository</code> on 24 Oct 2026.</div></footer>
+</body>
+</html>

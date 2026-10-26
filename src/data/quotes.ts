@@ -1,0 +1,157 @@
+// Short excerpts checked against public-domain editions; see public/LICENSES.md.
+export interface Quote { text: string; author: string; category: string; source?: string }
+export const QUOTE_CATEGORIES = [
+  { id: "all", label: "All Quotes" },
+  { id: "focus", label: "Focus" },
+  { id: "discipline", label: "Discipline" },
+  { id: "learning", label: "Learning" },
+  { id: "calm", label: "Calm" },
+  { id: "creativity", label: "Creativity" },
+  { id: "perseverance", label: "Perseverance" },
+];
+export const QUOTES: Quote[] = [
+  // Focus
+  {"text": "Give thyself leisure to learn some good thing, and cease roving and wandering to and fro.", "author": "Marcus Aurelius", "category": "focus", "source": "Meditations (Meric Casaubon translation)"},
+  {"text": "Affect not to set out thy thoughts with curious neat language.", "author": "Marcus Aurelius", "category": "focus", "source": "Meditations (Meric Casaubon translation)"},
+  {"text": "Let nothing be done rashly, and at random, but all things according to the most exact and perfect rules of art.", "author": "Marcus Aurelius", "category": "focus", "source": "Meditations (Meric Casaubon translation)"},
+  {"text": "For if thy reason do her part, what more canst thou require?", "author": "Marcus Aurelius", "category": "focus", "source": "Meditations (Meric Casaubon translation)"},
+  {"text": "Exercise, therefore, what is in your power.", "author": "Epictetus", "category": "focus", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "It is enough if everyone fully performs his own proper business.", "author": "Epictetus", "category": "focus", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "When you set about any action, remind yourself of what nature the action is.", "author": "Epictetus", "category": "focus", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "Let every one mind his own business, and endeavor to be what he was made.", "author": "Henry David Thoreau", "category": "focus", "source": "Walden / Civil Disobedience"},
+  {"text": "Our life is frittered away by detail.", "author": "Henry David Thoreau", "category": "focus", "source": "Walden / Civil Disobedience"},
+  {"text": "Simplicity, simplicity, simplicity!", "author": "Henry David Thoreau", "category": "focus", "source": "Walden / Civil Disobedience"},
+  {"text": "The morning, which is the most memorable season of the day, is the awakening hour.", "author": "Henry David Thoreau", "category": "focus", "source": "Walden / Civil Disobedience"},
+  {"text": "Why should we live with such hurry and waste of life?", "author": "Henry David Thoreau", "category": "focus", "source": "Walden / Civil Disobedience"},
+  {"text": "I have always been regretting that I was not as wise as the day I was born.", "author": "Henry David Thoreau", "category": "focus", "source": "Walden / Civil Disobedience"},
+  {"text": "The day is always his who works in it with serenity and great aims.", "author": "Ralph Waldo Emerson", "category": "focus", "source": "Essays"},
+  {"text": "Life wastes itself whilst we are preparing to live.", "author": "Ralph Waldo Emerson", "category": "focus", "source": "Essays"},
+  {"text": "The key to every man is his thought.", "author": "Ralph Waldo Emerson", "category": "focus", "source": "Essays"},
+  {"text": "The mind now thinks, now acts, and each fit reproduces the other.", "author": "Ralph Waldo Emerson", "category": "focus", "source": "Essays"},
+  {"text": "The true scholar grudges every opportunity of action passed by, as a loss of power.", "author": "Ralph Waldo Emerson", "category": "focus", "source": "Essays"},
+  {"text": "Books are for the scholar's idle times.", "author": "Ralph Waldo Emerson", "category": "focus", "source": "Essays"},
+  {"text": "Do not desire to be thought to know anything; and though you should appear to others to be somebody, distrust yourself.", "author": "Epictetus", "category": "focus", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  // Discipline
+  {"text": "Be not elated at any excellence not your own.", "author": "Epictetus", "category": "discipline", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "If you would improve, be content to be thought foolish and dull with regard to externals.", "author": "Epictetus", "category": "discipline", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "For this is your business—to act well the given part, but to choose it belongs to another.", "author": "Epictetus", "category": "discipline", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "You must be one man, either good or bad.", "author": "Epictetus", "category": "discipline", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "Consider first, man, what the matter is, and what your own nature is able to bear.", "author": "Epictetus", "category": "discipline", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "Well, preserve your own just relation toward him.", "author": "Epictetus", "category": "discipline", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "To understand nature, and follow her.", "author": "Epictetus", "category": "discipline", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "Death hangs over thee: whilst yet thou livest, whilst thou mayest, be good.", "author": "Marcus Aurelius", "category": "discipline", "source": "Meditations (Meric Casaubon translation)"},
+  {"text": "Thou hast had experience of that other kind of life: make now trial of this also.", "author": "Marcus Aurelius", "category": "discipline", "source": "Meditations (Meric Casaubon translation)"},
+  {"text": "I have always endeavored to acquire strict business habits; they are indispensable to every man.", "author": "Henry David Thoreau", "category": "discipline", "source": "Walden / Civil Disobedience"},
+  {"text": "Shall we always study to obtain more of these things, and not sometimes to be content with less?", "author": "Henry David Thoreau", "category": "discipline", "source": "Walden / Civil Disobedience"},
+  {"text": "A simple and independent mind does not toil at the bidding of any prince.", "author": "Henry David Thoreau", "category": "discipline", "source": "Walden / Civil Disobedience"},
+  {"text": "Sell your clothes and keep your thoughts.", "author": "Henry David Thoreau", "category": "discipline", "source": "Walden / Civil Disobedience"},
+  {"text": "Money is not required to buy one necessary of the soul.", "author": "Henry David Thoreau", "category": "discipline", "source": "Walden / Civil Disobedience"},
+  {"text": "The only obligation which I have a right to assume, is to do at any time what I think right.", "author": "Henry David Thoreau", "category": "discipline", "source": "Walden / Civil Disobedience"},
+  {"text": "Trust thyself: every heart vibrates to that iron string.", "author": "Ralph Waldo Emerson", "category": "discipline", "source": "Essays"},
+  {"text": "Nothing can bring you peace but yourself.", "author": "Ralph Waldo Emerson", "category": "discipline", "source": "Essays"},
+  {"text": "Nothing can bring you peace but the triumph of principles.", "author": "Ralph Waldo Emerson", "category": "discipline", "source": "Essays"},
+  {"text": "Nothing is at last sacred but the integrity of your own mind.", "author": "Ralph Waldo Emerson", "category": "discipline", "source": "Essays"},
+  {"text": "Whoso would be a man must be a nonconformist.", "author": "Ralph Waldo Emerson", "category": "discipline", "source": "Essays"},
+  // Learning
+  {"text": "Books are the best of things, well used; abused, among the worst.", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "History and exact science he must learn by laborious reading.", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "Thought and knowledge are natures in which apparatus and pretension avail nothing.", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "A great soul will be strong to live, as well as strong to think.", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "Time shall teach him that the scholar loses no hour which the man lives.", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "So much of nature as he is ignorant of, so much of his own mind does he not yet possess.", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "The books of an older period will not fit this.", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "It came into him life; it went out from him truth.", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "How often must we learn this lesson?", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "Each new step we take in thought reconciles twenty seemingly discordant facts, as expressions of one law.", "author": "Ralph Waldo Emerson", "category": "learning", "source": "Essays"},
+  {"text": "How could youths better learn to live than by at once trying the experiment of living?", "author": "Henry David Thoreau", "category": "learning", "source": "Walden / Civil Disobedience"},
+  {"text": "Methinks this would exercise their minds as much as mathematics.", "author": "Henry David Thoreau", "category": "learning", "source": "Walden / Civil Disobedience"},
+  {"text": "I have learned that the swiftest traveller is he that goes afoot.", "author": "Henry David Thoreau", "category": "learning", "source": "Walden / Civil Disobedience"},
+  {"text": "One piece of good sense would be more memorable than a monument as high as the moon.", "author": "Henry David Thoreau", "category": "learning", "source": "Walden / Civil Disobedience"},
+  {"text": "I will endeavor to speak a good word for the truth.", "author": "Henry David Thoreau", "category": "learning", "source": "Walden / Civil Disobedience"},
+  {"text": "I do not wish to be any more busy with my hands than is necessary.", "author": "Henry David Thoreau", "category": "learning", "source": "Walden / Civil Disobedience"},
+  {"text": "Books must be read as deliberately and reservedly as they were written.", "author": "Henry David Thoreau", "category": "learning", "source": "Walden / Civil Disobedience"},
+  {"text": "We should be as good as the worthies of antiquity, but partly by first knowing how good they were.", "author": "Henry David Thoreau", "category": "learning", "source": "Walden / Civil Disobedience"},
+  {"text": "The will of nature may be learned from things upon which we are all agreed.", "author": "Epictetus", "category": "learning", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "For if you once gain time and respite, you will more easily command yourself.", "author": "Epictetus", "category": "learning", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  // Calm
+  {"text": "I never found the companion that was so companionable as solitude.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "I love to be alone.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "I had three chairs in my house; one for solitude, two for friendship, three for society.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "Every morning was a cheerful invitation to make my life of equal simplicity, and I may say innocence, with Nature herself.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "Heaven is under our feet as well as over our heads.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "We need the tonic of wildness…", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "I awoke to an answered question, to Nature and daylight.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "The earth is all alive and covered with papillæ.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "So our prospects brighten on the influx of better thoughts.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "Through our own recovered innocence we discern the innocence of our neighbors.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "I do not see but a quiet mind may live as contentedly there, and have as cheering thoughts, as in a palace.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "It is life near the bone where it is sweetest.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "The life in us is like the water in the river.", "author": "Henry David Thoreau", "category": "calm", "source": "Walden / Civil Disobedience"},
+  {"text": "Good as is discourse, silence is better, and shames it.", "author": "Ralph Waldo Emerson", "category": "calm", "source": "Essays"},
+  {"text": "Its beauty is the beauty of his own mind.", "author": "Ralph Waldo Emerson", "category": "calm", "source": "Essays"},
+  {"text": "Its laws are the laws of his own mind.", "author": "Ralph Waldo Emerson", "category": "calm", "source": "Essays"},
+  {"text": "When, therefore, anyone provokes you, be assured that it is your own opinion which provokes you.", "author": "Epictetus", "category": "calm", "source": "The Enchiridion (Thomas Wentworth Higginson translation)"},
+  {"text": "This world is mere change, and this life, opinion.", "author": "Marcus Aurelius", "category": "calm", "source": "Meditations (Meric Casaubon translation)"},
+  {"text": "At what time soever thou wilt, it is in thy power to retire into thyself, and to be at rest, and free from all businesses.", "author": "Marcus Aurelius", "category": "calm", "source": "Meditations (Meric Casaubon translation)"},
+  {"text": "But nothing that is according to nature can be evil.", "author": "Marcus Aurelius", "category": "calm", "source": "Meditations (Meric Casaubon translation)"},
+  // Creativity
+  {"text": "The soul active sees absolute truth and utters truth, or creates.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "The one thing in the world of value is the active soul,--the soul, free, sovereign, active.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "Each age, it is found, must write its own books; or rather, each generation for the next succeeding.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "When the mind is braced by labor and invention, the page of whatever book we read becomes luminous with manifold allusion.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "To-day I am full of thoughts and can write what I please.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "I see no reason why I should not have the same thought, the same power of expression, to-morrow.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "Nothing is secure but life, transition, the energizing spirit.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "Everything looks permanent until its secret is known.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "No truth so sublime but it may be trivial to-morrow in the light of new thoughts.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "In nature every moment is new; the past is always swallowed and forgotten; the coming only is sacred.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "I am God in nature; I am a weed by the wall.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "There are no fixtures in nature.", "author": "Ralph Waldo Emerson", "category": "creativity", "source": "Essays"},
+  {"text": "Rather than love, than money, than fame, give me truth.", "author": "Henry David Thoreau", "category": "creativity", "source": "Walden / Civil Disobedience"},
+  {"text": "The material was pure, and his art was pure; how could the result be other than wonderful?", "author": "Henry David Thoreau", "category": "creativity", "source": "Walden / Civil Disobedience"},
+  {"text": "Is not our own interior white on the chart?", "author": "Henry David Thoreau", "category": "creativity", "source": "Walden / Civil Disobedience"},
+  {"text": "Nay, be a Columbus to whole new continents and worlds within you, opening new channels, not of trade, but of thought.", "author": "Henry David Thoreau", "category": "creativity", "source": "Walden / Civil Disobedience"},
+  {"text": "If you have built castles in the air, your work need not be lost; that is where they should be.", "author": "Henry David Thoreau", "category": "creativity", "source": "Walden / Civil Disobedience"},
+  {"text": "Better paint your house your own complexion; let it turn pale or blush for you.", "author": "Henry David Thoreau", "category": "creativity", "source": "Walden / Civil Disobedience"},
+  {"text": "Every child begins the world again, to some extent, and loves to stay out doors, even in wet and cold.", "author": "Henry David Thoreau", "category": "creativity", "source": "Walden / Civil Disobedience"},
+  {"text": "The cart before the horse is neither beautiful nor useful.", "author": "Henry David Thoreau", "category": "creativity", "source": "Walden / Civil Disobedience"},
+  // Perseverance
+  {"text": "However mean your life is, meet it and live it; do not shun it and call it hard names.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "I left the woods for as good a reason as I went there.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "Perhaps it seemed to me that I had several more lives to live, and could not spare any more time for that one.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "It is remarkable how easily and insensibly we fall into a particular route, and make a beaten track for ourselves.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "The surface of the earth is soft and impressible by the feet of men; and so with the paths which the mind travels.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "For it matters not how small the beginning may seem to be: what is once well done is done for ever.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "I will breathe after my own fashion.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "The life which men praise and regard as successful is but one kind.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "However, in this case my pains were their own reward.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "Thaw with his gentle persuasion is more powerful than Thor with his hammer.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "So our human life but dies down to its root, and still puts forth its green blade to eternity.", "author": "Henry David Thoreau", "category": "perseverance", "source": "Walden / Civil Disobedience"},
+  {"text": "Step by step we scale this mysterious ladder; the steps are actions, the new prospect is power.", "author": "Ralph Waldo Emerson", "category": "perseverance", "source": "Essays"},
+  {"text": "This time, like all times, is a very good one, if we but know what to do with it.", "author": "Ralph Waldo Emerson", "category": "perseverance", "source": "Essays"},
+  {"text": "We will walk on our own feet; we will work with our own hands; we will speak our own minds.", "author": "Ralph Waldo Emerson", "category": "perseverance", "source": "Essays"},
+  {"text": "Not he is great who can alter matter, but he who can alter my state of mind.", "author": "Ralph Waldo Emerson", "category": "perseverance", "source": "Essays"},
+  {"text": "A foolish consistency is the hobgoblin of little minds, adored by little statesmen and philosophers and divines.", "author": "Ralph Waldo Emerson", "category": "perseverance", "source": "Essays"},
+  {"text": "To be great is to be misunderstood.", "author": "Ralph Waldo Emerson", "category": "perseverance", "source": "Essays"},
+  {"text": "Insist on yourself; never imitate.", "author": "Ralph Waldo Emerson", "category": "perseverance", "source": "Essays"},
+  {"text": "Character is higher than intellect.", "author": "Ralph Waldo Emerson", "category": "perseverance", "source": "Essays"},
+  {"text": "Nothing great was ever achieved without enthusiasm.", "author": "Ralph Waldo Emerson", "category": "perseverance", "source": "Essays"},
+ ];
+
+/** Matches the dashboard's local-calendar daily selection. Offset affects previews only. */
+export function quoteForDay(category: string, date = new Date(), offset = 0): Quote | null {
+  const pool = category === "all" ? QUOTES : QUOTES.filter((quote) => quote.category === category);
+  if (!pool.length) return null;
+  const seed = date.getFullYear() * 400 + date.getMonth() * 31 + date.getDate();
+  return pool[((seed + offset) % pool.length + pool.length) % pool.length];
+}
+
+/** Stable daily category shuffle shared by the dashboard and settings preview. */
+export function dailyQuoteCategory(category: string, date: Date, randomize: boolean): string {
+  if (!randomize) return category;
+  const categories = QUOTE_CATEGORIES.filter(c => c.id !== "all");
+  const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  let hash = 2166136261;
+  for (const char of key) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  return categories[(hash >>> 0) % categories.length].id;
+}

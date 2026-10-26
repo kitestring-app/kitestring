@@ -1,0 +1,2 @@
+.alarm-toast { position: fixed; z-index: 100; bottom: 84px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 12px 16px; max-width: calc(100vw - 32px); }
+.alarm-toast span { white-space: nowrap; }

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1B1726"/>
+      <stop offset="1" stop-color="#100E16"/>
+    </linearGradient>
+    <filter id="haze" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="70"/></filter>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+    <radialGradient id="vignette" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.45"/>
+    </radialGradient>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C3B8F5"/>
+      <stop offset="1" stop-color="#F0B8D0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#sky)"/>
+
+  <!-- dusk haze -->
+  <g filter="url(#haze)" opacity="0.55">
+    <circle cx="900" cy="250" r="230" fill="#6E5FB8"/>
+    <circle cx="1040" cy="470" r="170" fill="#B5708F"/>
+    <circle cx="180" cy="560" r="200" fill="#3A3163"/>
+  </g>
+
+  <!-- faint stars -->
+  <g fill="#EDEAF5">
+    <circle cx="120" cy="90" r="1.6" opacity="0.5"/>
+    <circle cx="300" cy="150" r="1.1" opacity="0.35"/>
+    <circle cx="520" cy="70" r="1.4" opacity="0.4"/>
+    <circle cx="690" cy="120" r="1" opacity="0.3"/>
+    <circle cx="1110" cy="80" r="1.5" opacity="0.45"/>
+    <circle cx="610" cy="560" r="1.2" opacity="0.3"/>
+    <circle cx="440" cy="500" r="1" opacity="0.25"/>
+  </g>
+
+  <!-- Original Kitestring mark from brand/app.svg -->
+  <g transform="translate(716 130) scale(.34)">
+  <path d="M512 612 C 512 690 446 700 446 760 C 446 822 532 830 560 782" fill="none" stroke="#E7E2FF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M512 196 L340 404 L512 612 Z" fill="#F29E7C"/>
+  <path d="M512 196 L684 404 L512 612 Z" fill="#F7CF7E"/>
+  </g>
+
+  <!-- words -->
+  <g font-family="Iowan Old Style, Georgia, serif" fill="#EDEAF5">
+    <text x="96" y="310" font-size="76" letter-spacing="-1">Kitestring</text>
+  </g>
+  <text x="98" y="420" font-family="Avenir Next, Helvetica, sans-serif" font-size="27" fill="#EDEAF5" fill-opacity="0.72">Drift, then come back to it.</text>
+  <text x="98" y="540" font-family="Maple Mono NF, Menlo, monospace" font-size="20" letter-spacing="3" fill="#C3B8F5" fill-opacity="0.6">Calm focus timer</text>
+
+  <rect width="1200" height="630" fill="url(#vignette)"/>
+</svg>

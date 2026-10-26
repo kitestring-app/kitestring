@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why these sounds</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+  :root { --bg:#14121C; --fg:#EDEAF5; --dim:#847D9F; --line:rgba(195,184,245,.14); --glass:rgba(42,38,54,.42);
+    --lavender:#C3B8F5; --rose:#F5B5D2; --mint:#A8E5C0; --sky:#A5D8F0; --butter:#F2DCA8; --coral:#F0938A;
+    --ui:"MonaspiceAr Nerd Font Propo","MonaspiceAr Nerd Font",ui-sans-serif,system-ui,sans-serif; --mono:"Maple Mono NF",ui-monospace,monospace; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15.5px/1.65 var(--ui); }
+  .sky { position:fixed; inset:-20vmax; z-index:-1; filter:blur(80px); opacity:.45;
+    background: radial-gradient(40vmax 40vmax at 20% 10%, #5b4a98, transparent 65%), radial-gradient(40vmax 40vmax at 90% 60%, #7a4565, transparent 65%); }
+  .wrap { width:min(820px, 100% - 32px); margin:0 auto; padding:34px 0 60px; }
+  a { color:var(--lavender); text-decoration:none; border-bottom:1px solid rgba(195,184,245,.35); }
+  .back { font:13px var(--mono); border:0; color:var(--dim); }
+  h1 { font:600 30px/1.15 var(--mono); margin:14px 0 6px; }
+  .lede { color:var(--dim); margin:0 0 26px; font-size:16.5px; }
+  h2 { font:600 13px/1 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin:0 0 14px; }
+  .card { background:var(--glass); border:1px solid var(--line); border-radius:20px; padding:22px 24px; margin-bottom:16px;
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+  .verdicts { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap:10px; }
+  .v { border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:rgba(20,18,28,.35); }
+  .v b { display:block; font:600 14px var(--mono); }
+  .v span { color:var(--dim); font-size:13.5px; }
+  .pill { display:inline-block; font:600 11px/1 var(--mono); padding:4px 8px; border-radius:999px; margin-bottom:6px; color:var(--bg); }
+  .good { background:var(--mint); } .some { background:var(--butter); } .weak { background:var(--coral); }
+  ul { margin:8px 0 0; padding-left:20px; } li { margin:4px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font:600 12px var(--mono); color:var(--dim); text-transform:uppercase; letter-spacing:.08em; }
+  .scroll { overflow-x:auto; }
+  .num { font-family:var(--mono); color:var(--butter); }
+  .sources { font-size:13px; color:var(--dim); columns:2 280px; }
+  .sources li { break-inside:avoid; }
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"></div>
+<div class="wrap">
+  <a class="back" href="/">← Kitestring</a>
+  <h1>Why these sounds</h1>
+  <p class="lede">Try sound or silence. Keep what works for this task. These sound choices have not been shown to treat ADHD.</p>
+
+  <section class="card">
+    <h2>The short version</h2>
+    <div class="verdicts">
+      <div class="v"><span class="pill good">small but real</span><b>Pink / white noise</b><span>White and pink noise showed a small benefit on lab tasks in mostly young people with ADHD or high symptoms. That does not establish a benefit for your work.</span></div>
+      <div class="v"><span class="pill some">promising, thin</span><b>16 Hz pulsed music</b><span>Brain.fm's own study. One borderline result (<span class="num">p = 0.048</span>), self-reported ADHD symptoms, company-funded.</span></div>
+      <div class="v"><span class="pill weak">weak</span><b>Binaural beats</b><span>Reviews are mixed. ADHD trials found no change on objective attention tests.</span></div>
+      <div class="v"><span class="pill weak">untested</span><b>Brown noise, isochronic tones</b><span>No controlled attention studies. Fine if you like them, but nothing proves them.</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Is Brain.fm legit?</h2>
+    <p>Yes, it's a real company and not a scam. But the evidence is modest and the marketing runs ahead of it.</p>
+    <ul>
+      <li><b>Company:</b> Brain.fm, Inc., Brooklyn. The method dates to a 2005 patent (US7674224). It got a $225k US National Science Foundation small-business grant in 2017.</li>
+      <li><b>Price:</b> <span class="num">$14.99/month</span> or <span class="num">$99.99/year</span>. No free tier, just a 7-day trial that needs a card and auto-renews. Refunds are only for EU residents within 14 days if you haven't streamed.</li>
+      <li><b>Reviews:</b> Trustpilot 2.6/5, split between love and billing complaints (charged after cancelling, surprise annual charge). A mild dark pattern, not fraud.</li>
+      <li><b>The study</b> (Woods et al., 2024, <i>Communications Biology</i>): 4 experiments, 5-minute lab sessions. The ADHD-related benefit is a small, borderline effect in people who self-report symptoms, not diagnosed ADHD. The first author works at Brain.fm and holds equity, and the music was theirs. No independent replication yet.</li>
+      <li><b>What they do:</b> pulse the volume of the <span class="num">200 Hz–1 kHz</span> band of music at about <span class="num">16 Hz</span>. In their test, 16 Hz beat 8 and 32 Hz. Pulse depth made no significant difference.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Free alternatives</h2>
+    <div class="scroll"><table>
+      <tr><th>Tool</th><th>What you get</th><th>Catch</th></tr>
+      <tr><td><b>This page</b></td><td>Pink, brown or white noise with the optional 16 Hz mid-band pulse</td><td>None. Runs offline on your Mac.</td></tr>
+      <tr><td><a href="https://mynoise.net/" target="_blank" rel="noopener">myNoise</a></td><td>150+ generators, 10-band sliders, hearing calibration</td><td>Free and ad-free on the web, donation-funded</td></tr>
+      <tr><td><a href="https://moodist.mvze.net/" target="_blank" rel="noopener">Moodist</a></td><td>Open source: noise, 50+ ambient sounds, presets, timer</td><td>None. No account, no ads.</td></tr>
+      <tr><td>A Soft Murmur</td><td>10 mixable sounds</td><td>The app paywalls most sounds</td></tr>
+      <tr><td>Noisli</td><td>16 sounds, timer</td><td>Free tier capped at 1.5 h/day</td></tr>
+      <tr><td>YouTube noise / lofi</td><td>Endless streams</td><td>Ads can cut in mid-focus without Premium</td></tr>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <h2>How to use it</h2>
+    <ul>
+      <li><b>Choose sound or silence.</b> Every sound is optional. Switch it off whenever you prefer.</li>
+      <li><b>Keep it at conversation level</b> (about 60–70 dB): the lowest level that covers the room. The studies used 70–80 dB for minutes; you'll use it for hours.</li>
+      <li><b>No lyrics during reading or writing.</b> Words in music hurt reading and verbal memory. Instrumental lofi is roughly neutral.</li>
+      <li><b>Use it in blocks, not all day.</b> All studies were short sessions. Nobody knows if the effect fades as you get used to it, so the Pomodoro breaks help here too.</li>
+      <li><b>If a sound distracts you, stop.</b> A timer or sound preference does not measure attention or brain arousal.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Sources</h2>
+    <ul class="sources">
+      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11499863">Woods et al. 2024, Communications Biology</a></li>
+      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12420781/">Woods 2024 correction</a></li>
+      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11283987/">Nigg et al. 2024 noise meta-analysis, JAACAP</a></li>
+      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10748431/">Egeland et al. 2023</a></li>
+      <li><a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2016.01331/pdf">Söderlund et al. 2016</a></li>
+      <li><a href="https://pubmed.ncbi.nlm.nih.gov/17683456/">Söderlund et al. 2007</a></li>
+      <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10198548/">Ingendoh 2023, binaural beats review</a></li>
+      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9564012">Malandrone 2022, binaural beats in adult ADHD</a></li>
+      <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10162369/">Lyrics and reading, 2023</a></li>
+      <li><a href="https://www.who.int/publications/i/item/9789241515276">WHO-ITU safe listening standard</a></li>
+      <li><a href="https://arxiv.org/abs/1907.06909">Brain.fm 2019 preprint</a></li>
+      <li><a href="https://patents.google.com/patent/US7674224B2/en">Patent US7674224</a></li>
+      <li><a href="https://api.nsf.gov/services/v1/awards/1720698.json">NSF award 1720698</a></li>
+      <li><a href="https://www.brain.fm/pricing">Brain.fm pricing</a> · <a href="https://www.brain.fm/terms">terms</a></li>
+      <li><a href="https://www.trustpilot.com/review/brain.fm">Trustpilot: Brain.fm</a></li>
+      <li><a href="https://sciencebasedmedicine.org/music-for-adhd">Novella, Science-Based Medicine</a></li>
+      <li><a href="https://www.noisli.com/pricing">Noisli pricing</a></li>
+    </ul>
+  </section>
+</div>
+</body>
+</html>

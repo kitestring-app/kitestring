@@ -1,0 +1,70 @@
+{
+  "name": "kitestring-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Calm focus timer for macOS",
+  "author": "Kitestring contributors",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "build:web": "npm --prefix .. run build",
+    "build:icon": "node scripts/build-icon.cjs",
+    "dist": "npm run build:web && electron-builder --mac dmg --arm64",
+    "smoke": "node scripts/smoke.cjs"
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "local.custom-pomodoro.desktop",
+    "productName": "Kitestring",
+    "asar": true,
+    "directories": {
+      "output": "out",
+      "buildResources": "build"
+    },
+    "files": [
+      "*.cjs",
+      "build/icon.icns",
+      "build/trayTemplate*.png"
+    ],
+    "extraResources": [
+      {
+        "from": "build/icon.icns",
+        "to": "icon.icns"
+      },
+      {
+        "from": "../dist",
+        "to": "web"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/Kitestring.icon",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "Kitestring-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "sign": false
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true,
+      "enableEmbeddedAsarIntegrityValidation": true
+    },
+    "afterSign": "scripts/after-sign.cjs"
+  }
+}

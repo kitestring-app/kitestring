@@ -1,0 +1,11 @@
+.anim-tide-pools { animation: tide-pools 64s ease-in-out infinite alternate; }
+@keyframes tide-pools {
+  from { background-position: 10% 30%; }
+  to { background-position: 90% 70%; }
+}
+
+.themes-hidden :is(.bg, .theme-preview) { animation-play-state: paused !important; }
+.reduce-motion .anim-tide-pools { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-tide-pools { animation: none !important; }
+}

@@ -1,0 +1,10 @@
+.data-file-actions svg { width: 18px; height: 18px; flex: 0 0 auto; }
+.data-file-panel { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel-2); }
+.data-file-panel h4 { margin: 0 0 12px; color: var(--fg); }
+.data-file-sections { min-width: 0; padding: 0; margin: 12px 0; border: 0; }
+.data-file-sections legend { padding: 0; margin-bottom: 6px; }
+.data-file-panel .opt { gap: 16px; align-items: center; justify-content: space-between; }
+.data-file-panel .opt > div { flex: 1; min-width: 0; }
+.data-file-panel input[type="checkbox"] { flex: 0 0 auto; accent-color: var(--accent); }
+.data-section-detail { display: block; margin: 4px 0 0; font-weight: normal; }
+.data-file-panel .row { flex-wrap: wrap; }

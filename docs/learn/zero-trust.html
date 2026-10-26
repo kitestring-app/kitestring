@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Zero Trust · Inside Kitestring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="lesson.css">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the lesson</a>
+<header class="bar"><div class="bar-in">
+  <a class="home" href="index.html">Inside Kitestring</a>
+  <nav aria-label="Lessons"><ol>
+    <li><a href="stack.html">1 Stack</a></li>
+    <li><a href="shape.html">2 Shape</a></li>
+    <li><a href="data.html">3 Data</a></li>
+    <li><a href="cloudflare.html">4 Cloudflare</a></li>
+    <li><a href="zero-trust.html" aria-current="page">5 Zero Trust</a></li>
+    <li><a href="mac-app.html">6 Mac app</a></li>
+  </ol></nav>
+</div></header>
+<main id="main"><div class="col">
+<p class="eyebrow">Lesson 5 of 6</p>
+<h1>Zero Trust</h1>
+<p class="lede">Zero Trust is a rule more than a product: never let a request in because of <em>where</em> it comes from; check <em>who</em> it is, every time. Cloudflare's version of it is what puts a login page in front of your hosted copy.</p>
+
+<h2>The old way: castle and moat</h2>
+<p>Companies used to put a wall (firewall, VPN) around the office network and trust everything inside. Once you were "in", by sitting at an office desk or turning on the VPN, every internal app opened for you. The weakness: one stolen laptop or VPN password, and the attacker is inside the castle with everyone's trust.</p>
+<p><strong>Zero Trust</strong> drops the idea of an inside. Every app has its own guard, and every request must show proof of identity, no matter which network it came from. Being on your home Wi-Fi earns nothing.</p>
+
+<figure>
+  <div class="diagram">
+    <svg viewBox="0 0 700 260" role="img" aria-labelledby="ztT ztD">
+      <title id="ztT">Castle and moat versus a guard at every door</title>
+      <desc id="ztD">Left: one wall around many apps; once past the wall, all apps are open. Right: each app has its own guard that checks identity on every request.</desc>
+      <text x="20" y="24" font-weight="700">Castle and moat</text>
+      <rect x="20" y="40" width="300" height="190" rx="14" class="bad"/>
+      <text x="170" y="62" text-anchor="middle" font-size="12" class="dim">VPN wall: pass once, trusted everywhere</text>
+      <rect x="45" y="90" width="80" height="40" rx="6" class="box"/><text x="85" y="115" text-anchor="middle" font-size="13">app</text>
+      <rect x="140" y="90" width="80" height="40" rx="6" class="box"/><text x="180" y="115" text-anchor="middle" font-size="13">app</text>
+      <rect x="235" y="90" width="80" height="40" rx="6" class="box"/><text x="275" y="115" text-anchor="middle" font-size="13">app</text>
+      <rect x="90" y="160" width="80" height="40" rx="6" class="box"/><text x="130" y="185" text-anchor="middle" font-size="13">app</text>
+      <rect x="185" y="160" width="80" height="40" rx="6" class="box"/><text x="225" y="185" text-anchor="middle" font-size="13">app</text>
+
+      <text x="380" y="24" font-weight="700">Zero Trust</text>
+      <g>
+        <rect x="380" y="60" width="90" height="44" rx="6" class="b-cloud"/><text x="425" y="87" text-anchor="middle" font-size="13" class="t-cloud" font-weight="700">guard</text>
+        <rect x="480" y="60" width="80" height="44" rx="6" class="box"/><text x="520" y="87" text-anchor="middle" font-size="13">app</text>
+      </g>
+      <g>
+        <rect x="380" y="120" width="90" height="44" rx="6" class="b-cloud"/><text x="425" y="147" text-anchor="middle" font-size="13" class="t-cloud" font-weight="700">guard</text>
+        <rect x="480" y="120" width="80" height="44" rx="6" class="box"/><text x="520" y="147" text-anchor="middle" font-size="13">app</text>
+      </g>
+      <g>
+        <rect x="380" y="180" width="90" height="44" rx="6" class="b-cloud"/><text x="425" y="207" text-anchor="middle" font-size="13" class="t-cloud" font-weight="700">guard</text>
+        <rect x="480" y="180" width="80" height="44" rx="6" class="box"/><text x="520" y="207" text-anchor="middle" font-size="13">app</text>
+      </g>
+      <text x="580" y="130" font-size="12" class="dim">who are you?</text>
+      <text x="580" y="148" font-size="12" class="dim">every request</text>
+    </svg>
+  </div>
+</figure>
+
+<h2>Cloudflare One, Zero Trust and Access: which is which</h2>
+<p>The dashboard you just closed mixes these names, so here's the map:</p>
+<ul>
+  <li><strong>Cloudflare One</strong> is the brand for the whole security suite.</li>
+  <li><strong>Zero Trust</strong> is the dashboard section and plan name. You're on <em>Zero Trust Free</em>, team <code>your-team</code>. The card you entered when activating it is for upgrades; the free plan doesn't charge it.</li>
+  <li><strong>Access</strong> is the one feature we use: the guard at the door of an app. It's the item "Protect an application with Access" that shows as done on that page.</li>
+</ul>
+<p>The unticked items on that page (enroll a device, add a DNS location, add a SaaS integration) belong to the other features: replacing a company VPN, filtering a company's DNS, watching Google Workspace. A one-person focus app needs none of them, which is why nothing there is left to do.</p>
+
+<h2>What happens when you open the hosted copy</h2>
+<ol>
+  <li>Your browser asks for <code>kitestring.custom-pomodoro.workers.dev</code>. Access sees no login cookie and redirects you to <code>your-team.cloudflareaccess.com</code>.</li>
+  <li>You type your email. Access can email you a one-time PIN. A comment in <code>deploy/wrangler.jsonc</code> says the Access app is email-only. The allow-list itself is not in git, so this lesson does not name who is on it.</li>
+  <li>You enter the PIN. Access sets a cookie and, on every later request, attaches a signed token in a header called <code>Cf-Access-Jwt-Assertion</code>.</li>
+  <li>The request reaches our Worker with that token.</li>
+</ol>
+
+<h2>The token, and why the Worker checks it again</h2>
+<p>The token is a <strong>JWT</strong> (JSON Web Token): three base64url chunks joined by dots. Base64url uses <code>-</code> and <code>_</code>, and it leaves the padding off. <code>b64url</code> in the Worker puts the padding back before <code>atob</code>. A header says which key signed it. A payload carries your email, which app, and when it expires. A signature closes the token.</p>
+<pre><code>eyJhbGciOiJSUzI1NiIsImtpZCI6…   ← header   { alg: "RS256", kid: "…" }
+.eyJlbWFpbCI6InByYXguc3Iu…     ← payload  { email, aud, iss, exp }
+.Q2xvdWRmbGFyZSBzaWduZWQ…      ← signature, made with Cloudflare's private key</code></pre>
+<p>Cloudflare signs with a <strong>private key</strong> only it holds and publishes the matching <strong>public keys</strong> at <code>https://&lt;team&gt;/cdn-cgi/access/certs</code>. The Worker caches those keys for 10 minutes. Anyone can check a signature with the public key. Nobody can make one without the private key. <code>verifiedEmail()</code> in <code>worker/index.ts</code> returns null if the token is missing or does not split into three parts. It then checks:</p>
+<ol>
+  <li>The algorithm is RS256 (so nobody can sneak in "alg: none").</li>
+  <li>The <code>kid</code> is one of the team's current public keys, and the signature matches that key.</li>
+  <li><code>aud</code> (audience) is this app's ID, so a valid token for some other Access app can't be reused here.</li>
+  <li><code>iss</code> (issuer) is <code>https://</code> plus the team domain (<code>https://your-team.cloudflareaccess.com</code>). The bare domain is not enough.</li>
+  <li><code>exp</code> hasn't passed. <code>nbf</code> more than 60 seconds in the future is rejected too.</li>
+</ol>
+<p><code>email</code> has to be a string. The Worker lowercases it, and that string is the row owner in D1. That's <em>defence in depth</em>: if Access were ever misconfigured, or someone reached the Worker another way, a forged or missing token still gets nothing. The Worker does not redirect. It answers HTTP 401 and <code>{ ok: false, error: "not signed in" }</code>. Access itself can still send a browser with no cookie to the login page, before the Worker runs.</p>
+
+<div class="note limit"><span class="k">Where the analogy stops</span>
+  <p>"A guard at every door" makes it sound like many guards. For us it's one Access policy covering one hostname, plus the Worker's own token check. Zero Trust is a rule you can follow at any size.</p>
+</div>
+
+<section class="check" aria-labelledby="c5">
+  <h2 id="c5">Check yourself</h2>
+  <p>An attacker copies a real, unexpired Access token from a <em>different</em> Cloudflare Access app on the same team and sends it to <code>/api/sync</code>. The signature is genuine. Which of the five checks stops them?</p>
+  <details><summary>Show the answer</summary>
+    <p>The audience check (<code>aud</code>). The token is properly signed by your team and not expired, but its <code>aud</code> is the other app's ID, not Kitestring's <code>POLICY_AUD</code>. Without that check, any app on the team could unlock every other app's data.</p>
+  </details>
+</section>
+
+<nav class="pager" aria-label="Previous and next lesson"><a href="cloudflare.html">← Cloudflare, not Vercel</a><a href="mac-app.html">Same code, a Mac app →</a></nav>
+</div></main>
+<footer class="foot"><div class="col">Written from the code in <code>the repository</code> on 24 Oct 2026.</div></footer>
+</body>
+</html>

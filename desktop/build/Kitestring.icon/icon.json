@@ -1,0 +1,77 @@
+{
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:0.21961,0.18824,0.26667,1.00000",
+          "srgb:0.07843,0.07059,0.10980,1.00000"
+        ]
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.21961,0.18824,0.26667,1.00000",
+          "srgb:0.07843,0.07059,0.10980,1.00000"
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "Kite left",
+      "layers": [
+        {
+          "image-name": "kite-left.svg",
+          "name": "Kite left"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    },
+    {
+      "name": "Kite right",
+      "layers": [
+        {
+          "image-name": "kite-right.svg",
+          "name": "Kite right"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    },
+    {
+      "name": "Line",
+      "layers": [
+        {
+          "image-name": "line.svg",
+          "name": "Line"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

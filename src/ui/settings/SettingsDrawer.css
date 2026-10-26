@@ -1,0 +1,25 @@
+/* One surface for the fixed header, navigation and scrolling content. */
+.drawer { grid-template-rows: auto minmax(0, 1fr); background: var(--surface-solid); }
+.settings-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: var(--surface-solid); border-bottom: 1px solid var(--line); }
+.settings-header h2 { margin: 0; font: 700 20px/1.2 var(--display); }
+.settings-close { display: grid; place-items: center; width: 44px; height: 44px; padding: 4px; flex: none; }
+.settings-close .iconbtn { width: 36px; height: 36px; pointer-events: none; }
+.drawer nav { min-height: 0; }
+.drawer nav button.tab { white-space: nowrap; flex-shrink: 0; }
+.drawer nav button.tab svg { flex: none; }
+:root[data-look] .drawer main, :root:not([data-look]) .drawer main { min-width: 0; min-height: 0; background: var(--surface-solid); }
+/* The fixed header supplies the visible title. Keep each body's heading for assistive technology. */
+.drawer main h1 { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+/* Only preview choices keep the same material when selected. Text pills retain their own styling. */
+.drawer .grid3 > .choice { position: relative; background: var(--surface-sunk); color: var(--fg); border-color: var(--border); }
+.drawer .grid3 > .choice[aria-pressed="true"] { background: var(--surface-sunk); color: var(--fg); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.drawer .grid3 > .choice[aria-pressed="true"]::after { content: "✓"; font: 700 12px/1 system-ui; position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: var(--accent-fg); }
+/* Preview colons sit on the card surface, so use its ink while keeping the real glyph and weight. */
+.drawer .face-flip.is-compact .flip-colon { color: var(--fg); }
+/* At 22px a full-strength hinge cuts through the digits, especially on light tiles. */
+.drawer .face-flip.is-compact .flip-top { box-shadow: none; }
+@media (max-width: 760px) {
+  .drawer { grid-template-rows: auto auto minmax(0, 1fr); }
+  .drawer nav { min-width: 0; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px 14px; overflow-x: auto; scrollbar-width: none; }
+  .drawer nav::-webkit-scrollbar { display: none; }
+}

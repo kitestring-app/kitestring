@@ -1,0 +1,93 @@
+/* Web phone rules are isolated from the native renderer and desktop fine pointers. */
+@media (max-width: 600px) {
+  :root:not([data-desktop="true"]) {
+    .app { height: 100vh;
+      height: 100dvh; grid-template-rows: auto minmax(0, 1fr) auto; }
+    .topbar { padding: calc(8px + env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px)) 8px max(8px, env(safe-area-inset-left, 0px)); gap: 4px; }
+    .topbar .seg { padding: 2px; gap: 0; }
+    .topbar .seg button { padding: 6px; font-size: 12px; min-height: 44px; min-width: 44px; }
+    .topbar > .row { gap: 4px; min-width: 0; }
+    .topbar .btn { font-size: 0; padding: 6px; white-space: nowrap; }
+    .topbar .btn::after { content: "Sign in"; font-size: 12px; }
+    .bottombar { padding: 4px max(12px, env(safe-area-inset-right, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); min-height: calc(64px + env(safe-area-inset-bottom, 0px)); background: var(--surface-solid); border-top: 1px solid var(--line); }
+    .dock { gap: 8px; }
+    .credits { margin: 0; }
+    .credits a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+    .credits-links { display: none; }
+    .bg-video iframe { min-height: 100vh;
+      min-height: 100dvh; width: 177.78vh; width: 177.78dvh; }
+    .tasks-confetti { height: 100vh;
+      height: 100dvh; }
+    .center { padding: 12px; overflow-y: auto; overflow-x: hidden; }
+    .focus-center .headline { font-size: 22px; }
+    .tabs { gap: 12px; }
+    .controls { gap: 8px; flex-wrap: wrap; max-width: 100%; }
+    .pip-unavailable { display: none; }
+    .panel:not(.alarm-toast), .panel.wide:not(.alarm-toast), .tasks-panel { left: 0; right: 0; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); width: 100%; max-height: min(85vh, calc(100vh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))); max-height: min(85dvh, calc(100dvh - 140px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))); border-radius: var(--radius) var(--radius) 0 0; padding: 12px env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); }
+    .panel:not(.alarm-toast)::before { content: ""; width: 36px; height: 4px; border-radius: 4px; background: var(--fg-faint); position: absolute; top: 6px; left: calc(50% - 18px); }
+    .alarm-toast { left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(76px + env(safe-area-inset-bottom, 0px)); width: auto; max-width: none; transform: none; flex-direction: row; flex-wrap: wrap; justify-content: center; padding: 10px; }
+    .panel-head { flex: none; gap: 8px; padding: 8px 12px; }
+    .panel-head .badge { display: none; }
+    .panel-head h2 { font-size: 18px; }
+    .panel-body { min-height: 0; padding: 12px; overflow: auto; overscroll-behavior: contain; }
+    .tasks-footer { flex: none; }
+    .sounds-tabs { flex-wrap: nowrap; gap: 14px; }
+    .sounds-panel .ptabs button { font-size: 14px; white-space: nowrap; }
+    .drawer { height: 100vh;
+      height: 100dvh; }
+    .settings-header { padding: calc(8px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px)); }
+    .drawer nav { padding-inline: max(12px, env(safe-area-inset-left, 0px)) max(12px, env(safe-area-inset-right, 0px)); }
+    .drawer main { padding: 20px max(12px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
+    .drawer .card { padding: 16px 12px; }
+    .drawer .grid3 { grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); }
+  }
+  /* A sheet covers the middle. Hide that covered content from sight and hit testing. */
+  :root:not([data-desktop="true"]) body:has(.panel:not(.alarm-toast):not([hidden])) .center { visibility: hidden; }
+}
+@media (max-width: 360px) {
+  :root:not([data-desktop="true"]) {
+    .topbar { padding-inline: max(4px, env(safe-area-inset-left, 0px)) max(4px, env(safe-area-inset-right, 0px)); gap: 0; }
+    .topbar > .row { gap: 0; }
+    .topbar .btn { padding-inline: 2px; }
+    .topbar .seg button { padding-inline: 4px; }
+    .credits { padding-inline: 0; }
+    .credits-made { white-space: nowrap; }
+  }
+}
+@media (pointer: coarse) {
+  :root:not([data-desktop="true"]) {
+    :is(button, a, input, select, textarea, summary, [role="button"]) { min-width: 44px !important; min-height: 44px !important; }
+    a { display: inline-flex; align-items: center; justify-content: center; }
+    :is(button, input, select, textarea) { max-width: 100%; }
+    .opt, label:has(input[type="checkbox"]), label:has(input[type="radio"]) { min-height: 44px; align-items: center; }
+    /* The whole settings row is the switch's hit target; preserve the 46x26 track. */
+    input.switch { min-height: 26px !important; }
+    input:is([type="checkbox"], [type="radio"]):not(.switch) { appearance: none; display: inline-grid; place-items: center; padding: 0; background: transparent; border: 0; flex: none; cursor: pointer; }
+    input:is([type="checkbox"], [type="radio"]):not(.switch)::before { content: ""; width: 18px; height: 18px; box-sizing: border-box; border: 1px solid var(--fg-faint); border-radius: 4px; background: var(--surface-sunk); }
+    input[type="radio"]::before { border-radius: 50%; }
+    input:is([type="checkbox"], [type="radio"]):not(.switch):checked::before { content: "✓"; display: grid; place-items: center; font-size: 14px; line-height: 1; background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+    .control-tooltip, .pip-unavailable { display: none; }
+    .settings-close .iconbtn { min-width: 36px !important; min-height: 36px !important; }
+    .task-main { flex-wrap: wrap; gap: 4px; }
+    .task-title { min-width: 100px !important; flex-basis: calc(100% - 156px); }
+    .task-now { margin-left: 0; }
+    .task-check { margin: 0; }
+    .tasks-emojis { grid-template-columns: repeat(4, 1fr); }
+    .tasks-estimates { grid-template-columns: repeat(4, 1fr); }
+    .task-collapse { margin-left: 0; }
+    .mini-close { opacity: 1; }
+    .range { min-width: 44px; }
+  }
+}
+
+/* Wide touch viewports still need room for landscape notches and home indicators. */
+@media (pointer: coarse) and (min-width: 601px) {
+  :root:not([data-desktop="true"]) {
+    .topbar { padding: calc(18px + env(safe-area-inset-top, 0px)) max(22px, env(safe-area-inset-right, 0px)) 18px max(22px, env(safe-area-inset-left, 0px)); }
+    .bottombar { padding: 0 max(22px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(22px, env(safe-area-inset-left, 0px)); }
+    .panel { padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px); }
+    .settings-header { padding: calc(12px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 12px max(20px, env(safe-area-inset-left, 0px)); }
+    .drawer nav { padding-inline: max(14px, env(safe-area-inset-left, 0px)) max(14px, env(safe-area-inset-right, 0px)); }
+    .drawer main { padding: 40px max(clamp(20px, 5vw, 64px), env(safe-area-inset-right, 0px)) calc(80px + env(safe-area-inset-bottom, 0px)) max(clamp(20px, 5vw, 64px), env(safe-area-inset-left, 0px)); }
+  }
+}

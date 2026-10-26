@@ -1,0 +1,8 @@
+:root { color-scheme: dark; font: 14px system-ui, sans-serif; color: #f2efff; background: #14121c; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+form { height: 64px; padding: 10px 14px; display: flex; gap: 12px; align-items: center; }
+label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+input { flex: 1; min-width: 0; height: 42px; padding: 8px; font: inherit; color: inherit; border: 1px solid #7c5cff; border-radius: 8px; background: #202035; }
+input:focus-visible { outline: 2px solid #c3b8f5; outline-offset: 2px; }
+span { color: #b9b4ce; font-size: 11px; white-space: nowrap; }

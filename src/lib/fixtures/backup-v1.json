@@ -1,0 +1,13 @@
+{
+  "format": "custom-pomodoro-backup",
+  "version": 1,
+  "data": {
+    "settings": { "timer": { "lengths": { "pomodoro": 42, "short": 8, "long": 18, "countdown": 33 }, "autoStart": false, "notify": false, "alertSound": "bell" }, "extras": { "reduceMotion": true } },
+    "timer": { "segment": "focus", "elapsedBefore": 0, "startedAt": null, "round": 2, "creditedUpTo": 0, "segId": "old-paused" },
+    "tasks": [{ "id": "legacy-task", "title": "Open the draft", "done": true, "createdAt": 1792843200000 }],
+    "focusPick": null,
+    "stats": { "chunks": [{ "id": "legacy-chunk", "kind": "focus", "segment": "focus", "start": 1792843200000, "ms": 1200000, "completed": true }], "tasksDone": [{ "taskId": "legacy-task", "at": 1792844400000 }] },
+    "notes": "Earlier effort stays here.",
+    "mixer": { "layers": [], "mixes": [], "favourites": [] }
+  }
+}
