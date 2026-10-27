@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeSettings } from "./settings";
+import { effectiveDefaultTab, sanitizeSettings } from "./settings";
 import { BACKUP_FORMAT, parseBackup } from "../lib/backup";
+
+describe("effective default settings tab", () => {
+  it("temporarily treats a hidden Stats default as recent without rewriting the preference", () => {
+    const extras = { hideStats: true, defaultTab: "stats" as const };
+    expect(effectiveDefaultTab(extras)).toBe("recent");
+    expect(extras.defaultTab).toBe("stats");
+    expect(effectiveDefaultTab({ ...extras, hideStats: false })).toBe("stats");
+  });
+  it.each(["recent", "themes", "clock", "timer", "quotes", "extras", "data", "about"] as const)("preserves the %s preference with Stats hidden", defaultTab => {
+    expect(effectiveDefaultTab({ hideStats: true, defaultTab })).toBe(defaultTab);
+  });
+});
 
 describe("interruption preference", () => {
   it("defaults on for old settings and sanitizes non-booleans", () => {

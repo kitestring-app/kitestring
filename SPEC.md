@@ -33,7 +33,7 @@ Minimal runtime deps (react, react-dom). Persistence: IndexedDB via a ~60-line w
 6. **Notepad**: autosaved, word/character count.
 7. **Themes**: per dashboard mode; library by category (Gradients & Colors — generated; Animated — CSS; Scenic/Nature/Urban — curated Unsplash CDN links, not bundled); custom image upload (stored in IndexedDB); randomizer; apply to all modes; disable animated themes.
 8. **Clock**: 12/24 h, seconds, flip clock, size, dynamic greetings + display name.
-9. **Stats**: Today/Week/Month/3M/6M/1Y/All; cards: focus time, tasks completed, sessions, break time; Focus Calendar heatmap (hours/sessions, 6 months/1 year); Focus Trend chart.
+9. **Stats**: Today/Week/Month/3M/6M/1Y/All; plain daily or Monday-based weekly records of focused time (including partial sessions) and recorded task/subtask completions. Neutral empty periods; no graded calendar. Hide stats in Extras removes entry points without changing the timer or saved history; the choice persists in settings backups and sync.
 10. **Compatibility history**: raw sessions and legacy score/streak functions stay available for old data and backups. Score and streak are absent from normal stats and dashboard/return flows.
 11. **Quotes**: categories, show in Focus and/or Home.
 12. **Extras**: clear mode (hide UI when mouse idle/outside), prevent sleep (Screen Wake Lock), default settings tab, theme randomizer, reduce motion.

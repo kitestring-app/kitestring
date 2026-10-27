@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useStore } from "../../lib/store";
-import { floatingGlass, localPreferences, localPreferencesUpdate, settings, settingsUpdate, type Settings, type SettingsTab } from "../../state/settings";
+import { effectiveDefaultTab, floatingGlass, localPreferences, localPreferencesUpdate, settings, settingsUpdate, type Settings, type SettingsTab } from "../../state/settings";
 import { Toggle } from "./SettingsDrawer";
 
 export function ExtrasTab() {
@@ -29,6 +29,7 @@ export function ExtrasTab() {
       {window.desktop?.getSecureDns && window.desktop?.setSecureDns && <SecureDnsSettings />}
       <div className="card">
         <h3>Performance & display</h3>
+        <Toggle title="Hide stats" help="Hide record views. Your timer and saved history stay available." checked={x.hideStats} onChange={v => set({ hideStats: v })} />
         <Toggle title="Disable animated themes" help="Saves battery and CPU." checked={x.disableAnimated} onChange={(v) => set({ disableAnimated: v })} />
         <Toggle title="Reduce motion" help="Turns off UI transitions and animations." checked={x.reduceMotion} onChange={(v) => set({ reduceMotion: v })} />
         <Toggle title="Clear mode" help="While a session runs, hide controls after 3 seconds without mouse movement, or when the mouse leaves the window." checked={x.clearMode} onChange={(v) => set({ clearMode: v })} />
@@ -37,9 +38,9 @@ export function ExtrasTab() {
       <div className="card">
         <h3>Default settings tab</h3>
         <p className="help">Which tab opens when you open settings.</p>
-        <select className="input" style={{ maxWidth: 320 }} value={x.defaultTab} onChange={(e) => set({ defaultTab: e.target.value as SettingsTab | "recent" })}>
+        <select className="input" style={{ maxWidth: 320 }} value={effectiveDefaultTab(x)} onChange={(e) => set({ defaultTab: e.target.value as SettingsTab | "recent" })}>
           <option value="recent">Recently opened</option>
-          {(["themes", "clock", "timer", "stats", "quotes", "extras", "data"] as SettingsTab[]).map((t) => <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>)}
+          {(["themes", "clock", "timer", "stats", "quotes", "extras", "data"] as SettingsTab[]).filter(t => !x.hideStats || t !== "stats").map((t) => <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>)}
         </select>
       </div>
       <div className="card">

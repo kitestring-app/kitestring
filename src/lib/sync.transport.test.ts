@@ -204,3 +204,19 @@ it('review2 P1: timer-only atomic saves never stamp or upload stale stats over a
   expect(puts.flatMap(p => (p as { entries: { key: string }[] }).entries).filter(e => e.key === 'stats')).toEqual([]);
   off(); await sync.signOut();
 });
+
+it('round-trips Hide stats within the whole settings document through sync upload and pull', async () => {
+  const { sync, store, fetch, puts } = await setup();
+  const s = await import('../state/settings');
+  s.settingsUpdate('extras', { hideStats: true }); await store.flushAll();
+  await sync.chooseInitialData('keep');
+  const sent = (puts[0] as { entries: { key: string; value: typeof s.DEFAULT_SETTINGS }[] }).entries.find(e => e.key === 'settings')!.value;
+  expect(sent.extras.hideStats).toBe(true); expect(sent).toEqual(s.settings.get());
+  s.settings.set(s.DEFAULT_SETTINGS); await store.flushAll();
+  const fallback = fetch.getMockImplementation()!;
+  fetch.mockImplementation(async (url, init) => url === '/api/sync' && init.method === 'GET'
+    ? Response.json({ entries: [{ key: 'settings', value: sent, updatedAt: Date.now() + 1000 }] }) : fallback(url, init));
+  await sync.syncNow();
+  expect(s.settings.get()).toEqual(sent); expect((await (await import('./db')).dbGet<typeof sent>('settings'))?.extras.hideStats).toBe(true);
+  await sync.signOut();
+});
