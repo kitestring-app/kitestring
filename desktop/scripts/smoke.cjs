@@ -133,10 +133,11 @@ async function main() {
     assert.equal(info.secure, true);
     assert.equal(info.rendered, true);
     assert.deepEqual(info.bridge, ['armAlarm', 'attention', 'cancelSpeech', 'cloud', 'consumeSuspension', 'disarmAlarm', 'floatTimer',
-      'getSecureDns', 'notificationStatus', 'onAudioAction', 'onAudioRequest', 'onFloatTimer', 'onFloatingPreferences',
-      'onFlush', 'onFullScreenTransition', 'onLifecycle', 'onMenuCommand', 'onParked', 'onTimerAction', 'onTimerRequest',
-      'parkingStatus', 'preventSleep', 'publishAudioState', 'publishTimerState', 'release', 'setFloatingPreferences',
-      'setSecureDns', 'setStatus', 'speak', 'testReminder', 'toggleFullScreen']);
+      'getFullScreen', 'getSecureDns', 'notificationStatus', 'onAudioAction', 'onAudioRequest', 'onFloatTimer',
+      'onFloatingPreferences', 'onFlush', 'onFullScreenChange', 'onFullScreenTransition', 'onLifecycle', 'onMenuCommand',
+      'onParked', 'onTimerAction', 'onTimerRequest', 'parkingStatus', 'platform', 'preventSleep', 'publishAudioState',
+      'publishTimerState', 'release', 'setFloatingPreferences', 'setSecureDns', 'setStatus', 'speak', 'testReminder',
+      'toggleFullScreen']);
     assert.equal(info.frozen, true);
     assert.equal(info.node, 'undefined');
     assert.equal(info.status, 200);

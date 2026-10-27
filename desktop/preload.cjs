@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('desktop', Object.freeze(mini ? {
   showMain: () => ipcRenderer.send('desktop:show-main'),
   timerControl: (action) => { if (validTimerCommand(action) || action === 'endSession') return ipcRenderer.invoke('desktop:timer-control', action); return Promise.resolve({ ok: false, reason: 'invalid-command' }); },
 } : {
+  platform: process.platform,
+  getFullScreen: () => ipcRenderer.invoke('desktop:get-fullscreen'),
+  onFullScreenChange: (callback) => subscribe('desktop:fullscreen-state', value => { if (typeof value === 'boolean') callback(value); }),
   cloud: Object.freeze({
     signIn: (email, password) => ipcRenderer.invoke('desktop:cloud-signIn', email, password),
     signOut: () => ipcRenderer.invoke('desktop:cloud-signOut'),

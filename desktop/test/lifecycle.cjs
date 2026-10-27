@@ -865,6 +865,15 @@ test('native Timer menu and tray carry input origin through main-process dispatc
   ipc.emit('desktop:timer-result', event(), window.sentArgs[0].id, { ok: true });
 });
 
+test('fullscreen snapshot is restricted to the trusted main frame', () => {
+  assert.equal(ipc.invoke('desktop:get-fullscreen', { sender: window.webContents, senderFrame: { url: window.url } }), null);
+  assert.equal(ipc.invoke('desktop:get-fullscreen', { sender: {}, senderFrame: window.webContents.mainFrame }), null);
+  for (const full of [true, false]) {
+    window.fullscreen = full;
+    assert.equal(ipc.invoke('desktop:get-fullscreen', event()), full);
+  }
+});
+
 test('Quit waits for a matching trusted renderer flush before allowing termination', () => {
   ipc.emit('desktop:prevent-sleep', event(), true);
   ipc.invoke('desktop:float-timer', event(), true);

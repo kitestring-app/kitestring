@@ -9,6 +9,7 @@ function attachFullscreen(window) {
     transitioning = false;
     if (window.isDestroyed()) return;
     settled = window.isFullScreen();
+    window.webContents.send('desktop:fullscreen-state', settled);
     send('end');
   };
   const armSafety = () => { if (safety === undefined) safety = setTimeout(end, 2500); };
