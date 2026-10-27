@@ -23,6 +23,7 @@ declare global {
     notify?: boolean;
     attention?: boolean;
     announcement?: DesktopAnnouncement;
+    genericSpeech?: boolean;
   }
   interface CloudReply { status: number; retryAfter?: string | null; data: { ok: boolean; email?: string; error?: string; entries?: { key: string; value: unknown; updatedAt: number }[] } }
   interface Window {

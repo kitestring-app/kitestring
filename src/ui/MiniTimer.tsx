@@ -57,7 +57,7 @@ export function MiniTimer({ native = false }: { native?: boolean }) {
         {v.hardLocked && <span className="mini-lock" title="Hard mode: this block runs to the end"><Glyph name="lock" size={12} title="Hard mode" /></span>}
         {!v.running && !v.hiddenTime && <span className="mini-paused">{v.elapsed > 0 ? "Paused" : "Ready"}</span>}
       </div>
-      {v.hiddenTime && (native ? <button className="btn small" aria-label="Open Kitestring" onClick={() => window.desktop?.showMain?.()}>{v.running ? "Running" : "Paused"}</button> : <span>{v.running ? "Running" : "Paused"}</span>)}
+      {v.hiddenTime && (native ? <button className="btn small" aria-label={`${v.running ? "Running" : "Paused"}. Open Kitestring`} onClick={() => window.desktop?.showMain?.()}>{v.running ? "Running" : "Paused"}</button> : <span>{v.running ? "Running" : "Paused"}</span>)}
       {v.hiddenTime && <span className="sr-only" role="timer" aria-live="off">{label}: {v.timeDescription}</span>}
       {!v.hiddenTime && (native
         ? <button className="mini-digits" aria-label={`${v.display}. Open Kitestring`} onClick={() => window.desktop?.showMain?.()}>{v.display}</button>

@@ -114,7 +114,13 @@ it.each([false, true])("hidden floating time removes digits and progress, preser
   expect(html).toContain("Running"); expect(html).toContain('role="timer" aria-live="off">Focus: 25 minutes left');
   if (native) {
     hooks.stateIndex = hooks.refIndex = 0;
-    elements(MiniTimer({ native })).find(el => el.props["aria-label"] === "Open Kitestring")!.props.onClick!();
+    elements(MiniTimer({ native })).find(el => el.props["aria-label"] === "Running. Open Kitestring")!.props.onClick!();
     expect(showMain).toHaveBeenCalledOnce();
   }
+});
+
+it.each([true, false])("names the Hidden native opener with its running status %s", running => {
+  view.hiddenTime = true; view.running = running;
+  const status = running ? "Running" : "Paused";
+  expect(renderToStaticMarkup(<MiniTimer native />)).toContain(`aria-label="${status}. Open Kitestring"`);
 });

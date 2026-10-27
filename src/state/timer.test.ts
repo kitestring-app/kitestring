@@ -232,6 +232,71 @@ describe("spoken announcements", () => {
     expect(armCompanionWithSpeech).toHaveBeenLastCalledWith(expect.any(Number), "focus-done", 0.85, true, "signature");
   });
 
+  it.each([false, true])("Hidden auto-starts use generic speech with companion available %s", companion => {
+    vi.mocked(companionKnownUp).mockReturnValue(companion);
+    vi.stubGlobal("document", { addEventListener: vi.fn() });
+    window.addEventListener = vi.fn();
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, display: "hidden", autoRun: "always", focusDoneSound: "none", breakOverSound: "none" } });
+    startTicker();
+    for (const [segment, text] of [["focus", "Focus session done. Time for a break."], ["short", "Break is over. Time to focus."]] as const) {
+      timerActions.goTo(segment);
+      finish();
+      vi.advanceTimersByTime(0);
+      expect(armCompanionWithSpeech).toHaveBeenLastCalledWith(expect.any(Number), segment === "focus" ? "break-over" : "focus-done", 0, true, "none");
+      if (companion) expect(speak).not.toHaveBeenCalled();
+      else expect(speak).toHaveBeenLastCalledWith(expect.objectContaining({ text }));
+    }
+  });
+
+  it("Hidden countdown repeat speaks no block length", () => {
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, display: "hidden", mode: "countdown", countdownRepeat: true, focusDoneSound: "none" } });
+    finish(); vi.advanceTimersByTime(0);
+    expect(speak).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Focus session done. Time for a break." }));
+  });
+
+  it("switching to Hidden while speech waits for the chime removes its duration", () => {
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, autoRun: "always" } });
+    finish();
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, display: "hidden" } });
+    vi.advanceTimersByTime(6500);
+    expect(speak).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Focus session done. Time for a break." }));
+  });
+
+  it("keeps the page's generic fallback when Hidden is selected during a companion chime", () => {
+    vi.mocked(companionKnownUp).mockReturnValue(true);
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, autoRun: "always" } });
+    finish();
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, display: "hidden" } });
+    vi.advanceTimersByTime(6500);
+    expect(speak).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Focus session done. Time for a break." }));
+  });
+
+  it.each([false, true])("Hidden stops an active timed page announcement, but leaves completed speech alone (%s)", ended => {
+    vi.stubGlobal("document", { addEventListener: vi.fn() });
+    window.addEventListener = vi.fn();
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, autoRun: "always", focusDoneSound: "none" } });
+    startTicker();
+    finish(); vi.advanceTimersByTime(0);
+    const utterance = speak.mock.calls.at(-1)![0];
+    expect(utterance.text).toBe("Break started. Five minutes.");
+    if (ended) utterance.onend?.();
+    cancel.mockClear();
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, display: "hidden" } });
+    expect(cancel).toHaveBeenCalledTimes(ended ? 0 : 1);
+  });
+
+  it("keeps a Hidden generic reminder speaking when another timer setting changes", () => {
+    vi.stubGlobal("document", { addEventListener: vi.fn() });
+    window.addEventListener = vi.fn();
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, display: "hidden", autoRun: "always", focusDoneSound: "none" } });
+    startTicker();
+    finish(); vi.advanceTimersByTime(0);
+    expect(speak).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Focus session done. Time for a break." }));
+    cancel.mockClear();
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, alertVolume: 0.5 } });
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
   it("waits for the focus chime and includes the next task", () => {
     tasks.set([{ id: "task", title: "Write the outline", done: false, createdAt: 0 }]);
     finish();
