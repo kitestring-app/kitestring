@@ -55,6 +55,7 @@ export interface Settings {
   themes: Record<DashMode, ThemeRef>;
   quotes: { category: string; randomCategory: boolean; inFocus: boolean; inHome: boolean };
   extras: {
+    hideStats: boolean;
     displayName: string;
     disableAnimated: boolean;
     clearMode: boolean;
@@ -111,6 +112,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   quotes: { randomCategory: false, category: "all", inFocus: true, inHome: true },
   extras: {
+    hideStats: false,
     displayName: "",
     disableAnimated: false,
     clearMode: false,

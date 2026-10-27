@@ -170,8 +170,8 @@ it("gives every textless button in the rendered dashboard and panels an accessib
   try {
     tasks.set([{ id: "tooltip-task", title: "Review chapter", done: false, createdAt: 0 }]);
     let checked = 0;
-    for (const dash of ["home", "focus", "ambient"] as const) {
-      settings.set({ ...DEFAULT_SETTINGS, dash });
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise"] as const) for (const hideStats of [false, true]) for (const dash of ["home", "focus", "ambient"] as const) {
+      settings.set({ ...DEFAULT_SETTINGS, dash, appearance: { ...DEFAULT_SETTINGS.appearance, look }, extras: { ...DEFAULT_SETTINGS.extras, hideStats } });
       const views = [createElement(App), createElement(TasksPanel, { onClose() {} }), createElement(NotepadPanel, { onClose() {} }), createElement(SoundsPanel, { open: true, onClose() {} }), createElement(SettingsDrawer, { onClose() {} }), createElement(StatsTab)];
       for (const view of views) {
         const html = renderToStaticMarkup(view);
@@ -191,6 +191,6 @@ it("gives every textless button in the rendered dashboard and panels an accessib
         f.stop();
       }
     }
-    expect(checked).toBeGreaterThan(500); // includes each empty calendar button
+    expect(checked).toBeGreaterThan(500); // covers all looks, dashboards and both stats visibility choices
   } finally { settings.set(previous); tasks.set(previousTasks); }
 });

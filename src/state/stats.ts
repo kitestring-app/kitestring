@@ -305,6 +305,15 @@ export function focusTrend(days: Map<string, DayTotals>, from: number, to: numbe
   return out;
 }
 
+/** Plain records reuse the calendar buckets; task completions keep their recorded local day. */
+export function focusRecords(days: Map<string, DayTotals>, from: number, to: number, weekly: boolean) {
+  return focusTrend(days, from, to, weekly).map(bucket => {
+    let tasks = 0;
+    for (let day = bucket.start; day <= bucket.end; day = addDays(day, 1)) tasks += days.get(dayKey(day))?.tasks ?? 0;
+    return { ...bucket, tasks };
+  });
+}
+
 export interface CalendarDay {
   at: number;
   key: string;

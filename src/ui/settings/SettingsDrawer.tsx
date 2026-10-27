@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useStore } from "../../lib/store";
 import { settings, settingsUpdate, type SettingsTab } from "../../state/settings";
 import { Icon } from "../icons";
 import { TimerTab } from "./TimerTab";
@@ -23,9 +24,10 @@ const TABS: { id: SettingsTab; label: string; icon: keyof typeof Icon; view: () 
 ];
 
 export function SettingsDrawer({ onClose, initialTab }: { onClose: () => void; initialTab?: SettingsTab }) {
-  const s = settings.get();
+  const s = useStore(settings);
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? (s.extras.defaultTab === "recent" ? s.lastTab : s.extras.defaultTab));
-  const current = TABS.find((t) => t.id === tab)!;
+  const tabs = TABS.filter(t => !s.extras.hideStats || t.id !== "stats");
+  const current = tabs.find(t => t.id === tab) ?? TABS.find(t => t.id === "timer")!;
   const View = current.view;
   const pick = (id: SettingsTab) => {
     setTab(id);
@@ -36,7 +38,7 @@ export function SettingsDrawer({ onClose, initialTab }: { onClose: () => void; i
   const nav = useRef<HTMLElement>(null);
   useEffect(() => {
     nav.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [tab]);
+  }, [current.id]);
   const openerRef = useRef<HTMLElement | null>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -71,10 +73,10 @@ export function SettingsDrawer({ onClose, initialTab }: { onClose: () => void; i
         <button ref={closeBtn} className="settings-close" onClick={onClose} aria-label="Close settings · Escape"><span className="iconbtn"><Icon.close /></span></button>
       </header>
       <nav ref={nav} aria-label="Settings sections">
-        {TABS.map((t) => {
+        {tabs.map((t) => {
           const I = Icon[t.icon];
           return (
-            <button key={t.id} className="tab" aria-current={tab === t.id} onClick={() => pick(t.id)}>
+            <button key={t.id} className="tab" aria-current={current.id === t.id} onClick={() => pick(t.id)}>
               <I /> {t.label}
             </button>
           );
