@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
 
-function loadBridge(argv = []) {
+function loadBridge(argv = [], platform = "darwin") {
   const globals = {};
   const sent = [];
   const invoked = [];
@@ -22,7 +22,7 @@ function loadBridge(argv = []) {
         removeListener: (channel, listener) => events.removeListener(channel, listener),
       },
     }),
-    process: { argv },
+    process: { argv, platform },
     window: { focus: () => focus.push('focus') },
     document: { activeElement: { blur: () => focus.push('blur') } },
   });
@@ -34,8 +34,8 @@ test('main bridge is frozen and routes the supported native methods', async () =
   assert.deepEqual(Object.keys(bridge).sort(), [
     'armAlarm', 'attention', 'cancelSpeech', 'cloud', 'consumeSuspension', 'disarmAlarm', 'floatTimer',
     'getSecureDns', 'notificationStatus', 'onAudioAction', 'onAudioRequest', 'onFloatTimer', 'onFloatingPreferences', 'onFlush', 'onFullScreenTransition', 'onLifecycle', 'onMenuCommand', 'onParked', 'onTimerAction', 'onTimerRequest', 'parkingStatus', 'preventSleep', 'publishAudioState', 'publishTimerState', 'release',
-    'setFloatingPreferences', 'setSecureDns', 'setStatus', 'speak', 'testReminder', 'toggleFullScreen',
-  ]);
+    'platform', 'getFullScreen', 'onFullScreenChange', 'setFloatingPreferences', 'setSecureDns', 'setStatus', 'speak', 'testReminder', 'toggleFullScreen',
+  ].sort());
   assert.equal(Object.isFrozen(bridge), true);
   bridge.setStatus(42);
   bridge.attention('bogus');
@@ -249,4 +249,21 @@ test('round4 the main preload exposes a synchronous bounded suspend latch read',
   assert.equal(bridge.consumeSuspension(), true);
   assert.deepEqual(sent, [['desktop:consume-suspension']]);
   assert.equal(loadBridge(['--mini-timer']).bridge.consumeSuspension, undefined);
+});
+
+test('main bridge identifies the platform and validates fullscreen state events', async () => {
+  for (const platform of ['darwin', 'linux', 'win32']) {
+    const { bridge, events, invoked } = loadBridge([], platform);
+    assert.equal(bridge.platform, platform);
+    await bridge.getFullScreen();
+    assert.deepEqual(invoked, [['desktop:get-fullscreen']]);
+    const values = [];
+    const off = bridge.onFullScreenChange(value => values.push(value));
+    for (const value of [true, 'true', false, null]) events.emit('desktop:fullscreen-state', {}, value);
+    assert.deepEqual(values, [true, false]);
+    off(); events.emit('desktop:fullscreen-state', {}, true);
+    assert.deepEqual(values, [true, false]);
+    const mini = loadBridge(['--mini-timer'], platform).bridge;
+    for (const key of ['platform', 'getFullScreen', 'onFullScreenChange']) assert.equal(Object.hasOwn(mini, key), false);
+  }
 });

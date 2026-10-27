@@ -1,0 +1,11 @@
+/* Transparent native drag surface leaves the theme visible behind traffic lights.
+   No double-click handler: macOS keeps its configured title-bar action. */
+.mac-titlebar .native-titlebar {
+  position: fixed; inset: 0 0 auto; height: 28px; z-index: 30;
+  -webkit-app-region: drag;
+}
+.mac-titlebar .app { padding-top: 28px; }
+.mac-titlebar .drawer { top: 28px; }
+.mac-titlebar :is(button, a, input, textarea, select, [role="button"], [contenteditable="true"]) {
+  -webkit-app-region: no-drag;
+}

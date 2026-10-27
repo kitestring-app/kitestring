@@ -1,3 +1,4 @@
+import { NativeTitlebar } from "./ui/NativeTitlebar";
 import { EndSessionHost, requestEndSession } from "./ui/timer/EndSession";
 import { InterruptionCapture } from "./ui/ParkCapture";
 import { Credits } from "./ui/Credits";
@@ -126,6 +127,7 @@ export default function App() {
 
   return (
     <>
+      <NativeTitlebar />
       <InkFilters />
       <Background />
       <TitleSync />

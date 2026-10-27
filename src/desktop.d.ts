@@ -28,6 +28,9 @@ declare global {
   interface CloudReply { status: number; retryAfter?: string | null; data: { ok: boolean; email?: string; error?: string; entries?: { key: string; value: unknown; updatedAt: number }[] } }
   interface Window {
     desktop?: {
+      platform?: string;
+      getFullScreen?: () => Promise<boolean | null>;
+      onFullScreenChange?: (callback: (fullscreen: boolean) => void) => () => void;
       cloud?: {
         signIn(email: string, password: string): Promise<CloudReply>;
         signOut(): Promise<CloudReply>;

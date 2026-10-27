@@ -26,7 +26,7 @@ test('start/end messages cover native entry and exit, with exit viewport repair'
     h.window.emit(next ? 'will-enter-full-screen' : 'will-leave-full-screen');
     assert.deepEqual(h.messages.at(-1), ['desktop:fullscreen-transition', 'start']);
     h.complete(next);
-    assert.deepEqual(h.messages.slice(-2), [['invalidate'], ['desktop:fullscreen-transition', 'end']]);
+    assert.deepEqual(h.messages.slice(-3), [['invalidate'], ['desktop:fullscreen-state', next], ['desktop:fullscreen-transition', 'end']]);
   }
   assert.deepEqual(h.sizes, [[1280, 821], [1280, 820]]);
 });
@@ -123,4 +123,12 @@ test('a transition with no native events times out and allows another toggle', t
   assert.deepEqual(h.messages.at(-1), ['desktop:fullscreen-transition', 'end']);
   h.controller.toggle();
   assert.deepEqual(h.calls, [true, true]);
+});
+
+test('publishes native fullscreen state on completion', t => {
+  const h = fixture(t);
+  for (const full of [true, false]) {
+    h.complete(full);
+    assert.ok(h.messages.some(message => message[0] === 'desktop:fullscreen-state' && message[1] === full));
+  }
 });

@@ -137,6 +137,7 @@ function createWindow() {
   window = new BrowserWindow({
     title: 'Kitestring', width: 1280, height: 820, minWidth: 720, minHeight: 540,
     show: false, backgroundColor: '#14121c',
+    ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true,
       sandbox: true, nodeIntegration: false, webSecurity: true, backgroundThrottling: false,
@@ -338,6 +339,7 @@ if (!app.requestSingleInstanceLock()) {
     parking.register();
     ipcMain.handle('desktop:parking-status', event => trustedSender(event) ? parking.status() : null);
     // The page's own Fullscreen API is refused by the permission handler; use the native macOS full-screen Space instead.
+    ipcMain.handle('desktop:get-fullscreen', event => trustedSender(event) ? window.isFullScreen() : null);
     ipcMain.handle('desktop:toggle-fullscreen', event => {
       if (!trustedSender(event)) return null;
       return fullscreen.toggle();
