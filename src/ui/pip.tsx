@@ -68,7 +68,10 @@ export async function openPip(): Promise<string | null> {
   const extra = w.document.createElement("style");
   // The PiP window gets the same look as the app it came from.
   // ...and follows it when the look changes while the window is open.
-  const syncLook = () => { w.document.documentElement.dataset.look = settings.get().appearance.look; };
+  const syncLook = () => {
+    w.document.documentElement.dataset.look = settings.get().appearance.look;
+    w.document.documentElement.classList.toggle("reduce-motion", settings.get().extras.reduceMotion);
+  };
   syncLook();
   const offLook = settings.subscribe(syncLook);
   extra.textContent = `body{overflow:hidden;background:var(--bg);color:var(--fg);display:grid;place-items:center;height:100vh}

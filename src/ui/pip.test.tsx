@@ -6,14 +6,14 @@ vi.mock("../state/timer", () => ({ useTimerView: vi.fn(), timerActions: {} }));
 const preferences = vi.hoisted(() => ({ floatingTimer: false }));
 const look = vi.hoisted(() => {
   const subs = new Set<() => void>();
-  return { value: "classic", subs, set(v: string) { this.value = v; subs.forEach(fn => fn()); } };
+  return { value: "classic", reduceMotion: false, subs, set(v: string) { this.value = v; subs.forEach(fn => fn()); } };
 });
 vi.mock("../state/settings", () => ({
   localPreferencesReady: Promise.resolve(),
   localPreferences: { get: () => preferences },
   localPreferencesUpdate: (patch: object) => Object.assign(preferences, patch),
   settings: {
-    get: () => ({ appearance: { look: look.value } }),
+    get: () => ({ appearance: { look: look.value }, extras: { reduceMotion: look.reduceMotion } }),
     subscribe: (fn: () => void) => { look.subs.add(fn); return () => void look.subs.delete(fn); },
   },
 }));
@@ -24,7 +24,7 @@ function floatingWindow() {
   return {
     focus: vi.fn(),
     document: {
-      documentElement: { dataset: {} as { look?: string } },
+      documentElement: { dataset: {} as { look?: string }, classList: { toggle: vi.fn() } },
       createElement: vi.fn((tagName: string) => ({ tagName, textContent: "" })),
       head: { appendChild: vi.fn() },
       body: { appendChild: vi.fn() },
@@ -36,7 +36,7 @@ function floatingWindow() {
 beforeEach(() => {
   vi.resetModules();
   preferences.floatingTimer = false;
-  look.subs.clear();
+  look.subs.clear(); look.reduceMotion = false;
   vi.clearAllMocks();
   roots.createRoot.mockReturnValue({ render: roots.render, unmount: roots.unmount });
   vi.stubGlobal("document", { styleSheets: [], documentElement: { dataset: {} } });
@@ -199,4 +199,15 @@ it("toggles from the persisted preference after a tray or Settings change", asyn
   await openPip();
   expect(floatTimer).toHaveBeenLastCalledWith(true);
   expect(preferences.floatingTimer).toBe(true);
+});
+
+it("mirrors app reduced motion into an open Document PiP root and cleans up", async () => {
+  const floating = floatingWindow(); look.reduceMotion = true;
+  vi.stubGlobal("window", { documentPictureInPicture: { requestWindow: vi.fn().mockResolvedValue(floating), window: null } });
+  await (await import("./pip")).openPip();
+  expect(floating.document.documentElement.classList.toggle).toHaveBeenLastCalledWith("reduce-motion", true);
+  look.reduceMotion = false; look.set("glass");
+  expect(floating.document.documentElement.classList.toggle).toHaveBeenLastCalledWith("reduce-motion", false);
+  (floating.addEventListener.mock.calls[0][1] as () => void)();
+  expect(look.subs.size).toBe(0);
 });

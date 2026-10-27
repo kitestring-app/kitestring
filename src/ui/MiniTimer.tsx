@@ -47,7 +47,7 @@ export function MiniTimer({ native = false }: { native?: boolean }) {
     return () => document.documentElement.classList.remove("reduce-motion");
   }, [native, reduceMotion]);
   const segment = v.state.segment as "focus" | "short" | "long";
-  const label = v.mode === "animedoro" && segment === "long" ? "Watch time" : SEGMENT_LABEL[segment];
+  const label = v.hiddenTime ? SEGMENT_LABEL[segment] : v.mode === "animedoro" && segment === "long" ? "Watch time" : SEGMENT_LABEL[segment];
   return (
     <main className={`mini-timer is-${segment}${v.running ? " is-running" : ""}`} style={{ ["--mini-alpha" as string]: String(glass.opacity) }} aria-label={`Floating timer, ${label}`}>
       {native && <button className="mini-close" aria-label="Close floating timer" onClick={() => void window.desktop?.floatTimer?.(false)}><span aria-hidden="true">×</span></button>}
@@ -55,12 +55,14 @@ export function MiniTimer({ native = false }: { native?: boolean }) {
         <span className="mini-state-icon"><Glyph name={STATE_GLYPH[segment] ?? "target"} size={14} /></span>
         <span>{label}</span>
         {v.hardLocked && <span className="mini-lock" title="Hard mode: this block runs to the end"><Glyph name="lock" size={12} title="Hard mode" /></span>}
-        {!v.running && <span className="mini-paused">{v.elapsed > 0 ? "Paused" : "Ready"}</span>}
+        {!v.running && !v.hiddenTime && <span className="mini-paused">{v.elapsed > 0 ? "Paused" : "Ready"}</span>}
       </div>
-      {native
+      {v.hiddenTime && (native ? <button className="btn small" aria-label={`${v.running ? "Running" : "Paused"}. Open Kitestring`} onClick={() => window.desktop?.showMain?.()}>{v.running ? "Running" : "Paused"}</button> : <span>{v.running ? "Running" : "Paused"}</span>)}
+      {v.hiddenTime && <span className="sr-only" role="timer" aria-live="off">{label}: {v.timeDescription}</span>}
+      {!v.hiddenTime && (native
         ? <button className="mini-digits" aria-label={`${v.display}. Open Kitestring`} onClick={() => window.desktop?.showMain?.()}>{v.display}</button>
-        : <div className="mini-digits">{v.display}</div>}
-      <div className="mini-progress" aria-hidden="true"><i style={{ width: `${v.progress * 100}%` }} /></div>
+        : <div className="mini-digits">{v.display}</div>)}
+      {!v.hiddenTime && <div className="mini-progress" aria-hidden="true"><i style={{ width: `${v.progress * 100}%` }} /></div>}
       {native && <div className="mini-volume" role="group" aria-label="Volume">
         <button className="mini-mute" aria-label={audio.muted ? "Unmute audio" : "Mute audio"} aria-pressed={audio.muted} onClick={() => window.desktop?.audioControl?.({ action: "mute" })}>
           {audio.muted ? <Icon.muted /> : <Icon.volume />}

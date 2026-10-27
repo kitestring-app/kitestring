@@ -1,0 +1,4 @@
+.time-display { position: relative; max-width: 100%; }
+.time-display-toggle { position: absolute; inset: 0; width: 100%; background: transparent; border: 0; border-radius: var(--radius); cursor: pointer; }
+.time-display-toggle:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+.timer-hidden { margin: 16px 0; color: var(--on-bg); font-size: clamp(20px, 4vw, 32px); text-shadow: var(--on-bg-shadow); }

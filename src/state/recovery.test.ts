@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IDBFactory } from "fake-indexeddb";
 vi.mock("../audio/core", () => ({ cancelAllChimes: vi.fn(), playTimerTick: vi.fn(), cancelChime: vi.fn(), cancelEnd: vi.fn(), releaseChime: vi.fn(), scheduleChime: vi.fn(), scheduleEnd: vi.fn() }));
 vi.mock("../audio/companion", () => ({ armCompanionWithSpeech: vi.fn().mockResolvedValue(false), cancelCompanionSpeech: vi.fn(), companionAvailable: vi.fn().mockResolvedValue(false), companionKnownUp: vi.fn(() => false), disarmCompanion: vi.fn() }));
+describe.each(["remaining", "elapsed", "hidden"] as const)("Recovery with %s time", display => {
 let modules: Awaited<ReturnType<typeof setup>>;
 async function setup() {
   const [t, e, st, ts, i, a, store, db, stats] = await Promise.all([
@@ -17,7 +18,7 @@ beforeEach(async () => {
   vi.stubGlobal("document", { addEventListener: vi.fn(), visibilityState: "visible" });
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout", "setInterval", "clearInterval"] }); vi.setSystemTime(Date.UTC(2026, 9, 20, 12));
   modules = await setup();
-  modules.settings.set({ ...modules.DEFAULT_SETTINGS, timer: { ...modules.DEFAULT_SETTINGS.timer, autoRun: "always", takeover: false, speak: false, notify: false, bringToFront: false } });
+  modules.settings.set({ ...modules.DEFAULT_SETTINGS, timer: { ...modules.DEFAULT_SETTINGS.timer, display, autoRun: "always", takeover: false, speak: false, notify: false, bringToFront: false } });
   modules.intent.set({ action: "Write the first paragraph", why: "Send a draft", cue: "After tea", rev: 3, updatedAt: Date.now() });
   modules.tasks.set([{ id: "draft", title: "Draft", done: false, createdAt: Date.now(), etaMin: 7 }]);
   modules.timer.set({ ...modules.INITIAL_TIMER, segId: "first", frozen: true, frozenTotal: 60_000 });
@@ -600,4 +601,6 @@ it.each(["single", "group"])("Gemini 1: toggling a %s task is purposeful device 
   vi.setSystemTime(before + 24 * 60 * 60_000 + 1);
   modules.checkReturnActivity(true);
   expect(modules.returnActivity.get().pendingGap).toBeNull();
+});
+
 });

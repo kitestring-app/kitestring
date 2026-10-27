@@ -1,3 +1,4 @@
+import { timerAnnouncement, timerDisplay } from "./timerDisplay";
 import { intent, updateIntent } from "./intent";
 import { longerOfferAvailable, recordTinyFinish, settleLongerOffer, tinyStarts } from "./tinyStarts";
 import { answerParkingReview, chooseReviewBoundary, closeParkingReview, deferParkingReview, openParkingReview, parkingReview, queueParkingReview, registerReviewOwner, type ReviewBoundary } from "./parkingReview";
@@ -123,6 +124,7 @@ registerReviewOwner(() => canWriteClockStore("parkingReview"), choice => {
 });
 let armedKey = "";
 let speechTimer: (() => void) | null = null;
+let pageAnnouncement: SpeechSynthesisUtterance | null = null;
 const ticks = createTickScheduler((style, volume, delay, duration) => playTimerTick(style, volume, delay, duration));
 const selectedSound = (segment: E.Segment) => segment === "focus" ? T().focusDoneSound : T().breakOverSound;
 function syncTicks() {
@@ -141,37 +143,38 @@ function cancelSpeech() {
   try { if (typeof window !== "undefined") window.desktop?.cancelSpeech?.(); } catch { /* Still cancel page speech. */ }
   speechTimer?.();
   speechTimer = null;
+  pageAnnouncement = null;
   try { if (typeof window !== "undefined") window.speechSynthesis?.cancel(); } catch { /* Already stopped. */ }
 }
 
 const autoRunEnabled = () => T().mode === "countdown" ? T().countdownRepeat : T().autoRun !== "off" && T().mode !== "stopwatch";
 
-function spokenMinutes(ms: number) {
-  const small = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
-  const tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
-  const minutes = ms / 60_000;
-  const text = !Number.isInteger(minutes) || minutes >= 100 ? String(minutes) : minutes < 20 ? small[minutes]! :
-    tens[Math.floor(minutes / 10)] + (minutes % 10 ? `-${small[minutes % 10]}` : "");
-  return `${text[0]!.toUpperCase()}${text.slice(1)} ${minutes === 1 ? "minute" : "minutes"}.`;
-}
-
-function announce(kind: AlertKind, line?: string) {
+function announce(kind: AlertKind, announcement?: DesktopAnnouncement) {
   if (window.desktop?.armAlarm) return; // The native alarm owns chime, speech and their ordering.
   cancelSpeech();
+  const line = timerAnnouncement(T().display, announcement).line;
   if (!T().speak || (!line && companionKnownUp()) || typeof window === "undefined" || !("speechSynthesis" in window)) return;
   const delay = (kind === "focus-done" ? T().focusDoneSound : T().breakOverSound) === "none" ? 0 : kind === "focus-done" ? 6500 : 5500;
   speechTimer = boundaryAlert.defer(() => {
     speechTimer = null;
-    if (!T().speak || (!line && companionKnownUp())) return;
+    const line = timerAnnouncement(T().display, announcement).line;
+    // This queued boundary belongs to the page, even if its timed line becomes generic.
+    if (!T().speak) return;
     const task = currentTask(tasks.get())?.title.trim();
     const reminder = kind === "focus-done" ? "Focus session done. Time for a break." : "Break is over. Time to focus.";
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(line ?? reminder + (task ? ` Next up: ${task}` : "")));
+    const utterance = new SpeechSynthesisUtterance(line ?? reminder + (task ? ` Next up: ${task}` : ""));
+    if (line) {
+      pageAnnouncement = utterance;
+      utterance.onend = utterance.onerror = () => { if (pageAnnouncement === utterance) pageAnnouncement = null; };
+    }
+    window.speechSynthesis.speak(utterance);
   }, delay);
 }
 
 /** Arm or disarm the end chime + end watch to match the timer. Idempotent; only the leader tab plays audio. */
 function syncAudio() {
   if (!canWriteClockStore("timer") || !recoveryHydrated) return;
+  if (pageAnnouncement && timerAnnouncement(T().display).genericSpeech) cancelSpeech();
   syncTicks();
   const s = timer.get();
   const total = totalMs(s);
@@ -207,10 +210,10 @@ function syncAudio() {
   }
   const { alertVolume, speak } = T();
   const alertSound = selectedSound(s.segment);
-  // Auto-run announcements depend on the next segment; the page speaks those itself.
-  const companionSpeak = speak && !autoRunEnabled();
+  // The page owns timed auto-run speech; Hidden uses the companion's generic reminder.
+  const companionSpeak = speak && (!autoRunEnabled() || T().display === "hidden");
   reminderStatus.set("");
-  const key = `${s.segId}:${s.startedAt}:${total}:${alertSound}:${alertVolume}:${speak}:${T().autoRun}:${T().countdownRepeat}:${T().notify}:${T().bringToFront}:${T().longEvery}:${JSON.stringify(T().lengths)}`;
+  const key = `${s.segId}:${s.startedAt}:${total}:${T().display}:${alertSound}:${alertVolume}:${speak}:${T().autoRun}:${T().countdownRepeat}:${T().notify}:${T().bringToFront}:${T().longEvery}:${JSON.stringify(T().lengths)}`;
   if (key === armedKey) return;
   armedKey = key;
   const leftMs = E.remaining(s, total, Date.now());
@@ -221,11 +224,11 @@ function syncAudio() {
     cancelEnd(); // Main owns the deadline; a silent Web Audio clock would waste an audio process.
     const next = E.advance(s, T(), s.startedAt + total - s.elapsedBefore, true);
     const cycleComplete = T().autoRun === "cycle" && E.endsCycle(T().mode, s.segment);
-    const announcement: DesktopAnnouncement | undefined = cycleComplete ? { phase: "cycle" } :
-      next.startedAt !== null ? { phase: next.segment === "focus" ? "focus" : "break", minutes: liveTotal(next)! / 60_000 } : undefined;
+    const speech = timerAnnouncement(T().display, cycleComplete ? { phase: "cycle" } :
+      next.startedAt !== null ? { phase: next.segment === "focus" ? "focus" : "break", minutes: liveTotal(next)! / 60_000 } : undefined);
     void window.desktop.armAlarm({ at: s.startedAt + total - s.elapsedBefore, kind, alertSound,
       volume: alertSound === "none" ? 0 : alertVolume, speak, notify: T().notify, attention: T().bringToFront,
-      ...(announcement ? { announcement } : {}) }).then(ok => {
+      genericSpeech: speech.genericSpeech, ...(speech.native ? { announcement: speech.native } : {}) }).then(ok => {
         if (armedKey !== key) return;
         if (!ok) throw new Error("Native reminder unavailable");
       }).catch(() => {
@@ -440,9 +443,8 @@ const localTimerActions = {
       alertTypingGuard.begin();
       window.desktop.attention(kind);
     }
-    const line = cycleComplete ? "Cycle complete. Nice work." : next.startedAt !== null ?
-      `${next.segment === "focus" ? "Focus" : "Break"} started. ${spokenMinutes(totalMs()!)}` : undefined;
-    announce(kind, line);
+    announce(kind, cycleComplete ? { phase: "cycle" } : next.startedAt !== null ?
+      { phase: next.segment === "focus" ? "focus" : "break", minutes: totalMs()! / 60_000 } : undefined);
   },
   /** Only the notice's buttons can answer it; a stale notice cannot change a newer segment. */
   answerTransition(action: "start" | "skip" | "snooze" | "dismiss" | "pause") {
@@ -673,7 +675,7 @@ export function useTimerView() {
     elapsed: el,
     remaining: left,
     progress: total ? Math.min(1, el / total) : (el % STOPWATCH_LAP) / STOPWATCH_LAP,
-    display: total === null ? E.fmt(el, false, true) : E.fmt(left),
+    ...timerDisplay(t.display, el, left, total),
     mode: t.mode,
     longEvery: t.longEvery,
     hardLocked: hardModeLocked(s),

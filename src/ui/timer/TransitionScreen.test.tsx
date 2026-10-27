@@ -6,7 +6,7 @@ vi.mock("react", async (original) => ({
   useSyncExternalStore: (_subscribe: unknown, get: () => unknown) => get(),
 }));
 const view = vi.hoisted(() => ({
-  state: { segId: "next", segment: "short" }, running: false, total: 300_000, display: "04:59", elapsed: 1000,
+  hiddenTime: false, state: { segId: "next", segment: "short" }, running: false, total: 300_000, display: "04:59", elapsed: 1000,
 }));
 vi.mock("../../state/timer", () => ({ useTimerView: () => view, timerActions: { answerTransition: vi.fn() } }));
 
@@ -40,7 +40,7 @@ beforeEach(async () => {
   focusPick.set(null);
   transitionStore.dismiss();
   view.state = { segId: "next", segment: "short" };
-  view.running = false;
+  view.hiddenTime = false; view.running = false;
   view.display = "04:59";
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -157,4 +157,12 @@ it.each([false, true])("describes a countdown completion without break actions (
   expect(html).toContain(repeat ? "Countdown restarted" : "Session complete");
   expectReminder(html, repeat ? "Click anywhere to close" : "Click to start again · Esc for later");
   for (const label of ["Start break", "Skip break", "+5 min break", "Break started"]) expect(html).not.toContain(label);
+});
+
+it.each([false, true])("hidden time keeps reminder actions and removes durations with auto-start %s", running => {
+  view.hiddenTime = true; view.running = running; show();
+  const html = renderToStaticMarkup(<TransitionScreen />);
+  expect(html).not.toContain('class="transition-length"');
+  expect(html).toContain("Short break");
+  expectReminder(html, running ? "Click anywhere to close" : "Click to start your break · Esc for later");
 });

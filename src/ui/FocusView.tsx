@@ -6,13 +6,14 @@ import { StartSupport } from "./StartSupport";
 import { EndSessionControl, HardModeBadge } from "./timer/EndSession";
 import { useState, useSyncExternalStore } from "react";
 import { useStore } from "../lib/store";
-import { settings, type TallyId } from "../state/settings";
+import { settings, settingsUpdate, type TallyId } from "../state/settings";
 import { currentTask, tasks } from "../state/tasks";
 import { reminderStatus, timerActions, useTimerView } from "../state/timer";
 import { SEGMENT_LABEL, type Segment } from "../state/timerEngine";
 import { Icon } from "./icons";
 import { FACES } from "./timer/faces";
 import { openPip } from "./pip";
+import "./FocusView.css";
 import { QuoteLine } from "./QuoteLine";
 
 import { parked } from "../state/parked";
@@ -61,7 +62,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
 
   const segs: Segment[] =
     t.mode === "5217" ? ["focus", "short"] : t.mode === "animedoro" ? ["focus", "long"] : t.mode === "pomodoro" ? ["focus", "short", "long"] : ["focus"];
-  const label = (s: Segment) => (t.mode === "animedoro" && s === "long" ? "Watch time" : t.mode === "stopwatch" && s === "focus" ? "Stopwatch" : t.mode === "countdown" && s === "focus" ? "Countdown" : SEGMENT_LABEL[s]);
+  const label = (s: Segment) => (v.hiddenTime ? SEGMENT_LABEL[s] : t.mode === "animedoro" && s === "long" ? "Watch time" : t.mode === "stopwatch" && s === "focus" ? "Stopwatch" : t.mode === "countdown" && s === "focus" ? "Countdown" : SEGMENT_LABEL[s]);
   const n = t.mode === "pomodoro" ? t.longEvery : 0;
   const filled = v.state.segment === "focus" ? v.state.round : v.state.segment === "long" ? n : v.state.round;
 
@@ -93,13 +94,19 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
           return glyph ? <span key={i} className={`tally ${on ? "on" : ""}`}><Glyph name={glyph} size={18} filled={on && (glyph === "star" || glyph === "apple")} /></span> : <span key={i} className={`dot ${on ? "on" : ""}`} />;
         })}
       </div>
-      <Face display={v.display} progress={v.progress} showNumbers={t.showNumbers} big />
+      <div className="time-display">
+        {v.hiddenTime ? <p className="timer-hidden">{label(v.state.segment)} · {v.running ? "Running" : "Paused"}</p> :
+          <Face display={v.display} progress={v.progress} showNumbers={t.showNumbers} big />}
+        <button type="button" className="time-display-toggle" aria-label={`Time display: ${{ remaining: "Remaining", elapsed: "Elapsed", hidden: "Hidden" }[t.display]}. Switch to ${{ remaining: "Elapsed", elapsed: "Hidden", hidden: "Remaining" }[t.display]}`}
+          title="Tap the timer to switch Remaining, Elapsed or Hidden"
+          onClick={() => settingsUpdate("timer", { display: t.display === "remaining" ? "elapsed" : t.display === "elapsed" ? "hidden" : "remaining" })} />
+      </div>
       {/* screen readers: one calm update per minute instead of every second */}
-      <span className="sr-only" role="timer" aria-live="polite">
-        {label(v.state.segment)}: {v.total === null ? `${Math.floor(v.elapsed / 60_000)} minutes elapsed` : `${Math.ceil(v.remaining / 60_000)} minutes left`}
+      <span className="sr-only" role="timer" aria-live={v.hiddenTime ? "off" : "polite"}>
+        {label(v.state.segment)}: {v.timeDescription}
         {v.running ? "" : ", paused"}
       </span>
-      {t.progressBar && v.total !== null && (
+      {!v.hiddenTime && t.progressBar && v.total !== null && (
         <div className="progress-line" aria-hidden="true">
           <i style={{ width: `${v.progress * 100}%` }} />
         </div>

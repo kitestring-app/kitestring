@@ -3,9 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MiniTimer } from "./MiniTimer";
 import { ExtrasTab } from "./settings/ExtrasTab";
-const view = vi.hoisted(() => ({ mode: "pomodoro", state: { segment: "focus" }, display: "25:00", running: false, progress: 0, elapsed: 0, hardLocked: false }));
+const view = vi.hoisted(() => ({ hiddenTime: false, timeDescription: "25 minutes left", mode: "pomodoro", state: { segment: "focus" }, display: "25:00", running: false, progress: 0, elapsed: 0, hardLocked: false }));
 const hooks = vi.hoisted(() => ({ state: [] as unknown[], refs: [] as { current: unknown }[], effects: [] as (() => unknown)[], stateIndex: 0, refIndex: 0 }));
-beforeEach(() => { view.state.segment = "focus"; view.running = false; view.elapsed = view.progress = 0; view.display = "25:00"; view.hardLocked = false; hooks.state = []; hooks.refs = []; hooks.effects = []; hooks.stateIndex = hooks.refIndex = 0; });
+beforeEach(() => { view.hiddenTime = false; view.state.segment = "focus"; view.running = false; view.elapsed = view.progress = 0; view.display = "25:00"; view.hardLocked = false; hooks.state = []; hooks.refs = []; hooks.effects = []; hooks.stateIndex = hooks.refIndex = 0; });
 vi.mock("react", async original => ({ ...await original<typeof import("react")>(),
   useSyncExternalStore: (_subscribe: unknown, get: () => unknown) => get(),
   useEffect: (effect: () => unknown) => { hooks.effects.push(effect); },
@@ -104,4 +104,23 @@ it.each(["short", "long"])("displays a new %s break as Ready and an elapsed brea
     expect(tree.filter(el => el.type === "button").map(el => el.props["aria-label"])).toEqual(native ? ["Close floating timer", "25:00. Open Kitestring", "Mute audio"] : []);
     expect(renderToStaticMarkup(<MiniTimer native={native} />)).toContain(`aria-label="Floating timer, ${segment === "short" ? "Short break" : "Long break"}"`);
   }
+});
+
+it.each([false, true])("hidden floating time removes digits and progress, preserves native opener %s", native => {
+  const showMain = vi.fn(); vi.stubGlobal("window", { desktop: { showMain } });
+  view.hiddenTime = true; view.running = true;
+  const html = renderToStaticMarkup(<MiniTimer native={native} />);
+  expect(html).not.toMatch(/class="mini-(digits|progress)"/);
+  expect(html).toContain("Running"); expect(html).toContain('role="timer" aria-live="off">Focus: 25 minutes left');
+  if (native) {
+    hooks.stateIndex = hooks.refIndex = 0;
+    elements(MiniTimer({ native })).find(el => el.props["aria-label"] === "Running. Open Kitestring")!.props.onClick!();
+    expect(showMain).toHaveBeenCalledOnce();
+  }
+});
+
+it.each([true, false])("names the Hidden native opener with its running status %s", running => {
+  view.hiddenTime = true; view.running = running;
+  const status = running ? "Running" : "Paused";
+  expect(renderToStaticMarkup(<MiniTimer native />)).toContain(`aria-label="${status}. Open Kitestring"`);
 });

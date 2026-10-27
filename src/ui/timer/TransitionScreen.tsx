@@ -93,8 +93,8 @@ function TransitionPrompt({ notice }: { notice: TransitionNotice }) {
         <span className="transition-state"><span className="transition-state-icon"><Glyph name={stateGlyph} size={15} /></span>{stateLabel}{locked && <Glyph name="lock" size={12} title="Hard mode" />}{sound.ringing && !sound.silenced && <span className="transition-ringing" aria-label="Alarm sounding"><Glyph name="bell" size={13} /></span>}</span>
         <h1 id="transition-title" tabIndex={-1}>{title}</h1>
         {!breakTime && task && <p className="transition-task">{task}</p>}
-        {breakTime && !cycleComplete && <p className="transition-length">{autoStarted ? v.display : `${Math.round((breakTotal ?? 0) / 60_000)} min`}</p>}
-        {!breakTime && autoStarted && !cycleComplete && <p className="transition-length">{v.total === null ? fmt(v.elapsed) : v.display}</p>}
+        {!v.hiddenTime && breakTime && !cycleComplete && <p className="transition-length">{autoStarted ? v.display : `${Math.round((breakTotal ?? 0) / 60_000)} min`}</p>}
+        {!v.hiddenTime && !breakTime && autoStarted && !cycleComplete && <p className="transition-length">{v.total === null ? fmt(v.elapsed) : v.display}</p>}
         <p id="transition-instruction">{instruction}</p>
         <p className="transition-hint" id="transition-hint">{hint}</p>
         {/* Invisible on screen (the reminder stays buttonless), reachable by Tab and screen readers. */}

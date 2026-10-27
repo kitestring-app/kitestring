@@ -22,13 +22,13 @@ function announcement(input) {
 }
 function createNativeServices({ Notification, powerSaveBlocker, execFile, stateFile, alertsDir, attention, showWindow, onRing = () => {}, onStopSound = () => {},
   now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout, readJSON: read = readJSON, writeJSON: write = writeJSON }) {
-  let pending = null, timer = null, power = null, sound = null, speech = null, version = 0;
+  let pending = null, timer = null, power = null, sound = null, speech = null, activeAnnouncement = null, version = 0;
   let suspended = false;
   let failed = false;
   let lastFired = null;
   let notification = null;
   function save() { write(stateFile, pending); }
-  function cancelSpeech() { version++; speech?.kill(); speech = null; }
+  function cancelSpeech() { version++; speech?.kill(); speech = null; activeAnnouncement = null; }
   function stopSound() { sound?.kill(); sound = null; }
   function notificationStatus() { return { supported: !!Notification?.isSupported(), failed }; }
   const delivered = [];
@@ -52,12 +52,14 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
     const line = announcement(input);
     if (!line) return false;
     cancelSpeech();
+    activeAnnouncement = input;
     try { const child = execFile('/usr/bin/say', [line], () => { if (speech === child) speech = null; }); speech = child; } catch { return false; }
     return true;
   }
   function ring(a) {
     cancelSpeech(); stopSound();
     onRing(a);
+    activeAnnouncement = a;
     const token = version;
     const afterSound = () => { if (token !== version) return; sound = null; if (a.speak) speak(a); };
     if (a.notify !== false) notify(a.kind);
@@ -94,15 +96,22 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
   function valid(input) {
     return input && typeof input === 'object' && Number.isFinite(input.at) && input.at >= now() - 60000 && input.at <= now() + 48 * 3600000 &&
       kinds.includes(input.kind) && validAlertSound(input.alertSound) && Number.isFinite(input.volume) && typeof input.speak === 'boolean' &&
+      (input.genericSpeech === undefined || typeof input.genericSpeech === 'boolean') &&
       (input.notify === undefined || typeof input.notify === 'boolean') && (input.attention === undefined || typeof input.attention === 'boolean') &&
       (input.announcement === undefined || (input.announcement && ['focus', 'break', 'cycle'].includes(input.announcement.phase) && announcement(input) !== null));
   }
   function arm(input) {
     if (!valid(input)) return false;
     if (pending && pending.at <= now()) check();
+    // The shared display policy also applies to the boundary already waiting behind its chime.
+    if (input.genericSpeech && activeAnnouncement?.announcement) {
+      delete activeAnnouncement.announcement;
+      if (speech) speak(activeAnnouncement);
+    }
     if (`${input.kind}:${input.at}` === lastFired) return true;
     pending = { at: input.at, kind: input.kind, alertSound: input.alertSound ?? 'signature', volume: Math.min(1, Math.max(0, input.volume)), speak: input.speak,
       notify: input.notify !== false, attention: input.attention !== false,
+      ...(input.genericSpeech !== undefined ? { genericSpeech: input.genericSpeech } : {}),
       ...(input.announcement ? { announcement: { phase: input.announcement.phase, ...(input.announcement.minutes !== undefined ? { minutes: input.announcement.minutes } : {}) } } : {}) };
     save(); check(); return true;
   }

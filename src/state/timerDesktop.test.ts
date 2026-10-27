@@ -207,3 +207,19 @@ it("does not create tick audio in a native floating follower", async () => {
   timerActions.start(); vi.advanceTimersByTime(5000);
   expect((await import("../audio/core")).playTimerTick).not.toHaveBeenCalled();
 });
+
+it.each(["pomodoro", "countdown"] as const)("Hidden %s arms generic native speech and refreshes on display changes", async mode => {
+  const { timerActions, settings, totalMs } = await setup();
+  settings.set({ ...settings.get(), timer: { ...settings.get().timer, mode, countdownRepeat: true } });
+  timerActions.start();
+  const at = armAlarm.mock.calls.at(-1)![0].at;
+  expect(armAlarm.mock.calls.at(-1)![0].announcement).toBeDefined();
+  settings.set({ ...settings.get(), timer: { ...settings.get().timer, display: "hidden" } });
+  expect(armAlarm).toHaveBeenLastCalledWith(expect.objectContaining({ at, speak: true, genericSpeech: true }));
+  expect(armAlarm.mock.calls.at(-1)![0].announcement).toBeUndefined();
+  vi.advanceTimersByTime(totalMs()!);
+  expect(armAlarm.mock.calls.at(-1)![0].announcement).toBeUndefined();
+  expect(speech).not.toHaveBeenCalled();
+  settings.set({ ...settings.get(), timer: { ...settings.get().timer, display: "elapsed" } });
+  expect(armAlarm.mock.calls.at(-1)![0].announcement).toBeDefined();
+});

@@ -244,6 +244,26 @@ test('auto-run announcements use only phase and duration, after audio', () => {
   }
 });
 
+test('a shared generic-speech policy refreshes the active chime without losing its reminder or next alarm', () => {
+  const h = harness();
+  fire(h, { announcement: { phase: 'break', minutes: 5 } });
+  const next = alarm(h, { kind: 'break-over', genericSpeech: true });
+  h.services.arm(next);
+  assert.equal(speech(h).length, 0);
+  sounds(h)[0].done(null);
+  assert.deepEqual(speech(h)[0].args, ['Focus session done. Time for a break.']);
+  assert.equal(h.services.snapshot().pending.at, next.at);
+});
+
+test('a shared generic-speech policy replaces an already speaking duration', () => {
+  const h = harness();
+  fire(h, { volume: 0, announcement: { phase: 'break', minutes: 5 } });
+  const active = speech(h)[0];
+  h.services.arm(alarm(h, { kind: 'break-over', genericSpeech: true }));
+  assert.equal(active.killed, true);
+  assert.deepEqual(speech(h).at(-1).args, ['Focus session done. Time for a break.']);
+});
+
 test('cancelling speech prevents a delayed chime callback from starting it', () => {
   const h = harness();
   fire(h);
