@@ -305,6 +305,23 @@ export function focusTrend(days: Map<string, DayTotals>, from: number, to: numbe
   return out;
 }
 
+/** Records split credited focus at local midnights; saved chunks and legacy totals stay intact. */
+export function focusRecordDays(data: StatsData, now = Date.now()): Map<string, DayTotals> {
+  const days = new Map<string, DayTotals>();
+  const get = (key: string) => days.get(key) ?? (days.set(key, empty()), days.get(key)!);
+  for (const chunk of data.chunks) {
+    if (chunk.kind !== "focus") continue;
+    const end = Math.min(chunk.start + chunk.ms, now);
+    for (let at = chunk.start; at < end;) {
+      const next = Math.min(addDays(startOfDay(at), 1), end);
+      get(dayKey(at)).focusMs += next - at;
+      at = next;
+    }
+  }
+  for (const task of data.tasksDone) if (task.at <= now) get(dayKey(task.at)).tasks += 1;
+  return days;
+}
+
 /** Plain records reuse the calendar buckets; task completions keep their recorded local day. */
 export function focusRecords(days: Map<string, DayTotals>, from: number, to: number, weekly: boolean) {
   return focusTrend(days, from, to, weekly).map(bucket => {

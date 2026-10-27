@@ -71,6 +71,11 @@ export interface Settings {
   lastTab: SettingsTab;
 }
 
+/** Hiding Stats temporarily treats a Stats default as Recently opened without rewriting it. */
+export function effectiveDefaultTab(extras: Pick<Settings["extras"], "hideStats" | "defaultTab">): SettingsTab | "recent" {
+  return extras.hideStats && extras.defaultTab === "stats" ? "recent" : extras.defaultTab;
+}
+
 export const LOOKS = ["classic", "glass", "sketch", "companion", "sunrise"] as const;
 export type LookId = (typeof LOOKS)[number];
 export const WALLPAPER_FX = ["none", "frost", "frosted-blur", "fog-window", "rain-glass", "grain", "vignette", "dim"] as const;

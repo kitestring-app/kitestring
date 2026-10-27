@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useStore } from "../../lib/store";
-import { settings, settingsUpdate, type SettingsTab } from "../../state/settings";
+import { effectiveDefaultTab, settings, settingsUpdate, type SettingsTab } from "../../state/settings";
 import { Icon } from "../icons";
 import { TimerTab } from "./TimerTab";
 import { ClockTab } from "./ClockTab";
@@ -25,7 +25,8 @@ const TABS: { id: SettingsTab; label: string; icon: keyof typeof Icon; view: () 
 
 export function SettingsDrawer({ onClose, initialTab }: { onClose: () => void; initialTab?: SettingsTab }) {
   const s = useStore(settings);
-  const [tab, setTab] = useState<SettingsTab>(initialTab ?? (s.extras.defaultTab === "recent" ? s.lastTab : s.extras.defaultTab));
+  const defaultTab = effectiveDefaultTab(s.extras);
+  const [tab, setTab] = useState<SettingsTab>(initialTab ?? (defaultTab === "recent" ? s.lastTab : defaultTab));
   const tabs = TABS.filter(t => !s.extras.hideStats || t.id !== "stats");
   const current = tabs.find(t => t.id === tab) ?? TABS.find(t => t.id === "timer")!;
   const View = current.view;

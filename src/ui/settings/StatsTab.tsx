@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "../../lib/store";
-import { focusRecords, formatStatsDuration, stats, statsOverview } from "../../state/stats";
+import { focusRecordDays, focusRecords, formatStatsDuration, stats, statsOverview } from "../../state/stats";
 import type { Range } from "../../state/stats";
 import { SessionLog } from "../stats/SessionLog";
 import "./StatsTab.css";
@@ -28,8 +28,9 @@ export function StatsTab() {
     return () => { window.clearInterval(timer); unsubscribe(); document.removeEventListener("visibilitychange", refresh); };
   }, []);
   const view = useMemo(() => statsOverview(data, range, clock), [data, range, clock]);
-  const records = useMemo(() => focusRecords(view.days, view.from, clock, weekly).reverse(), [view, clock, weekly]);
-  const hasData = view.totals.focusMs > 0 || view.totals.tasks > 0;
+  const days = useMemo(() => focusRecordDays(data, clock), [data, clock]);
+  const records = useMemo(() => focusRecords(days, view.from, clock, weekly).reverse(), [days, view.from, clock, weekly]);
+  const hasData = records.some(record => record.focusMs > 0 || record.tasks > 0);
   return (
     <section className="focus-stats" aria-labelledby="focus-stats-title" onKeyDown={e => {
       if (e.key === " " && (e.target as HTMLElement).closest("button, summary")) e.stopPropagation();
