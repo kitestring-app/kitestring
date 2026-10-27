@@ -9,6 +9,8 @@ const shots = resolve(process.env.TITLEBAR_SHOTS_DIR || '.agents/jobs/73-evidenc
 const looks = ['classic', 'glass', 'sketch', 'companion', 'sunrise'];
 const c = new Chrome();
 const results = [];
+const startup = [];
+const overlays = [];
 let server;
 const ev = source => c.evaluate(source);
 async function settle() {
@@ -36,29 +38,74 @@ try {
     Math.random = () => .42;
     const mode = new URLSearchParams(location.search).get('native');
     if (mode) {
-      let full = mode === 'fullscreen';
+      let full = false;
+      window.__fullscreenAnswered = false;
       let listener;
       window.__nativeFullscreen = value => { full=value; listener?.(value); };
       window.desktop = {
         platform: mode === 'linux' ? 'linux' : 'darwin', mini: mode === 'mini',
-        getFullScreen: () => mode === 'race' ? new Promise(resolve => requestAnimationFrame(() => { window.__nativeFullscreen(true); resolve(false); })) : Promise.resolve(full),
+        getFullScreen: mode === 'missing' ? undefined : () => new Promise((resolve, reject) => {
+          window.__resolveFullscreen = value => { window.__fullscreenAnswered = true; resolve(value); };
+          window.__rejectFullscreen = error => { window.__fullscreenAnswered = true; reject(error); };
+        }),
         onFullScreenChange: callback => { listener=callback; return () => { listener=undefined; }; },
         floatTimer: async () => { window.__floatRequested=true; return true; },
         toggleFullScreen: async () => { window.__nativeFullscreen(!full); return full; },
       };
     }
+    // Observe the first React commit, before any deferred bridge answer can arrive.
+    const firstFrame = new MutationObserver(() => {
+      if (!document.querySelector('.app')) return;
+      firstFrame.disconnect();
+      requestAnimationFrame(() => {
+        window.__firstFrame = {
+          inset: document.documentElement.classList.contains('mac-titlebar'),
+          drag: !!document.querySelector('.native-titlebar'),
+          unanswered: !window.__fullscreenAnswered,
+        };
+      });
+    });
+    firstFrame.observe(document, {childList:true,subtree:true});
     addEventListener('DOMContentLoaded', () => {
       const s=document.createElement('style');
       s.textContent='*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'; document.head.append(s);
     });
   ` });
-  for (const mode of baseline ? ['web'] : ['web', 'mac', 'fullscreen', 'linux', 'mini', 'race']) {
+  for (const mode of baseline ? ['web'] : ['web', 'mac', 'fullscreen', 'linux', 'mini', 'race', 'race-windowed', 'null', 'rejected', 'pending', 'missing']) {
     await c.send('Page.navigate', { url: 'about:blank' });
     await c.waitFor("location.href === 'about:blank'");
     await c.send('Storage.clearDataForOrigin', { origin: c.origin, storageTypes: 'all' });
     await c.send('Page.navigate', { url: c.origin + (mode === 'web' ? '' : `/?native=${mode}`) });
     await c.waitFor("document.querySelector('.center') && document.readyState === 'complete'");
     await ev(`Promise.all([import('/src/state/settings.ts'),import('/src/state/timer.ts')]).then(async ([s,t])=>{ await s.calmFoundationReady; await t.timerHydrationReady; })`);
+    if (!baseline) {
+      await c.waitFor('window.__firstFrame');
+      const first = await ev('window.__firstFrame');
+      const native = !['web', 'linux', 'mini'].includes(mode);
+      assert.equal(first.inset, native, `${mode} first frame inset before bridge answer`);
+      assert.equal(first.drag, native, `${mode} first frame drag strip before bridge answer`);
+      if (native && mode !== 'missing') {
+        assert.equal(first.unanswered, true, `${mode} first frame precedes bridge answer`);
+        await c.waitFor('window.__resolveFullscreen');
+        assert.equal(await ev('window.__fullscreenAnswered'), false, `${mode} bridge read is pending`);
+      }
+      if (mode === 'race' || mode === 'race-windowed') {
+        await ev('window.__nativeFullscreen(true)');
+        await c.waitFor("!document.documentElement.classList.contains('mac-titlebar')");
+        if (mode === 'race-windowed') {
+          await ev('window.__nativeFullscreen(false)');
+          await c.waitFor("document.documentElement.classList.contains('mac-titlebar')");
+        }
+        await ev(`window.__resolveFullscreen(${mode === 'race-windowed'})`);
+      } else if (mode === 'rejected') await ev("window.__rejectFullscreen(new Error('Bridge unavailable'))");
+      else if (native && !['pending', 'missing'].includes(mode)) {
+        await ev(`window.__resolveFullscreen(${mode === 'fullscreen' ? 'true' : mode === 'null' ? 'null' : 'false'})`);
+      }
+      await settle();
+      const expected = native && !['fullscreen', 'race'].includes(mode);
+      assert.equal(await ev("document.documentElement.classList.contains('mac-titlebar')"), expected, `${mode} inset after bridge result or newest event`);
+      startup.push({mode,first,inset:expected});
+    }
     for (const [width,height] of [[720,540],[1280,820]]) {
       await c.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
       for (const look of looks) for (const dash of ['home','focus','ambient']) {
@@ -77,7 +124,7 @@ try {
             center.scrollTop=0;
             return {inset:root.classList.contains('mac-titlebar'),drag:drag?rect(drag):null,region:drag?getComputedStyle(drag).webkitAppRegion:null,bad,unreachable,overlap:cr.top<top.bottom-.5||cr.bottom>bottom.top+.5,pageScroll:root.scrollHeight>innerHeight||root.scrollWidth>innerWidth,noDrag:controls.every(e=>getComputedStyle(e).webkitAppRegion==='no-drag')};
           })()`);
-          const mac = mode === 'mac';
+          const mac = !['web', 'fullscreen', 'linux', 'mini', 'race'].includes(mode);
           assert.equal(layout.inset, mac, `${mode} inset`);
           if (mac) {
             assert.deepEqual(layout.drag, {left:0,right:width,top:0,bottom:28,width,height:28});
@@ -101,7 +148,21 @@ try {
           assert.equal(await ev(`getComputedStyle(document.querySelector('.settings-close')).webkitAppRegion`),'no-drag');
           assert.equal(await ev(`[...document.querySelectorAll('.drawer button')].filter(b=>b.getBoundingClientRect().height).every(b=>b.getBoundingClientRect().top>=28)`),true);
           assert.equal(await ev(`document.elementFromPoint(120,10).classList.contains('native-titlebar')`),true);
+          const regions = {settings: await ev('getComputedStyle(document.elementFromPoint(640,10)).webkitAppRegion')};
           await click('.settings-close'); await c.waitFor("!document.querySelector('.drawer')");
+          await click('[data-panel="tasks"]'); await c.waitFor("document.querySelector('.tasks-panel')");
+          regions.tasks = await ev('getComputedStyle(document.elementFromPoint(640,10)).webkitAppRegion');
+          await click('.tasks-close'); await c.waitFor("!document.querySelector('.tasks-panel')");
+          await ev(`import('/src/ui/timer/TransitionStore.tsx').then(n=>n.transitionStore.show({segId:${JSON.stringify(`${look}-${width}-${dash}`)},ended:'focus',at:Date.now(),nextSegId:'next',breakSegment:'short',breakRound:1,snoozes:0,autoStarted:true}))`);
+          await c.waitFor("document.querySelector('.transition-screen[open]')");
+          regions.transition = await ev('getComputedStyle(document.elementFromPoint(640,10)).webkitAppRegion');
+          overlays.push({width,height,look,dash,...regions});
+          assert.deepEqual(regions, {settings:'no-drag',tasks:'no-drag',transition:'no-drag'}, 'overlay regions at (640,10)');
+          await ev('new Promise(resolve=>setTimeout(resolve,450))');
+          await c.send('Input.dispatchMouseEvent', {type:'mousePressed',x:640,y:10,button:'left',clickCount:1});
+          await c.send('Input.dispatchMouseEvent', {type:'mouseReleased',x:640,y:10,button:'left',clickCount:1});
+          await c.waitFor("!document.querySelector('.transition-screen')");
+          assert.equal(await ev("getComputedStyle(document.querySelector('.native-titlebar')).webkitAppRegion"), 'drag', 'drag restored after overlays close');
           if(dash==='focus') {
             await ev(`import('/src/state/intent.ts').then(i=>i.updateIntent({action:'A long action '.repeat(35),why:'Keep going',cue:'After tea '.repeat(45),reward:'A short walk'}))`);
             await ev(`import('/src/state/settings.ts').then(s=>s.settingsUpdate('timer',{interruptionPrompt:false,takeover:false,speak:false,notify:false,autoRun:'off',alertSound:'none'}))`);
@@ -123,5 +184,7 @@ try {
   }
   c.assertHealthy();
   await writeFile(`${shots}/geometry.json`,JSON.stringify(results,null,2)+'\n');
+  await writeFile(`${shots}/startup.json`,JSON.stringify(startup,null,2)+'\n');
+  await writeFile(`${shots}/overlays.json`,JSON.stringify(overlays,null,2)+'\n');
   console.log(`PASS: ${baseline?'web baseline captured':results.length+' titlebar layout cases; native fullscreen, hit targets and scroll reachability'}`);
 } finally { await c.close(); await server?.close(); }

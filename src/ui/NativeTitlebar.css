@@ -6,6 +6,9 @@
 }
 .mac-titlebar .app { padding-top: 28px; }
 .mac-titlebar .drawer { top: 28px; }
-.mac-titlebar :is(button, a, input, textarea, select, [role="button"], [contenteditable="true"]) {
+/* Dialogs and sheets must accept clicks even across the native drag strip.
+   The drawer and dock panels leave the strip exposed, so disable it while open. */
+.mac-titlebar:has(dialog[open], [role="dialog"], .drawer, .panel:not(.alarm-toast):not([hidden])) .native-titlebar,
+.mac-titlebar :is(dialog, [role="dialog"], .drawer, .panel, button, a, input, textarea, select, [role="button"], [contenteditable="true"]) {
   -webkit-app-region: no-drag;
 }

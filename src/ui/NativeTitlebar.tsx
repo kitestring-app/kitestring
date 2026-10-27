@@ -5,7 +5,8 @@ import "./NativeTitlebar.css";
 export function NativeTitlebar() {
   const desktop = typeof window === "undefined" ? undefined : window.desktop;
   const mac = desktop?.platform === "darwin" && !desktop.mini;
-  const [windowed, setWindowed] = useState(false);
+  // Reserve native chrome from the first paint until fullscreen is known.
+  const [windowed, setWindowed] = useState(mac);
   useEffect(() => {
     if (!mac) return;
     let live = true, changed = false;
