@@ -35,8 +35,10 @@ attention opt-in; it does not add a new system Focus integration.
    then hide or minimize Kitestring. Type continuously in the other app across
    the deadline. Expect a panel on **both** displays without switching Spaces;
    typing must stay in the original app and must not answer the alert.
-3. Click Take a break, then repeat for break end and Continue. Verify each starts
+3. Click Continue at focus end, then repeat at break end. Verify each starts
    the expected segment once; with auto-run on it must not pause the segment.
+   In single-session Countdown with takeover on, Continue starts another focus
+   session. The mode-neutral label does not promise a break.
    Verify Stop, Dismiss and Open on each display, including Hard mode refusal.
    Open must focus the dashboard on the clicked display and dismiss all panels.
 4. Repeat with one monitor, dashboard already in native full screen, desktop apps

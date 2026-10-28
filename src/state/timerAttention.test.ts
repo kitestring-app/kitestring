@@ -13,17 +13,25 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-async function boundary(takeover = false, autoRun: "off" | "always" = "off") {
+async function boundary(takeover = false, autoRun: "off" | "always" = "off", mode: "pomodoro" | "countdown" = "pomodoro") {
   const t = await import("./timer"), s = await import("./settings"), p = await import("../lib/store");
   await s.calmFoundationReady; await p.flushReadyStores();
   vi.useFakeTimers();
-  s.settingsUpdate("timer", { hardMode: false, takeover, autoRun, bringToFront: true, notify: false, speak: false, focusDoneSound: "none", breakOverSound: "none" });
+  s.settingsUpdate("timer", { mode, countdownRepeat: false, hardMode: false, takeover, autoRun, bringToFront: true, notify: false, speak: false, focusDoneSound: "none", breakOverSound: "none" });
   t.timerActions.start();
-  vi.setSystemTime(Date.now() + 25 * 60_000);
+  vi.setSystemTime(Date.now() + t.totalMs()!);
   t.timerActions.complete(t.timer.get().segId);
   return t;
 }
 const command = (segId: string, choice = "continue") => ({ action: "answerAttention", segId, choice }) as DesktopTimerCommand;
+
+it("Continue restarts single-session Countdown focus when takeover is on", async () => {
+  const t = await boundary(true, "off", "countdown");
+  expect(t.timer.get()).toMatchObject({ segment: "focus", startedAt: null });
+  expect(await t.runTimerCommand(command(t.timer.get().segId), "pointer")).toEqual({ ok: true });
+  expect(t.timer.get().segment).toBe("focus");
+  expect(t.timer.get().startedAt).not.toBeNull();
+});
 
 it.each([false, true])("Take a break starts the break with takeover=%s", async takeover => {
   const t = await boundary(takeover), segId = t.timer.get().segId;

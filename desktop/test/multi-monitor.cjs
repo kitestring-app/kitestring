@@ -259,7 +259,7 @@ test('the static page labels the boundary and exposes pointer actions only', () 
       window: { banner: { open: action => actions.push(action) } },
     });
     assert.equal(buttons.label.textContent, kind === 'focus-done' ? 'Focus complete' : 'Break over');
-    assert.equal(buttons.continue.textContent, kind === 'focus-done' ? 'Take a break' : 'Continue');
+    assert.equal(buttons.continue.textContent, 'Continue');
     for (const id of ['continue', 'stop', 'open', 'dismiss']) buttons[id].click();
     assert.deepEqual(actions, ['continue', 'stop', 'open', 'dismiss']);
   }
@@ -276,4 +276,20 @@ test('banner readiness survives native occlusion after its first paint and show 
   assert.equal(banners.snapshot()[0].visible, false);
   banners.stop();
   assert.deepEqual(banners.snapshot(), []);
+});
+
+test('banner action copy never promises a break when Continue may restart single-session focus', () => {
+  for (const kind of ['focus-done', 'break-over']) {
+    const actions = [];
+    const elements = Object.fromEntries(['label', 'continue', 'stop', 'open', 'dismiss'].map(id => [id, {
+      textContent: '', listeners: {}, addEventListener(name, listener) { this.listeners[name] = listener; },
+    }]));
+    vm.runInNewContext(readFileSync(path.join(__dirname, '../../public/banner.js'), 'utf8'), {
+      URLSearchParams, location: { search: `?kind=${kind}` },
+      document: { getElementById: id => elements[id] }, window: { banner: { open: action => actions.push(action) } },
+    });
+    assert.equal(elements.continue.textContent, 'Continue');
+    elements.continue.listeners.click();
+    assert.deepEqual(actions, ['continue']);
+  }
 });
