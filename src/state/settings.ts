@@ -30,6 +30,8 @@ export interface Settings {
     showNumbers: boolean;
     progressBar: boolean;
     alertSound: "signature" | "bell" | "chime" | "digital" | "wood" | "none";
+    startChime: boolean;
+    startChimeSound: "bubble" | "music-box" | "bell";
     focusDoneSound: Settings["timer"]["alertSound"];
     breakOverSound: Settings["timer"]["alertSound"];
     ticking: "off" | "breaks" | "focus" | "both";
@@ -97,6 +99,8 @@ export const DEFAULT_SETTINGS: Settings = {
     showNumbers: true,
     progressBar: false,
     alertSound: "signature",
+    startChime: true,
+    startChimeSound: "bubble",
     focusDoneSound: "signature",
     breakOverSound: "signature",
     ticking: "off",
@@ -176,6 +180,8 @@ export function sanitizeSettings(stored: unknown): Settings {
       alertSound: oneOf(t.alertSound, ["signature", "bell", "chime", "digital", "wood", "none"] as const, d.timer.alertSound),
       focusDoneSound: oneOf(rawTimer?.focusDoneSound ?? oldSound, sounds, oldSound),
       breakOverSound: oneOf(rawTimer?.breakOverSound ?? oldSound, sounds, oldSound),
+      startChime: typeof t.startChime === "boolean" ? t.startChime : true,
+      startChimeSound: oneOf(t.startChimeSound, ["bubble", "music-box", "bell"] as const, "bubble"),
       ticking: oneOf(t.ticking, ["off", "breaks", "focus", "both"] as const, "off"),
       tickStyle: oneOf(t.tickStyle, ["soft", "wood", "digital"] as const, "soft"),
       tickVolume: clamp(t.tickVolume, 0, 1, d.timer.tickVolume),

@@ -1,7 +1,8 @@
+import { playStartChime } from "../../audio/startChime";
 import { chooseReviewBoundary, parkingReview, type ReviewBoundary } from "../../state/parkingReview";
 import { useTimerView } from "../../state/timer";
 import { useStore } from "../../lib/store";
-import { applySupportPreset, presetState, quietTimer, supportPresetLabel, settings, settingsUpdate, type Settings, type TimerMode, type TimerStyle, type TallyId } from "../../state/settings";
+import { applySupportPreset, localPreferences, presetState, quietTimer, supportPresetLabel, settings, settingsUpdate, type Settings, type TimerMode, type TimerStyle, type TallyId } from "../../state/settings";
 import { previewChime, type AlertSound } from "../../audio/core";
 import { FlipPalettePicker } from "../timer/FlipPalettePicker";
 import { FACES } from "../timer/faces";
@@ -49,6 +50,7 @@ const MODES: { id: TimerMode; label: string; help: string }[] = [
 ];
 
 export function TimerTab() {
+  const muted = useStore(localPreferences, s => s.muted);
   const reminderGlass = useStore(settings, (st) => st.appearance.reminderGlass);
   const v = useTimerView();
   const nativeAlarms = typeof window !== "undefined" && !!window.desktop?.armAlarm;
@@ -189,6 +191,15 @@ export function TimerTab() {
 
       <div className="card">
         <h3>Alerts</h3>
+        <Toggle title="Start chime" help="A soft cue when you start a focus block. Uses alert volume and stays silent when both end sounds are None." checked={t.startChime} onChange={startChime => set({ startChime })} />
+        <div className="row" style={{ marginBottom: 10 }}>
+          <label className="row"><span>Start sound</span>
+            <select className="input" aria-label="Start sound" value={t.startChimeSound} onChange={e => set({ startChimeSound: e.target.value as Settings["timer"]["startChimeSound"] })}>
+              <option value="bubble">Bubble</option><option value="music-box">Music box</option><option value="bell">Soft bell</option>
+            </select>
+          </label>
+          <button className="btn small" aria-label="Preview start chime" disabled={!t.startChime || t.alertVolume <= 0 || muted || (t.focusDoneSound === "none" && t.breakOverSound === "none")} onClick={() => { if (!localPreferences.get().muted) playStartChime(t.startChimeSound, t.alertVolume); }}>Preview</button>
+        </div>
         <p className="help">Each pack has different focus and break sounds.</p>
         {([['focusDoneSound', 'Focus done', 'focus-done'], ['breakOverSound', 'Break over', 'break-over']] as const).map(([field, label, kind]) => (
           <div className="row" key={field} style={{ marginBottom: 10 }}>
