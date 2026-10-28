@@ -161,3 +161,35 @@ it.each([
   expect((await import('./parkingReview')).parkingReview.get().review?.itemIds).toEqual([id]);
   m.answerRecovery(m.recoveryCommand(), 'dismiss'); expect(m.recoveryOffer()).toBe('parking-review');
 });
+
+
+it.each(["local", "owner request"])("deleting an away log row through %s preserves its focus row and supports Undo", async route => {
+  const tasks = await import("./tasks"); tasks.addTask({ title: "Focus task" });
+  m.timerActions.start(); vi.advanceTimersByTime(30_000); hide(); await reopen(60_000);
+  const original = m.stats.get().chunks;
+  const row = m.sessionLog(m.stats.get(), [], { taskId: "" }).flatMap(day => day.sessions).find(item => item.kind === "break")!;
+  expect(row).toBeDefined();
+  const undo = route === "local" ? m.deleteSession(row)! : await m.requestDeleteSession(row);
+  expect(m.stats.get().chunks).toEqual(original.filter(chunk => chunk.kind === "focus"));
+  expect(focus()).toBe(30_000);
+  undo(); await Promise.resolve();
+  expect(m.stats.get().chunks).toEqual(original);
+});
+
+it.each(["web", "Mac"])("a %s task selection before wake reconciliation owns the resumed focus time", async platform => {
+  if (platform === "web") window.desktop = undefined;
+  const tasks = await import("./tasks");
+  const first = tasks.addTask({ title: "First" }), next = tasks.addTask({ title: "Next" });
+  m.timerActions.start(); vi.advanceTimersByTime(30_000); const at = Date.now();
+  if (platform === "Mac") Object.assign(window.desktop!, {
+    consumeSuspensionAt: vi.fn().mockReturnValueOnce({ at, suspended: false }).mockReturnValue(null),
+  });
+  vi.setSystemTime(at + 60_000); tasks.focusPick.set(next);
+  expect(m.timer.get()).toMatchObject({ startedAt: null, taskId: next, context: { taskId: next, taskTitle: "Next" } });
+  expect(m.answerRecovery(m.recoveryCommand(), "resume")).toBe(true);
+  vi.advanceTimersByTime(5_000); m.timerActions.pause();
+  const chunks = m.stats.get().chunks.filter(chunk => chunk.kind === "focus");
+  expect(chunks.filter(chunk => chunk.taskId === first).reduce((n, chunk) => n + chunk.ms, 0)).toBe(30_000);
+  expect(chunks.filter(chunk => chunk.taskId === next).reduce((n, chunk) => n + chunk.ms, 0)).toBe(5_000);
+  expect(away()[0]?.ms).toBe(60_000);
+});

@@ -366,8 +366,9 @@ const currentTaskId = () => currentTask(tasks.get())?.id;
 
 /** Switching tasks mid-session: bank the time so far to the old task, then attribute the rest to the new one. */
 function onTaskChange(explicit = false) {
-  if (recoverBeforeMutation()) return;
+  const recovering = recoverBeforeMutation();
   const s = timer.get();
+  if (recovering && s.startedAt !== null) return;
   if (!canWriteClockStore("timer") || s.segment !== "focus" || !s.context) return;
   const id = currentTaskId();
   if (id === s.taskId || (!explicit && s.taskId && !tasks.get().some(task => task.id === s.taskId))) return;
