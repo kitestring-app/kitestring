@@ -565,6 +565,19 @@ export async function acquireTimerOwnership() {
   await refreshClockStores();
   leader = true;
   settleOwnedSnapshot();
+  // BroadcastChannel does not echo to its sender. A command sent before the
+  // lock arrived must now run here, through the same guards as follower input.
+  for (const [id, waiting] of commandWaiters) {
+    clearTimeout(waiting.timeout);
+    commandWaiters.delete(id);
+    try {
+      const result = await executeSharedTimerRequest(waiting.request);
+      await flushReadyStores();
+      waiting.resolve(result);
+    } catch {
+      waiting.reject(new Error("Could not save the timer change. Try again."));
+    }
+  }
 }
 /** Useful for renderer teardown: a handoff cannot overtake the owner's queued accounting commit. */
 export async function releaseTimerOwnership() {
@@ -812,7 +825,7 @@ type SharedTimerRequest =
   | { kind: "undo"; token: string };
 interface SharedTimerResult { ok: boolean; undoToken?: string; refusal?: TimerRefusal; keptTimer?: boolean }
 const commands = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("custom-pomodoro");
-const commandWaiters = new Map<string, { resolve: (result: SharedTimerResult) => void; reject: (error: Error) => void; timeout: ReturnType<typeof setTimeout> }>();
+const commandWaiters = new Map<string, { request: SharedTimerRequest; resolve: (result: SharedTimerResult) => void; reject: (error: Error) => void; timeout: ReturnType<typeof setTimeout> }>();
 const reviewUndos = new Map<string, () => void>();
 async function executeSharedTimerRequest(request: SharedTimerRequest): Promise<SharedTimerResult> {
   if (!canWriteClockStore("timer", true)) return { ok: false };
@@ -898,14 +911,16 @@ commands?.addEventListener("message", (event: MessageEvent) => {
 });
 async function sharedTimerRequest(request: SharedTimerRequest): Promise<SharedTimerResult> {
   await timerHydrationReady;
+  if (canWriteClockStore("timer")) return executeSharedTimerRequest(request);
   if (promotionReady) await promotionReady;
   if (canWriteClockStore("timer")) return executeSharedTimerRequest(request);
   if (!commands) throw new Error("Could not reach the active timer. Try again.");
   await flushReadyStores();
+  if (canWriteClockStore("timer")) return executeSharedTimerRequest(request);
   const id = uid();
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => { commandWaiters.delete(id); reject(new Error("Could not reach the active timer. Try again.")); }, 5000);
-    commandWaiters.set(id, { resolve, reject, timeout });
+    commandWaiters.set(id, { request, resolve, reject, timeout });
     commands.postMessage({ type: "timer-request", id, request });
   });
 }

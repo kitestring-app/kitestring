@@ -166,3 +166,45 @@ it.each(["accepted", "dismissed"] as const)("Grok 3: a follower's %s offer is ap
   expect(m.timer.get()).toBe(current);
   expect(tiny.tinyStarts.get().offer).toBe("available");
 });
+
+it.each(["web", "desktop"])("runs an early %s Start when this renderer wins the pending leader lock", async surface => {
+  const result = surface === "desktop" ? m.runTimerCommand("toggle") : m.timerActions.toggle();
+  await vi.waitFor(() => expect(commandChannel().postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "timer-request" })));
+  const request = commandChannel().postMessage.mock.calls.find(([message]) => message.type === "timer-request")![0];
+  expect(m.timer.get().startedAt).toBeNull();
+  void grant();
+  await vi.waitFor(() => expect(m.timer.get().startedAt).not.toBeNull());
+  const startedAt = m.timer.get().startedAt;
+  if (surface === "desktop") expect(await result).toEqual({ ok: true });
+  // A late delivery cannot toggle the newly started block back to paused.
+  commandChannel().receive(request);
+  await m.flushReadyStores();
+  expect(m.timer.get().startedAt).toBe(startedAt);
+});
+
+it("does not lose Start when ownership arrives during the follower flush", async () => {
+  const store = await import("../lib/store");
+  const flush = store.flushReadyStores;
+  let release!: () => void, entered!: () => void;
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  const flushing = new Promise<void>(resolve => { entered = resolve; });
+  vi.spyOn(store, "flushReadyStores").mockImplementationOnce(async () => { await flush(); entered(); await blocked; });
+  const result = m.runTimerCommand("toggle");
+  await flushing;
+  void grant();
+  await vi.waitFor(() => expect(m.canWriteClockStore("timer")).toBe(true));
+  release();
+  await vi.waitFor(() => expect(m.timer.get().startedAt).not.toBeNull());
+  expect(await result).toEqual({ ok: true });
+});
+
+it("finishes promotion when early native Start continues a saved completion boundary", async () => {
+  Channel.all[0].receive({ type: "write", entries: [["timer", { ...m.timer.get(),
+    boundary: { id: "saved-boundary", ended: "focus", at: Date.now(), missed: true } }]] });
+  const result = m.runTimerCommand("toggle");
+  await vi.waitFor(() => expect(commandChannel().postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "timer-request" })));
+  void grant();
+  await vi.waitFor(() => expect(m.timer.get().boundary).toBeUndefined());
+  expect(await result).toEqual({ ok: true });
+  expect(m.timer.get().startedAt).not.toBeNull();
+});
