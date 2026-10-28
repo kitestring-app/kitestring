@@ -148,3 +148,16 @@ it('a queued deadline callback after pagehide cannot settle departure before the
   expect(m.clockPresence.get()).toMatchObject({ departedAt: expect.any(Number) }); expect(away()).toHaveLength(0);
   await reopen(60_000); expect(focus()).toBe(30_000); expect(away()[0]?.ms).toBe(3_660_000);
 });
+
+it.each([
+  ['pomodoro', 'focus', 'block'], ['countdown', 'focus', 'session'], ['pomodoro', 'long', 'session'],
+] as const)('completed %s %s recovery preserves the configured %s parking review', async (mode, segment, boundary) => {
+  const p = await import('./parkingReview'), thoughts = await import('./parked');
+  m.settingsUpdate('timer', { mode }); p.chooseReviewBoundary(boundary);
+  thoughts.parkThought('Read later', { segment: 'focus' }); const id = thoughts.parked.get()[0].id;
+  m.timerActions.goTo(segment); m.timerActions.start(); const start = Date.now(), mono = performance.now();
+  vi.spyOn(performance, 'now').mockImplementation(() => mono + Date.now() - start);
+  vi.setSystemTime(start + m.totalMs()!); await m.prepareTimerDeparture(); await reopen(3_600_000);
+  expect((await import('./parkingReview')).parkingReview.get().review?.itemIds).toEqual([id]);
+  m.answerRecovery(m.recoveryCommand(), 'dismiss'); expect(m.recoveryOffer()).toBe('parking-review');
+});

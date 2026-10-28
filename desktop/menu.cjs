@@ -52,7 +52,7 @@ function validTimerState(value) {
 }
 function timerMenuItems(state, command, appMenu = false, globalStopRegistered = false) {
   const breakTime = state.segment !== 'focus';
-  const item = (label, value, accelerator) => ({ label, ...(appMenu && accelerator ? { accelerator } : {}), ...(state.hardLocked && value !== 'endSession' ? { label: `🔒 ${label}`, enabled: false, toolTip: 'Hard mode: this block runs to the end' } : {}), click: (_item, _window, event) => command(value, menuOrigin(event)) });
+  const item = (label, value, accelerator) => ({ label, ...(appMenu && accelerator ? { accelerator } : {}), ...(state.hardLocked && value !== 'endSession' && !(value === 'toggle' && !state.running) ? { label: `🔒 ${label}`, enabled: false, toolTip: 'Hard mode: this block runs to the end' } : {}), click: (_item, _window, event) => command(value, menuOrigin(event)) });
   const stop = { label: 'Stop Sound', ...(appMenu ? { accelerator: 'Command+.' } : {}), click: (_item, _window, event) => command('stopSound', menuOrigin(event)), enabled: state.ringing,
     ...(appMenu ? { registerAccelerator: !globalStopRegistered } : {}) };
   return [

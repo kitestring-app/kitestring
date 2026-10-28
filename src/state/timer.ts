@@ -166,7 +166,13 @@ function settleAway(at: number, now = Date.now()) {
     next = E.advance(paused, { ...T(), autoRun: "off", countdownRepeat: false }, cutoff, finished);
     next.context = { ...context, spentMs: focusMs };
     next.boundary = { id: s.segId, ended: s.segment, at: now, missed: true };
-    if (finished && s.segment === "focus" && s.tinyStart) recordTinyFinish(s.segId);
+    if (finished) {
+      if (s.segment === "focus") {
+        if (s.tinyStart) recordTinyFinish(s.segId);
+        queueParkingReview("block", s.segId);
+      }
+      if (E.endsSession(T().mode, s.segment) || E.endsCycle(T().mode, s.segment)) queueParkingReview("session", s.segId);
+    }
   } else {
     next = { ...E.markCredited(paused, cutoff, s.segment === "focus" ? total : null), context,
       hardLocked: s.hardLocked || T().hardMode, reentry: E.newSegId() };

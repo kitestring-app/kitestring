@@ -63,6 +63,19 @@ describe.skipIf(process.env.RETURN_BROWSER !== "1")("away records in disposable 
     await chrome.waitFor("!document.querySelector('.start-support')");
     expect(await chrome.evaluate("import('/src/state/timer.ts').then(t=>t.requestTinyBlock(t.recoveryCommand(),1))")).toBe(false);
     expect(await chrome.evaluate("import('/src/state/timer.ts').then(t=>t.timer.get().frozenTotal)")).toBe(1_500_000);
+    expect(await chrome.evaluate("document.querySelector('[aria-label=\"Start · Space\"]').disabled")).toBe(false);
+    await chrome.evaluate("document.querySelector('[aria-label=\"Start · Space\"]').click()");
+    expect(await chrome.evaluate("import('/src/state/timer.ts').then(t=>t.timer.get().startedAt)")).toBe(fixed);
+    await chrome.evaluate(`(async () => {
+      const t=await import('/src/state/timer.ts'),s=await import('/src/state/settings.ts');
+      t.timer.set({...t.timer.get(),startedAt:null}); s.settings.set({...s.settings.get(),dash:'ambient'});
+    })()`);
+    await chrome.waitFor("document.querySelector('[aria-label=\"Start ambient timer\"]')");
+    expect(await chrome.evaluate("document.querySelector('[aria-label=\"Start ambient timer\"]').disabled")).toBe(false);
+    await chrome.evaluate("document.querySelector('[aria-label=\"Start ambient timer\"]').click()");
+    expect(await chrome.evaluate("import('/src/state/timer.ts').then(t=>t.timer.get().startedAt)")).toBe(fixed);
+    // End only this disposable fixture so the next platform starts idle.
+    await chrome.evaluate("import('/src/state/timer.ts').then(t=>t.timer.set({...t.timer.get(),startedAt:null,hardLocked:false}))");
     chrome.assertHealthy();
   }, 30_000);
 });

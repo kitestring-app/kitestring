@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
-const { applicationMenu, registerMenuCommands, validMenuCommand, MENU_COMMANDS } = require('../menu.cjs');
+const { timerMenuItems, applicationMenu, registerMenuCommands, validMenuCommand, MENU_COMMANDS } = require('../menu.cjs');
 function fixture() {
   const calls = [];
   const controls = {
@@ -90,4 +90,11 @@ test('unstarted breaks say Start Break, and focused Stop Sound keeps Cmd+. betwe
     assert.equal(items[0].registerAccelerator, true);
     assert.equal(items[0].enabled, true);
   }
+});
+
+test('paused Hard recovery offers Resume in native menus while retaining skip and stop locks', () => {
+  const items = timerMenuItems({ segment: 'focus', running: false, hasProgress: true, ringing: false, sounding: false, hardLocked: true }, () => {});
+  const resume = items.find(item => item.label.includes('Resume'));
+  assert.notEqual(resume.enabled, false);
+  for (const item of items.filter(item => /Skip|Stop/.test(item.label))) assert.equal(item.enabled, false);
 });
