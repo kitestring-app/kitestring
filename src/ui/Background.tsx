@@ -48,6 +48,10 @@ export function isLightTheme(ref: ThemeRef): boolean {
   return false; // custom photos keep light text over the scrim
 }
 
+function isPhotoTheme(ref: ThemeRef): boolean {
+  return ref.kind === "custom" || (ref.kind === "library" && !!findTheme(ref.id)?.background.includes("url("));
+}
+
 type Rgb = [number, number, number]; // gamma-encoded sRGB, 0..1, the space CSS blends layers in
 const rgbOf = (hex: string): Rgb | null => {
   const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
@@ -72,9 +76,9 @@ const LIGHT_INK = "#f4f2fb", DARK_INK = "#1a1726", PAPER_LIGHT_INK = "#fbf7ef";
  * Fog window and vignette leave the centre clear, so they change nothing. Photos have no measured
  * brightness, so without frost or dim they go by their light tag.
  */
-export function wallpaperIsLight(ref: ThemeRef, fx: WallpaperFx, strength: number, look: LookId = "classic"): boolean {
+export function wallpaperIsLight(ref: ThemeRef, fx: WallpaperFx, strength: number, look: LookId = "classic", lookBackdrop = true): boolean {
   const k = Math.min(1, Math.max(0, strength));
-  const paper = PAPER[look];
+  const paper = lookBackdrop ? PAPER[look] : undefined;
   const tints = fx === "frost" || fx === "dim";
   if (!paper && ref.kind !== "color" && !tints) return isLightTheme(ref);
   let base: Rgb = paper ? rgbOf(paper.paper)! : ref.kind === "color" ? (rgbOf(ref.id) ?? [0, 0, 0]) : isLightTheme(ref) ? [0.85, 0.85, 0.85] : [0.2, 0.2, 0.2];
@@ -82,7 +86,7 @@ export function wallpaperIsLight(ref: ThemeRef, fx: WallpaperFx, strength: numbe
   if (fx === "dim") base = mix(base, 0, 0.1 + 0.55 * k);
   if (paper) return contrast(rgbOf(paper.ink)!, base) >= contrast(rgbOf(PAPER_LIGHT_INK)!, base);
   // Dark ink brings the light scrim (8% white at the centre); light ink keeps the look's dark one.
-  const darkScrim = look === "glass" ? 0.04 : 0.12;
+  const darkScrim = !lookBackdrop && PAPER_LOOKS.includes(look) && isPhotoTheme(ref) ? 0.7 : look === "glass" ? 0.04 : 0.12;
   return contrast(rgbOf(DARK_INK)!, mix(base, 1, 0.08)) >= contrast(rgbOf(LIGHT_INK)!, mix(base, 0, darkScrim));
 }
 
@@ -92,18 +96,22 @@ export function Background() {
   const ref = s.themes[s.dash];
   const url = useCustomUrl(ref);
   const { style, cls } = themeStyle(ref, url, s.extras.disableAnimated);
-  const { look, fx, fxStrength } = s.appearance;
+  const { look, fx, fxStrength, lookBackdrop } = s.appearance;
   const paper = PAPER_LOOKS.includes(look);
-  // Paper looks draw their own backdrop; dimming it can call for light ink instead of their usual dark one.
-  const darkInk = wallpaperIsLight(ref, fx, fxStrength, look);
-  const light = !paper && darkInk, paperDimmed = paper && !darkInk;
+  const builtin = paper && lookBackdrop;
+  const photo = paper && !lookBackdrop && isPhotoTheme(ref);
+  // Pick ink from the backdrop actually drawn, including wallpaper overrides.
+  const darkInk = wallpaperIsLight(ref, fx, fxStrength, look, lookBackdrop);
+  const light = !builtin && darkInk, paperDimmed = paper && !darkInk;
   useEffect(() => {
+    document.documentElement.classList.toggle("paper-wallpaper", paper && !lookBackdrop);
+    document.documentElement.classList.toggle("paper-photo", photo);
     document.documentElement.classList.toggle("theme-light", light);
     document.documentElement.classList.toggle("paper-dimmed", paperDimmed);
-  }, [light, paperDimmed]);
+  }, [light, paperDimmed, paper, lookBackdrop, photo]);
   return (
     <>
-      {paper ? <LookBackdrop look={look} /> : <div key={`${ref.kind}:${ref.id}`} className={`bg ${cls}`} style={style} />}
+      {builtin ? <LookBackdrop look={look} /> : <div key={`${ref.kind}:${ref.id}`} className={`bg ${cls}`} style={style} />}
       <WallpaperEffect fx={fx} strength={fxStrength} />
       <div className="scrim" />
     </>

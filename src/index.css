@@ -156,8 +156,12 @@ html.theme-light[data-look="glass"] {
 html:not(.theme-light)[data-look="glass"] :is(.iconbtn, .seg button, .credits) { text-shadow: 0 1px 2px rgb(0 0 0 / 35%); }
 html:not(.theme-light)[data-look="glass"] .iconbtn svg { filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 40%)); }
 
+/* Wallpaper overrides use the same protective scrim while paper cards keep their own ink. */
+html.paper-wallpaper[data-look] { --scrim: radial-gradient(ellipse at center, rgb(0 0 0 / 12%), rgb(0 0 0 / 42%)); }
+/* Unmeasured photos can contain white pixels. Keep pale paper ink readable even there. */
+html.paper-wallpaper.paper-photo:not(.theme-light) { --scrim: radial-gradient(ellipse at center, rgb(0 0 0 / 70%), rgb(0 0 0 / 80%)); }
 /* Light photo wallpapers in the dark looks flip the text straight over the wallpaper to ink. */
-html.theme-light:is(:not([data-look]), [data-look="classic"], [data-look="glass"]) {
+html.theme-light:is(:not([data-look]), [data-look="classic"], [data-look="glass"], .paper-wallpaper) {
   --on-bg: #1a1726; --on-bg-dim: rgb(26 23 38 / 74%); --on-bg-faint: rgb(26 23 38 / 56%); --on-bg-shadow: none; --dot-shadow: 0;
   --scrim: radial-gradient(ellipse at center, rgb(255 255 255 / 8%), rgb(255 255 255 / 18%));
 }

@@ -88,3 +88,14 @@ it("retains independent event choices on reload and import", () => {
   expect(migrated.timer).toMatchObject({ focusDoneSound: "none", breakOverSound: "digital", ticking: "both", tickStyle: "wood", tickVolume: 0.4 });
   expect(sanitizeSettings(migrated)).toEqual(migrated);
 });
+
+describe("look backdrop preference", () => {
+  it("keeps old settings on their look backdrop and rejects non-booleans", () => {
+    for (const lookBackdrop of [undefined, null, 0, "false", {}, []]) expect(sanitizeSettings({ appearance: { lookBackdrop } }).appearance.lookBackdrop).toBe(true);
+  });
+  it.each([true, false])("round-trips %s through settings and backups", lookBackdrop => {
+    const clean = sanitizeSettings({ appearance: { lookBackdrop } });
+    const { data } = parseBackup(JSON.stringify({ format: BACKUP_FORMAT, version: 2, sections: ["settings"], data: { settings: clean } }));
+    expect(sanitizeSettings(data.settings).appearance.lookBackdrop).toBe(lookBackdrop);
+  });
+});
