@@ -86,6 +86,43 @@ describe.skipIf(process.env.BREATHING_BROWSER !== "1")("optional breathing insid
       await click('Close');
     }
   },60000);
+  it("preserves a running guide across timer Pause and Resume without replacing recovery cards",async()=>{
+    for(const look of ['classic','glass','sketch','companion','sunrise']) {
+      await page(`s.settingsUpdate('appearance',{look:'${look}'});s.settingsUpdate('timer',{display:'remaining'});t.timerActions.goTo('long');t.timerActions.start();`);
+      await chrome.waitFor("document.querySelector('.breathing-entry')");
+      await click('Breathe'); await click('Cyclic sigh'); await click('Slower'); await click('Breathe for 5 minutes');
+      await chrome.waitFor("document.querySelector('.breathing-active')");
+      await chrome.evaluate("document.querySelector('[aria-label=\"Pause · Space\"]').click()");
+      await chrome.waitFor("document.querySelector('[aria-label=\"Session context\"]')");
+      expect(await chrome.evaluate("document.querySelectorAll('.recovery-card').length")).toBe(1);
+      await click('Resume');
+      await chrome.waitFor("document.querySelector('[aria-label=\"Pause · Space\"]')");
+      expect(await chrome.evaluate("document.querySelector('.breathing-active')?.textContent")).toMatch(/(?:2\d\d|300) seconds left/);
+      expect(await chrome.evaluate("document.activeElement.matches('.breathing-host')")).toBe(true);
+      await chrome.waitFor("import('/src/lib/alertTypingGuard.ts').then(g=>!g.alertTypingGuard.pending())");
+      await chrome.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+      await chrome.send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+      await chrome.waitFor("document.activeElement.matches('.breathing-entry')"); await click('Breathe');
+      expect(await chrome.evaluate("document.querySelector('[aria-label=\"Breathing pattern\"] [aria-pressed=true]').textContent")).toBe('Cyclic sigh');
+      expect(await chrome.evaluate("document.querySelector('[aria-label=\"Breathing pace\"] [aria-pressed=true]').textContent")).toBe('Slower');
+      await page(`t.timerActions.stop();`);
+    }
+  },30000);
+  it("keeps active guidance visible and reachable when Clear mode hides other chrome",async()=>{
+    for(const look of ['classic','glass','sketch','companion','sunrise']) {
+      await page(`s.settingsUpdate('appearance',{look:'${look}'});s.settingsUpdate('extras',{clearMode:true,reduceMotion:false});t.timerActions.goTo('short');t.timerActions.start();`);
+      await chrome.waitFor("document.querySelector('.breathing-entry')");
+      await click('Breathe'); await click('Breathe for 1 minute');
+      await chrome.waitFor("document.querySelector('.breathing-active')");
+      await chrome.evaluate("document.documentElement.dispatchEvent(new PointerEvent('pointerleave',{pointerType:'mouse'}))");
+      await chrome.waitFor("document.querySelector('.app.idle')");
+      await chrome.evaluate("new Promise(r=>setTimeout(r,600))");
+      expect(await chrome.evaluate("(()=>{const s=getComputedStyle(document.querySelector('.breathing-card'));return {opacity:s.opacity,pointerEvents:s.pointerEvents}})()")).toEqual({opacity:'1',pointerEvents:'auto'});
+      await chrome.evaluate("document.querySelector('.breathing-card [aria-label=Close]').click()");
+      await page(`t.timerActions.stop();`);
+    }
+    await page(`s.settingsUpdate('extras',{clearMode:false});t.timerActions.goTo('focus');`);
+  },30000);
   it("leaves Start, Pause and Skip usable, closes on segment change and never resumes on navigation or reload",async()=>{
     await page(`s.settingsUpdate('timer',{display:'remaining'});s.settingsUpdate('extras',{reduceMotion:false});t.timerActions.goTo('long');`);
     await chrome.waitFor("document.querySelector('.breathing-entry')"); await click('Breathe'); await click('Breathe for 1 minute');
@@ -101,7 +138,9 @@ describe.skipIf(process.env.BREATHING_BROWSER !== "1")("optional breathing insid
     await page(`s.settingsUpdate('dash','focus');`); await chrome.waitFor("document.querySelector('.breathing-entry')");
     expect(await chrome.evaluate("!!document.querySelector('.breathing-active')")).toBe(false);
     await click('Breathe'); await click('Breathe for 1 minute');
+    await page("await (await import('/src/lib/store.ts')).flushReadyStores()");
     await chrome.send('Page.reload'); await chrome.waitFor("document.querySelector('.focus-center')");
+    await chrome.waitFor("import('/src/state/timer.ts').then(async t=>{await t.timerHydrationReady;return (await import('/src/lib/store.ts')).canWriteClockStore('timer')})");
     expect(await chrome.evaluate("!!document.querySelector('.breathing-active')")).toBe(false);
     expect(await page("return t.timer.get().startedAt")).toBe(null); chrome.assertHealthy();
   },30000);
