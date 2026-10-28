@@ -78,3 +78,7 @@ Minimal runtime deps (react, react-dom). Persistence: IndexedDB via a ~60-line w
 ## Optional breathing inside breaks (slice 3)
 - Short and long breaks offer a silent, optional 1 or 5 minute guide in the existing card slot. In/out and cyclic sigh (two short inhales, one long exhale) offer gentle or slower pacing without holds. Static guidance respects system and app reduced motion. Hidden display removes the guide countdown.
 - Start, Pause and Skip remain available. Pause preserves the guide behind higher-priority recovery content; Resume restores it. Active guidance stays visible in Clear mode. Close or Escape leaves without changing the timer, awarding anything or writing a new record. Segment changes, navigation and reload discard the guide. Copy describes the controls without efficacy claims. Shared source serves web and Mac.
+
+## Evidence page (slice 3)
+- About and footer link to a bundled, static “Why it works this way” page. Each feature has a conservative evidence-strength link, sources and population/intervention limits. None is rated strong; no app efficacy is inferred from other programs.
+- Explanations work offline from built files, without scripts, fonts or network requests. External papers are optional. System light/dark and reduced motion are respected. The Mac app opens the page in its existing app view.

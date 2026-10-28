@@ -13,6 +13,7 @@ export const SUPPORT_LINKS = [
 export function Credits() {
   return (
     <p className="credits">
+      <a href="./research.html">Why it works this way</a>
       <span className="credits-made">
         Made with <span className="credits-heart"><Glyph name="heart" size={12} filled title="love" /></span> by{" "}
         <a href="https://github.com/praxstack" target="_blank" rel="noopener noreferrer">Prax</a>

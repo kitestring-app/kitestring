@@ -3,115 +3,167 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Why these sounds</title>
-<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<meta name="color-scheme" content="dark light">
+<title>Why it works this way · Kitestring</title>
 <style>
-  :root { --bg:#14121C; --fg:#EDEAF5; --dim:#847D9F; --line:rgba(195,184,245,.14); --glass:rgba(42,38,54,.42);
-    --lavender:#C3B8F5; --rose:#F5B5D2; --mint:#A8E5C0; --sky:#A5D8F0; --butter:#F2DCA8; --coral:#F0938A;
-    --ui:"MonaspiceAr Nerd Font Propo","MonaspiceAr Nerd Font",ui-sans-serif,system-ui,sans-serif; --mono:"Maple Mono NF",ui-monospace,monospace; }
+  :root { color-scheme: dark; --bg:#14121c; --fg:#f4f2fb; --fg-dim:#c9c7d6;
+    --panel:#24212f; --line:#51495f; --accent:#c3b8f5; --radius:20px; }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:15.5px/1.65 var(--ui); }
-  .sky { position:fixed; inset:-20vmax; z-index:-1; filter:blur(80px); opacity:.45;
-    background: radial-gradient(40vmax 40vmax at 20% 10%, #5b4a98, transparent 65%), radial-gradient(40vmax 40vmax at 90% 60%, #7a4565, transparent 65%); }
-  .wrap { width:min(820px, 100% - 32px); margin:0 auto; padding:34px 0 60px; }
-  a { color:var(--lavender); text-decoration:none; border-bottom:1px solid rgba(195,184,245,.35); }
-  .back { font:13px var(--mono); border:0; color:var(--dim); }
-  h1 { font:600 30px/1.15 var(--mono); margin:14px 0 6px; }
-  .lede { color:var(--dim); margin:0 0 26px; font-size:16.5px; }
-  h2 { font:600 13px/1 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin:0 0 14px; }
-  .card { background:var(--glass); border:1px solid var(--line); border-radius:20px; padding:22px 24px; margin-bottom:16px;
-    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
-  .verdicts { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap:10px; }
-  .v { border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:rgba(20,18,28,.35); }
-  .v b { display:block; font:600 14px var(--mono); }
-  .v span { color:var(--dim); font-size:13.5px; }
-  .pill { display:inline-block; font:600 11px/1 var(--mono); padding:4px 8px; border-radius:999px; margin-bottom:6px; color:var(--bg); }
-  .good { background:var(--mint); } .some { background:var(--butter); } .weak { background:var(--coral); }
-  ul { margin:8px 0 0; padding-left:20px; } li { margin:4px 0; }
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  th, td { text-align:left; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-  th { font:600 12px var(--mono); color:var(--dim); text-transform:uppercase; letter-spacing:.08em; }
-  .scroll { overflow-x:auto; }
-  .num { font-family:var(--mono); color:var(--butter); }
-  .sources { font-size:13px; color:var(--dim); columns:2 280px; }
-  .sources li { break-inside:avoid; }
+  html { scroll-padding-top:24px; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.7 system-ui,sans-serif; }
+  main { width:min(760px, 100% - 32px); margin:auto; padding:32px 0 56px; }
+  a { color:var(--accent); text-underline-offset:4px; overflow-wrap:anywhere; }
+  a:hover { text-decoration-thickness:2px; }
+  a:focus-visible { outline:3px solid var(--accent); outline-offset:4px; border-radius:2px; }
+  h1 { font-size:clamp(1.8rem, 6vw, 2.6rem); line-height:1.2; letter-spacing:-.03em; margin:24px 0 16px; }
+  h2 { font-size:1.3rem; line-height:1.35; margin:0 0 12px; }
+  h3 { font-size:1.05rem; line-height:1.4; margin:8px 0; }
+  p { margin:8px 0 16px; }
+  .lede { font-size:1.1rem; }
+  .muted, .limit { color:var(--fg-dim); }
+  section, article { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px; margin-top:16px; }
+  .features { background:none; border:0; padding:0; margin-top:32px; }
+  .strength { font-size:.85rem; font-weight:650; }
+  .sources { margin:32px 0; }
+  .sources li { margin:16px 0; padding-left:4px; }
+  ul { padding-left:22px; }
+  :target { outline:2px solid var(--accent); outline-offset:5px; }
+  @media (prefers-color-scheme: light) {
+    :root { color-scheme:light; --bg:#f6f1e8; --fg:#2a2014; --fg-dim:#625440;
+      --panel:#fffaf3; --line:#c6b9a7; --accent:#6344bb; }
+  }
+  @media (max-width:480px) { section, article { padding:20px; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
 </style>
 </head>
 <body>
-<div class="sky" aria-hidden="true"></div>
-<div class="wrap">
-  <a class="back" href="/">← Kitestring</a>
-  <h1>Why these sounds</h1>
-  <p class="lede">Try sound or silence. Keep what works for this task. These sound choices have not been shown to treat ADHD.</p>
-
-  <section class="card">
-    <h2>The short version</h2>
-    <div class="verdicts">
-      <div class="v"><span class="pill good">small but real</span><b>Pink / white noise</b><span>White and pink noise showed a small benefit on lab tasks in mostly young people with ADHD or high symptoms. That does not establish a benefit for your work.</span></div>
-      <div class="v"><span class="pill some">promising, thin</span><b>16 Hz pulsed music</b><span>Brain.fm's own study. One borderline result (<span class="num">p = 0.048</span>), self-reported ADHD symptoms, company-funded.</span></div>
-      <div class="v"><span class="pill weak">weak</span><b>Binaural beats</b><span>Reviews are mixed. ADHD trials found no change on objective attention tests.</span></div>
-      <div class="v"><span class="pill weak">untested</span><b>Brown noise, isochronic tones</b><span>No controlled attention studies. Fine if you like them, but nothing proves them.</span></div>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Is Brain.fm legit?</h2>
-    <p>Yes, it's a real company and not a scam. But the evidence is modest and the marketing runs ahead of it.</p>
+<main>
+  <nav aria-label="Back to dashboard"><a href="./">← Kitestring</a></nav>
+  <header>
+    <h1>Why it works this way</h1>
+    <p class="lede">A clear next action, a choice of pace, and a way back when you pause.</p>
+    <p>Kitestring supports planning and focus routines. It is not a treatment or a substitute for professional care.
+      Some planning tools here draw on skills taught in adult ADHD CBT. These app features have not been shown to treat ADHD.</p>
+    <p class="muted">These are reasons for design choices, not promises about your results. The explanations and source details are bundled with the app and readable offline. Opening a paper needs internet access.</p>
+  </header>
+  <section aria-labelledby="ratings">
+    <h2 id="ratings">What the strengths mean</h2>
+    <p>The rating is for the feature in this app and its adult audience, rather than the quality of a whole research field.</p>
     <ul>
-      <li><b>Company:</b> Brain.fm, Inc., Brooklyn. The method dates to a 2005 patent (US7674224). It got a $225k US National Science Foundation small-business grant in 2017.</li>
-      <li><b>Price:</b> <span class="num">$14.99/month</span> or <span class="num">$99.99/year</span>. No free tier, just a 7-day trial that needs a card and auto-renews. Refunds are only for EU residents within 14 days if you haven't streamed.</li>
-      <li><b>Reviews:</b> Trustpilot 2.6/5, split between love and billing complaints (charged after cancelling, surprise annual charge). A mild dark pattern, not fraud.</li>
-      <li><b>The study</b> (Woods et al., 2024, <i>Communications Biology</i>): 4 experiments, 5-minute lab sessions. The ADHD-related benefit is a small, borderline effect in people who self-report symptoms, not diagnosed ADHD. The first author works at Brain.fm and holds equity, and the music was theirs. No independent replication yet.</li>
-      <li><b>What they do:</b> pulse the volume of the <span class="num">200 Hz–1 kHz</span> band of music at about <span class="num">16 Hz</span>. In their test, 16 Hz beat 8 and 32 Hz. Pulse depth made no significant difference.</li>
+      <li id="strong"><b>Strong:</b> repeated, direct evidence for the feature, audience and useful outcome. None of the features below meets this bar.</li>
+      <li id="moderate"><b>Moderate:</b> related experiments or parts of a larger program support the direction. There is still a gap between that research and this app.</li>
+      <li id="weak"><b>Weak:</b> indirect, preliminary or mixed evidence, or a much shorter version of what was studied. The feature's benefit here is not established.</li>
     </ul>
   </section>
-
-  <section class="card">
-    <h2>Free alternatives</h2>
-    <div class="scroll"><table>
-      <tr><th>Tool</th><th>What you get</th><th>Catch</th></tr>
-      <tr><td><b>This page</b></td><td>Pink, brown or white noise with the optional 16 Hz mid-band pulse</td><td>None. Runs offline on your Mac.</td></tr>
-      <tr><td><a href="https://mynoise.net/" target="_blank" rel="noopener">myNoise</a></td><td>150+ generators, 10-band sliders, hearing calibration</td><td>Free and ad-free on the web, donation-funded</td></tr>
-      <tr><td><a href="https://moodist.mvze.net/" target="_blank" rel="noopener">Moodist</a></td><td>Open source: noise, 50+ ambient sounds, presets, timer</td><td>None. No account, no ads.</td></tr>
-      <tr><td>A Soft Murmur</td><td>10 mixable sounds</td><td>The app paywalls most sounds</td></tr>
-      <tr><td>Noisli</td><td>16 sounds, timer</td><td>Free tier capped at 1.5 h/day</td></tr>
-      <tr><td>YouTube noise / lofi</td><td>Endless streams</td><td>Ads can cut in mid-focus without Premium</td></tr>
-    </table></div>
+  <section class="features" aria-labelledby="choices">
+    <h2 id="choices">The choices in the app</h2>
+    <article data-feature="action">
+      <a class="strength" href="#moderate">Moderate evidence</a>
+      <h3>One next action</h3>
+      <p>Choose one small action to start. Keep the larger task list nearby without having to plan everything first.</p>
+      <p class="limit">Solanto studied a therapist-led, multi-week program with adults diagnosed with ADHD. It included planning and organisation. It did not test an isolated next-action card. <a href="#S1">[S1]</a></p>
+    </article>
+    <article data-feature="tiny">
+      <a class="strength" href="#weak">Weak evidence</a>
+      <h3>A smaller first block</h3>
+      <p>Choose a short block or use your usual length. A tiny start is an option, not a quota.</p>
+      <p class="limit">Safren's adult skills manual teaches adjustable work chunks. It does not establish an ideal tiny-start duration or a benefit from this button. <a href="#S3">[S3]</a></p>
+    </article>
+    <article data-feature="cue">
+      <a class="strength" href="#moderate">Moderate evidence</a>
+      <h3>Your own if-then cue</h3>
+      <p>Save a situation and a possible next step, such as “After tea, open the draft.” Change or skip it when plans change.</p>
+      <p class="limit">Reviews cover cue-response plans across varied goals, and mental contrasting combined with planning. These are different interventions; a single optional field does not inherit their results. <a href="#S5">[S5]</a> <a href="#S6">[S6]</a></p>
+    </article>
+    <article data-feature="parking">
+      <a class="strength" href="#moderate">Moderate evidence</a>
+      <h3>Park a thought, then decide</h3>
+      <p>Save a distracting thought and decide what to do with it later. Review is optional, and resuming needs no explanation.</p>
+      <p class="limit">Safren's manual pairs recording distractions during an agreed work period with reviewing them afterwards. This supports the sequence, not a separate benefit from a capture box. Urgent needs need no delay. <a href="#S3">[S3]</a></p>
+    </article>
+    <article data-feature="return">
+      <a class="strength" href="#weak">Weak evidence</a>
+      <h3>Keep your next step ready</h3>
+      <p>Keep your next step ready for when you return. You can pause without writing a note.</p>
+      <p class="limit">Nonclinical interruption experiments studied preparation and ready-to-resume plans. They do not establish how quickly someone will return using this app. <a href="#S11">[S11]</a> <a href="#S13">[S13]</a></p>
+    </article>
+    <article data-feature="breaks">
+      <a class="strength" href="#moderate">Moderate evidence for recovery</a>
+      <h3>Flexible blocks and breaks</h3>
+      <p>Use work blocks and breaks that fit your day. Brief breaks may help with fatigue. Research has not established an ideal ADHD Pomodoro schedule.</p>
+      <p class="limit">A micro-break review covered varied nonclinical samples; overall performance improvement was not established. A one-day student study compared scheduled and self-regulated breaks. Neither establishes a universal 25/5 ratio. <a href="#S8">[S8]</a> <a href="#S9">[S9]</a></p>
+    </article>
+    <article data-feature="display">
+      <a class="strength" href="#weak">Weak evidence</a>
+      <h3>Remaining, elapsed or hidden time</h3>
+      <p>Choose how much time information you want to see.</p>
+      <p class="limit">An adult ADHD review found a small, varied body of time-perception research. It did not test visual timers or show which display works best. This is a user choice. <a href="#S10">[S10]</a></p>
+    </article>
+    <article data-feature="quiet">
+      <a class="strength" href="#moderate">Moderate evidence</a>
+      <h3>Quiet sessions, chosen reminders</h3>
+      <p>Start quietly and choose the reminders you want.</p>
+      <p class="limit">General attention and work experiments studied phone notifications and interruptions. They do not establish an ideal reminder dose for adults with ADHD. Fewer reminders will not suit everyone. <a href="#S14">[S14]</a> <a href="#S15">[S15]</a></p>
+    </article>
+    <article data-feature="records">
+      <a class="strength" href="#moderate">Moderate evidence</a>
+      <h3>Records you can hide</h3>
+      <p>Recorded time shows timer use. It does not measure attention. Hide stats when you prefer.</p>
+      <p class="limit">A review of randomized studies examined monitoring progress across varied goals. It does not validate a Focus Score or infer effort, mood or recovery from session minutes. <a href="#S16">[S16]</a></p>
+    </article>
+    <article data-feature="restart">
+      <a class="strength" href="#weak">Weak evidence</a>
+      <h3>Return without a penalty</h3>
+      <p>Your earlier sessions stay here when you miss a day.</p>
+      <p class="limit">Self-compassion interventions and consumer studies of displayed streaks are different from a neutral return screen. Neither establishes a clinical benefit from interface wording. Keeping history is a product choice. <a href="#S17">[S17]</a> <a href="#S18">[S18]</a></p>
+    </article>
+    <article data-feature="reward">
+      <a class="strength" href="#weak">Weak evidence</a>
+      <h3>A self-chosen reward</h3>
+      <p>Add an optional small reward to your action. Rest and breaks remain available regardless of completion.</p>
+      <p class="limit">A health-gamification review found mixed results and limits in study quality. It does not validate this reward field or establish an ADHD-specific benefit. <a href="#S19">[S19]</a></p>
+    </article>
+    <article data-feature="sound">
+      <a class="strength" href="#weak">Weak evidence for adult daily work</a>
+      <h3>Sound or silence</h3>
+      <p>Try sound or silence. Keep what works for this task. Stop a sound if it distracts you.</p>
+      <p class="limit">White and pink noise studies mostly involved young people with ADHD or high symptoms doing lab tasks. This does not establish a benefit for adult work; the review found no brown-noise studies. Music findings vary by task, including interference. A modulated-music study used nonclinical experiments and had company interests; it does not validate this sound library. Brown noise and binaural beats remain preference options without an established benefit here. <a href="#S24">[S24]</a> <a href="#S25">[S25]</a> <a href="#S26">[S26]</a></p>
+    </article>
+    <article data-feature="breathing">
+      <a class="strength" href="#weak">Weak evidence for the brief guide</a>
+      <h3>An optional breathing break</h3>
+      <p>Optional breathing practice. Stop if it feels uncomfortable. An ordinary break is always available.</p>
+      <p class="limit">A structured-breathing study used five minutes daily for a month, not one sigh. A broader review had study-quality limits; another trial found no advantage for one slow rate over a matched comparison. None establishes an instant effect from this guide. <a href="#S27">[S27]</a> <a href="#S28">[S28]</a> <a href="#S29">[S29]</a></p>
+    </article>
   </section>
-
-  <section class="card">
-    <h2>How to use it</h2>
+  <section class="sources" aria-labelledby="sources">
+    <h2 id="sources">Sources and scope</h2>
+    <p class="muted">Source IDs follow the design evidence review of 25 October 2026. These are the studies and manuals behind the choices, not trials of Kitestring. Paper links open separately and are optional.</p>
     <ul>
-      <li><b>Choose sound or silence.</b> Every sound is optional. Switch it off whenever you prefer.</li>
-      <li><b>Keep it at conversation level</b> (about 60–70 dB): the lowest level that covers the room. The studies used 70–80 dB for minutes; you'll use it for hours.</li>
-      <li><b>No lyrics during reading or writing.</b> Words in music hurt reading and verbal memory. Instrumental lofi is roughly neutral.</li>
-      <li><b>Use it in blocks, not all day.</b> All studies were short sessions. Nobody knows if the effect fades as you get used to it, so the Pomodoro breaks help here too.</li>
-      <li><b>If a sound distracts you, stop.</b> A timer or sound preference does not measure attention or brain arousal.</li>
+      <li id="S1"><a href="https://pubmed.ncbi.nlm.nih.gov/20231319/" target="_blank" rel="noopener noreferrer">S1 · Solanto et al. (2010)</a>. Adult meta-cognitive therapy trial; American Journal of Psychiatry.</li>
+      <li id="S3"><a href="https://academic.oup.com/book/1240/chapter-abstract/140166595" target="_blank" rel="noopener noreferrer">S3 · Safren et al. (2017)</a>. Attention span and distractibility delay, session 6; Mastering Your Adult ADHD, Therapist Guide. Manual, not an isolated-feature trial.</li>
+      <li id="S5"><a href="https://www.sciencedirect.com/science/article/pii/S0065260106380021" target="_blank" rel="noopener noreferrer">S5 · Gollwitzer &amp; Sheeran (2006)</a>. Implementation intentions and goal achievement; meta-analysis. Original publisher access is limited.</li>
+      <li id="S6"><a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2021.565202/full" target="_blank" rel="noopener noreferrer">S6 · Wang et al. (2021)</a>. Mental contrasting with implementation intentions; meta-analysis.</li>
+      <li id="S8"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9432722/" target="_blank" rel="noopener noreferrer">S8 · Albulescu et al. (2022)</a>. Micro-breaks, well-being and performance; systematic review and meta-analysis.</li>
+      <li id="S9"><a href="https://bpspsychub.onlinelibrary.wiley.com/doi/10.1111/bjep.12593" target="_blank" rel="noopener noreferrer">S9 · Biwer et al. (2023)</a>. Scheduled and self-regulated breaks in 87 students over one study day.</li>
+      <li id="S10"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9962130/" target="_blank" rel="noopener noreferrer">S10 · Mette (2023)</a>. Time perception in adult ADHD; review of nine heterogeneous studies.</li>
+      <li id="S11"><a href="https://interruptions.net/literature/Trafton-IJHCS03.pdf" target="_blank" rel="noopener noreferrer">S11 · Trafton et al. (2003)</a>. Preparing to resume an interrupted task; experimental study.</li>
+      <li id="S13"><a href="https://pubsonline.informs.org/doi/abs/10.1287/orsc.2017.1184?journalCode=orsc" target="_blank" rel="noopener noreferrer">S13 · Leroy &amp; Glomb (2018)</a>. Ready-to-resume plans; four studies, mainly examining performance on interrupting tasks.</li>
+      <li id="S14"><a href="https://pubmed.ncbi.nlm.nih.gov/26121498/" target="_blank" rel="noopener noreferrer">S14 · Stothart et al. (2015)</a>. Phone notifications during a general attention task.</li>
+      <li id="S15"><a href="https://www.ics.uci.edu/~gmark/chi08-mark.pdf" target="_blank" rel="noopener noreferrer">S15 · Mark et al. (2008)</a>. Interrupted work, stress and effort; CHI experiment.</li>
+      <li id="S16"><a href="https://www.apa.org/pubs/journals/releases/bul-bul0000025.pdf" target="_blank" rel="noopener noreferrer">S16 · Harkin et al. (2016)</a>. Monitoring goal progress; meta-analysis of 138 randomized studies.</li>
+      <li id="S17"><a href="https://onlinelibrary.wiley.com/doi/10.1002/cpp.2586" target="_blank" rel="noopener noreferrer">S17 · Wakelin et al. (2022)</a>. Self-compassion interventions and self-criticism; systematic review and meta-analysis.</li>
+      <li id="S18"><a href="https://academic.oup.com/jcr/article-abstract/49/6/1095/6623414" target="_blank" rel="noopener noreferrer">S18 · Silverman &amp; Barasch (2023)</a>. Displayed streaks and consumer decisions; seven studies.</li>
+      <li id="S19"><a href="https://pubmed.ncbi.nlm.nih.gov/30135818/" target="_blank" rel="noopener noreferrer">S19 · Johnson et al. (2016)</a>. Gamification for health and wellbeing; systematic review.</li>
+      <li id="S24"><a href="https://pubmed.ncbi.nlm.nih.gov/38428577/" target="_blank" rel="noopener noreferrer">S24 · Nigg et al. (2024)</a>. White and pink noise in youth with ADHD or elevated attention problems; systematic review and meta-analysis.</li>
+      <li id="S25"><a href="https://journals.sagepub.com/doi/10.1177/20592043221134392" target="_blank" rel="noopener noreferrer">S25 · Cheah et al. (2022)</a>. Background music and cognitive task performance; systematic review.</li>
+      <li id="S26"><a href="https://www.nature.com/articles/s42003-024-07026-3" target="_blank" rel="noopener noreferrer">S26 · Woods et al. (2024)</a>. Rapid modulation in music; Communications Biology. Brain.fm employment and equity interests. <a href="https://www.nature.com/articles/s42003-026-10015-3" target="_blank" rel="noopener noreferrer">2026 correction</a>.</li>
+      <li id="S27"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9873947/" target="_blank" rel="noopener noreferrer">S27 · Balban et al. (2023)</a>. Daily structured respiration for a month in 108 adults, mostly recruited from a university class.</li>
+      <li id="S28"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9828383/" target="_blank" rel="noopener noreferrer">S28 · Fincham et al. (2023)</a>. Breathwork; meta-analysis of randomized controlled trials.</li>
+      <li id="S29"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10719279/" target="_blank" rel="noopener noreferrer">S29 · Fincham et al. (2023)</a>. Coherent breathing; placebo-controlled trial with 400 adults over four weeks.</li>
     </ul>
   </section>
-
-  <section class="card">
-    <h2>Sources</h2>
-    <ul class="sources">
-      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11499863">Woods et al. 2024, Communications Biology</a></li>
-      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12420781/">Woods 2024 correction</a></li>
-      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11283987/">Nigg et al. 2024 noise meta-analysis, JAACAP</a></li>
-      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10748431/">Egeland et al. 2023</a></li>
-      <li><a href="https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2016.01331/pdf">Söderlund et al. 2016</a></li>
-      <li><a href="https://pubmed.ncbi.nlm.nih.gov/17683456/">Söderlund et al. 2007</a></li>
-      <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10198548/">Ingendoh 2023, binaural beats review</a></li>
-      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9564012">Malandrone 2022, binaural beats in adult ADHD</a></li>
-      <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10162369/">Lyrics and reading, 2023</a></li>
-      <li><a href="https://www.who.int/publications/i/item/9789241515276">WHO-ITU safe listening standard</a></li>
-      <li><a href="https://arxiv.org/abs/1907.06909">Brain.fm 2019 preprint</a></li>
-      <li><a href="https://patents.google.com/patent/US7674224B2/en">Patent US7674224</a></li>
-      <li><a href="https://api.nsf.gov/services/v1/awards/1720698.json">NSF award 1720698</a></li>
-      <li><a href="https://www.brain.fm/pricing">Brain.fm pricing</a> · <a href="https://www.brain.fm/terms">terms</a></li>
-      <li><a href="https://www.trustpilot.com/review/brain.fm">Trustpilot: Brain.fm</a></li>
-      <li><a href="https://sciencebasedmedicine.org/music-for-adhd">Novella, Science-Based Medicine</a></li>
-      <li><a href="https://www.noisli.com/pricing">Noisli pricing</a></li>
-    </ul>
-  </section>
-</div>
+  <footer><p>Choose what fits, change it when you need to, and leave the rest.</p><a href="./">Return to Kitestring</a></footer>
+</main>
 </body>
 </html>
