@@ -119,6 +119,7 @@ describe.skipIf(process.env.EVIDENCE_BROWSER !== "1")("bundled evidence page", (
     chrome.assertHealthy();
   }, 30000);
   it("keeps the running dashboard alive while reading the evidence", async () => {
+    await chrome.send("Emulation.setCPUThrottlingRate", { rate: 20 });
     await chrome.send("Page.navigate", { url: chrome.origin });
     await chrome.waitFor("document.querySelector('.credits a[href=\"./research.html\"]')");
     await chrome.waitFor("document.querySelector('[aria-label=\"Start · Space\"]')");
