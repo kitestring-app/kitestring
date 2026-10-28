@@ -237,3 +237,18 @@ it('round-trips the wallpaper override through settings sync', async () => {
   expect((await (await import('./db')).dbGet<typeof sent>('settings'))?.appearance.lookBackdrop).toBe(false);
   await sync.signOut();
 });
+
+it('mixed-version task estimates survive pull, unrelated edits and push without a new sync key', async () => {
+  const { sync, tasks, fetch, store, puts } = await setup();
+  const value = [{ id: 'estimated', title: 'Draft', etaMin: 20, done: false, createdAt: Date.now() },
+    { id: 'legacy', title: 'Old task', done: false, createdAt: Date.now() }];
+  fetch.mockImplementation(async (url, init) => {
+    if (url === '/api/sync' && init.method === 'GET') return Response.json({ entries: [{ key: 'tasks', value, updatedAt: 1 }] });
+    if (url === '/api/sync' && init.method === 'PUT') puts.push(JSON.parse(init.body as string));
+    return Response.json({ ok: true });
+  });
+  await sync.chooseInitialData('replace'); expect(tasks.get()).toEqual(value);
+  tasks.set(value.map(t => ({ ...t, title: t.title + ' edited' })));
+  await store.flushAll(); await sync.syncNow();
+  expect(puts).toMatchObject([{ entries: expect.arrayContaining([{ key: 'tasks', value: value.map(t => ({ ...t, title: t.title + ' edited' })), updatedAt: expect.any(Number) }]) }]);
+});
