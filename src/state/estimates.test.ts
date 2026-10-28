@@ -23,3 +23,24 @@ it('offers up to three comparable completed titles with recorded work, even with
   expect(similarTasks(current, all, data).map(t => t.id)).toEqual(['a', 'c', 'b']);
   expect(similarTasks(task('empty', ''), all, data)).toEqual([]);
 });
+
+it('reads saved chunks once while comparing every row in one immutable snapshot', () => {
+  const all = Array.from({ length: 40 }, (_, i) => task(String(i), 'Draft project outline'));
+  let reads = 0;
+  const history: StatsData = { tasksDone: [], chunks: Array.from({ length: 400 }, (_, i) => ({
+    id: String(i), taskId: String(i % all.length),
+    get kind() { reads++; return 'focus' as const; },
+    segment: 'focus' as const, start: i, ms: 60000, completed: false,
+  })) };
+  for (const item of all) {
+    expect(recordedTaskMs(item, all, history)).toBe(600000);
+    expect(similarTasks(item, all, history)).toHaveLength(3);
+  }
+  expect(reads).toBeLessThanOrEqual(history.chunks.length);
+  const changed: StatsData = { ...history, chunks: [...history.chunks,
+    { id: 'extra', taskId: '0', kind: 'focus', segment: 'focus', start: 0, ms: 60000, completed: false }] };
+  expect(recordedTaskMs(all[0], all, changed)).toBe(660000);
+  const grouped = all.map(item => item.id === '1' ? { ...item, parentId: '0' } : item);
+  expect(recordedTaskMs(grouped[0], grouped, changed)).toBe(1260000);
+  expect(similarTasks(grouped[0], grouped, changed).map(item => item.id)).not.toContain('1');
+});
