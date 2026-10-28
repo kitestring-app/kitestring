@@ -20,7 +20,7 @@ export function getCtx(): AudioContext {
     limiter.release.value = 0.25;
     master.connect(makeup).connect(limiter).connect(ctx.destination);
   }
-  if (ctx.state === "suspended") void ctx.resume();
+  if (ctx.state === "suspended") void ctx.resume().catch(() => { /* Autoplay can remain unavailable. */ });
   return ctx;
 }
 
@@ -61,11 +61,35 @@ function playVoice(sound: Exclude<AlertSound, "none">, volume: number, inSeconds
   const src = c.createBufferSource();
   src.buffer = buf;
   src.connect(out);
-  const voice = { out, oscs: [src] as AudioScheduledSourceNode[] };
-  active.add(voice);
-  src.onended = () => { active.delete(voice); out.disconnect(); };
+  const voice = trackChime(out, src);
   src.start(c.currentTime + Math.max(0, inSeconds));
   return voice;
+}
+
+/** Start cues share Stop sound and quiet-mode cancellation with alert voices. */
+function trackChime(out: GainNode, source: AudioScheduledSourceNode) {
+  const voice = { out, oscs: [source] };
+  active.add(voice);
+  source.onended = () => { active.delete(voice); source.disconnect(); out.disconnect(); };
+  return voice;
+}
+
+/** Register before resume so Stop sound also cancels cues still awaiting autoplay. */
+export function playChimeSamples(c: AudioContext, samples: Float32Array, volume: number) {
+  const buffer = c.createBuffer(1, samples.length, ALERT_SAMPLE_RATE);
+  buffer.copyToChannel(samples as Float32Array<ArrayBuffer>, 0);
+  const out = c.createGain(), source = c.createBufferSource();
+  out.gain.value = Math.min(1, Math.max(0, volume));
+  out.connect(c.destination); source.buffer = buffer; source.connect(out);
+  const voice = trackChime(out, source), requestedAt = performance.now();
+  const discard = () => { active.delete(voice); source.disconnect(); out.disconnect(); };
+  const start = () => {
+    if (!active.has(voice)) return;
+    if (c.state === "suspended" || c.state === "closed" || performance.now() - requestedAt >= 500) return discard();
+    source.start(c.currentTime);
+  };
+  if (c.state === "suspended") void c.resume().then(start).catch(discard);
+  else start();
 }
 
 /** Arm the end-of-segment chime `inSeconds` from now on the audio clock (accurate even in throttled background tabs). */

@@ -45,6 +45,7 @@ it("classifies every production createStore key, including generic calls, and no
 // with constrained valid values need explicit alternatives; a new enum fails here
 // until a valid alternate is provided. Every other new leaf is exercised directly.
 const alternateStrings: Record<string, string> = {
+  "timer.startChimeSound": "bell",
   "timer.display": "hidden", "timer.mode": "countdown", "timer.autoRun": "cycle", "timer.flipPalette": "fern",
   "timer.style": "flip", "timer.alertSound": "bell", "timer.focusDoneSound": "chime",
   "timer.breakOverSound": "wood", "timer.ticking": "both", "timer.tickStyle": "digital", "timer.tally": "stem",

@@ -1,7 +1,8 @@
+import { playStartChime } from "../../audio/startChime";
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import { ALERT_SOUNDS } from "../../audio/alertSynth";
-import { DEFAULT_SETTINGS, settings, sanitizeSettings, presetState, STRONG_PATCH } from "../../state/settings";
+import { DEFAULT_SETTINGS, localPreferences, settings, sanitizeSettings, presetState, STRONG_PATCH } from "../../state/settings";
 import { previewChime } from "../../audio/core";
 import { testCompanion } from "../../audio/companion";
 import { TimerTab } from "./TimerTab";
@@ -15,6 +16,7 @@ vi.mock("react", async original => ({
   useState: (initial: unknown) => [initial === null ? true : initial, vi.fn()],
   useEffect: vi.fn(),
 }));
+vi.mock("../../audio/startChime", () => ({ playStartChime: vi.fn() }));
 vi.mock("../../audio/core", () => ({ previewChime: vi.fn() }));
 vi.mock("../../audio/companion", () => ({ companionAvailable: vi.fn(), testCompanion: vi.fn().mockResolvedValue(true) }));
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
@@ -96,4 +98,14 @@ it("keeps parking review timing in Timer Settings with all three device-only cho
   expect(options.map(o => o.props.children)).toEqual(["Never automatically", "End of block", "End of session"]);
   (select.props as unknown as { onChange: (e: { target: { value: string } }) => void }).onChange({ target: { value: "session" } });
   expect(parkingReview.get().boundary).toBe("session");
+});
+
+it("start preview rechecks mute even when an older button handler is retained", async () => {
+  await settings.ready; await localPreferences.ready; vi.stubGlobal("window", {});
+  settings.set(DEFAULT_SETTINGS); localPreferences.set(s => ({ ...s, muted: false }));
+  const button = elements(TimerTab()).find(el => el.props["aria-label"] === "Preview start chime")!;
+  localPreferences.set(s => ({ ...s, muted: true }));
+  button.props.onClick!(); expect(playStartChime).not.toHaveBeenCalled();
+  localPreferences.set(s => ({ ...s, muted: false }));
+  button.props.onClick!(); expect(playStartChime).toHaveBeenCalledWith("bubble", DEFAULT_SETTINGS.timer.alertVolume);
 });

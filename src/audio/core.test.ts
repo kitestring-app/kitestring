@@ -58,7 +58,11 @@ it("previews and schedules the bundled waveform, phase and volume on any output 
   releaseChime();
   scheduleChime("wood", 0.5, 60);
   const future = sources.at(-1)!;
+  const { playStartChime } = await import("./startChime");
+  playStartChime("bubble", 0.5);
+  const cue = sources.at(-1)!;
   cancelAllChimes(); cancelAllChimes();
+  expect(cue.stop).toHaveBeenCalledOnce();
   expect(released.stop).toHaveBeenCalledOnce();
   expect(future.stop).toHaveBeenCalledOnce();
   expect(sources.every(source => source.stop.mock.calls.length >= 1)).toBe(true);
@@ -98,4 +102,26 @@ it("runs tick loops entirely on the audio clock, with a scheduled end and immedi
     cancel(); expect(source.stop).toHaveBeenCalledOnce();
     expect(pageTimer).not.toHaveBeenCalled();
   } finally { pageTimer.mockRestore(); }
+});
+it("cancels a pending start cue before a suspended context resumes", async () => {
+  let resolveResume!: () => void;
+  const resumed = new Promise<void>(resolve => { resolveResume = resolve; });
+  const source = { connect: vi.fn(), disconnect: vi.fn(), start: vi.fn(), stop: vi.fn() };
+  class Context {
+    static instance: Context;
+    state = "suspended"; currentTime = 12; destination = {};
+    constructor() { Context.instance = this; }
+    resume() { return resumed; }
+    createGain() { const g = { gain: {}, connect: () => g, disconnect: vi.fn() }; return g; }
+    createDynamicsCompressor() { return { threshold: {}, knee: {}, ratio: {}, attack: {}, release: {}, connect() {} }; }
+    createBuffer() { return { copyToChannel: vi.fn() }; }
+    createBufferSource() { return source; }
+  }
+  vi.stubGlobal("AudioContext", Context);
+  const core = await import("./core"), cue = await import("./startChime");
+  cue.playStartChime("bubble", 0.5);
+  core.cancelAllChimes();
+  Context.instance.state = "running"; resolveResume();
+  await Promise.resolve(); await Promise.resolve();
+  expect(source.start).not.toHaveBeenCalled();
 });

@@ -1,3 +1,4 @@
+import { playStartChime, shouldStartChime } from "../audio/startChime";
 import { timerAnnouncement, timerDisplay } from "./timerDisplay";
 import { intent, updateIntent } from "./intent";
 import { longerOfferAvailable, recordTinyFinish, settleLongerOffer, tinyStarts } from "./tinyStarts";
@@ -459,6 +460,7 @@ const localTimerActions = {
     boundaryAlert.resumeTicks();
     timer.set(s);
     noteAlive();
+    if (shouldStartChime(cur, T(), localPreferences.get().muted)) playStartChime(T().startChimeSound, T().alertVolume);
     if (!window.desktop?.armAlarm && T().notify && "Notification" in window && Notification.permission === "default") void Notification.requestPermission();
   },
   pause() {
@@ -980,6 +982,7 @@ export function startTinyBlock(expectedSegId: string, minutes: number): boolean 
     !Number.isFinite(minutes) || minutes < 1 || minutes > 1440) return false;
   timer.set({ ...s, tinyStart: true, frozen: true, frozenTotal: minutes * 60_000, context: captureContext() });
   timerActions.start();
+  if (shouldStartChime(s, T(), localPreferences.get().muted)) playStartChime(T().startChimeSound, T().alertVolume);
   return true;
 }
 
