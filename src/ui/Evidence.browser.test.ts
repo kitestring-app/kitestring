@@ -58,7 +58,7 @@ describe.skipIf(process.env.EVIDENCE_BROWSER !== "1")("bundled evidence page", (
       await chrome.send("Emulation.setDeviceMetricsOverride", { width, height: 820, deviceScaleFactor: 1, mobile: true });
       await chrome.send("Page.navigate", { url: chrome.origin });
       await chrome.waitFor("document.querySelector('.credits a[href=\"./research.html\"]')");
-      for (const panel of ["tasks", "sounds", "notepad"]) {
+      for (const panel of ["tasks", "sounds", "notes"]) {
         await chrome.evaluate(`document.querySelector('[data-panel="${panel}"]').click()`);
         await chrome.waitFor("document.querySelector('.panel:not([hidden])')");
         expect(await chrome.evaluate(`(()=>{const link=document.querySelector('.credits a[href="./research.html"]');
