@@ -97,8 +97,8 @@ describe.skipIf(process.env.BACKUP_BROWSER !== "1")("factual records and Hide st
       await chrome.waitFor("document.querySelector('[aria-label=\"Start · Space\"]')");
       expect(await page("const t=await import('/src/state/timer.ts');return t.timer.get().elapsedBefore>=0 && t.timer.get().startedAt===null;")).toBe(true);
     }
-    await page("await (await import('/src/lib/store.ts')).flushReadyStores();"); await chrome.send('Page.reload');
-    await chrome.waitFor("document.querySelector('.focus-center')");
+    await page("await (await import('/src/lib/store.ts')).flushReadyStores();");
+    await chrome.reload("document.querySelector('.focus-center') && document.querySelector('[aria-label=\"Settings (S)\"]')");
     await chrome.evaluate("document.querySelector('[aria-label=\"Settings (S)\"]').click()");
     await chrome.waitFor("document.querySelector('.drawer')");
     expect(await page("return s.settings.get().extras.hideStats;")).toBe(true);

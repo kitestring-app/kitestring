@@ -68,8 +68,7 @@ describe.skipIf(process.env.AMBIENT_BROWSER !== "1")("hidden time on shared web 
     await chrome.waitFor("[...document.querySelectorAll('.mini-digits')].every(el => el.textContent === '01:05') && document.querySelectorAll('.mini-digits').length === 2");
     await page(`s.settingsUpdate('timer', {display: 'hidden'}); await (await import('/src/lib/store.ts')).flushReadyStores();`);
     await chrome.waitFor("document.querySelectorAll('.mini-digits, .mini-progress').length === 0");
-    await chrome.send("Page.reload");
-    await chrome.waitFor("document.querySelector('.timer-hidden')");
+    await chrome.reload("document.querySelector('.timer-hidden') && document.querySelector('[aria-label=\"Settings (S)\"]')");
     expect(await page("return s.settings.get().timer.display")).toBe("hidden");
     // The actual Settings choice, rather than just the state setter.
     await chrome.evaluate("document.querySelector('[aria-label=\"Settings (S)\"]').click()");
