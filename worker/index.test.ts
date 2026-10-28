@@ -342,3 +342,13 @@ it('preserves task guesses verbatim beside older tasks through the worker valida
   const saved = await (await worker.fetch(req('/api/sync', 'GET', undefined, headers), env)).json() as { entries: { value: unknown }[] };
   expect(saved.entries[0].value).toEqual(value);
 });
+
+it('round-trips away stats and unknown chunk fields without accepting a synced presence store', async () => {
+  const response = await login({ 'X-Client': 'desktop' }); const { token } = await response.json() as { token: string };
+  const headers = { Authorization: 'Bearer ' + token };
+  const value = { chunks: [{ id: 'away', kind: 'break', segment: 'short', start: Date.now(), ms: 3 * 86_400_000, completed: false, away: true, futureField: { kept: true } }], tasksDone: [] };
+  expect((await worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'stats', value, updatedAt: Date.now() }] }, headers), env)).status).toBe(200);
+  const data = await (await worker.fetch(req('/api/sync', 'GET', undefined, headers), env)).json() as { entries: { value: unknown }[] };
+  expect(data.entries[0].value).toEqual(value);
+  expect((await worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'clockPresence', value: {}, updatedAt: Date.now() }] }, headers), env)).status).toBe(400);
+});

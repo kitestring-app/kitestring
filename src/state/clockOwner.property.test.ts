@@ -88,12 +88,13 @@ it.each([0x60c10c, 0xc0ffee])("seeded real two-tab owner history, seed %i", asyn
   let step = -1;
   const trace: string[] = [];
   const ledger = new Map<string, number>();
+  let expectedAway = 0;
   const elapsedSeen = new Map<string, number>();
   const coverage = new Set<string>();
   const lead = () => tabs[owner]!;
   const elapsed = (tab: Tab) => {
     const s = tab.clock.timer.get();
-    return Math.min(tab.clock.totalMs(s) ?? Infinity, s.elapsedBefore + (s.startedAt === null ? 0 : Math.max(0, Date.now() - s.startedAt)));
+    return Math.min(s.segment === "focus" ? tab.clock.totalMs(s) ?? Infinity : Infinity, s.elapsedBefore + (s.startedAt === null ? 0 : Math.max(0, Date.now() - s.startedAt)));
   };
   async function flush() { for (const tab of tabs) await tab.store.flushReadyStores(); }
   async function drain() {
@@ -112,7 +113,7 @@ it.each([0x60c10c, 0xc0ffee])("seeded real two-tab owner history, seed %i", asyn
     if (s.startedAt !== null) {
       // Independent wall-time ledger: integrate time actually running, capped at
       // the frozen deadline. No timer engine or stats function calculates this.
-      const remaining = Math.max(0, (tab.clock.totalMs(s) ?? Infinity) - elapsed(tab));
+      const remaining = s.segment === "focus" ? Math.max(0, (tab.clock.totalMs(s) ?? Infinity) - elapsed(tab)) : Infinity;
       ledger.set(s.segId, (ledger.get(s.segId) ?? 0) + Math.min(ms, remaining));
     }
     vi.setSystemTime(Date.now() + ms);
@@ -132,6 +133,8 @@ it.each([0x60c10c, 0xc0ffee])("seeded real two-tab owner history, seed %i", asyn
     }
     const s = previous.clock.timer.get(), total = previous.clock.totalMs(s);
     const shouldSettle = s.startedAt !== null && total !== null && elapsed(previous) >= total;
+    // This renderer was alive through this handoff. Bank that fact before destroying it.
+    await previous.clock.prepareTimerDeparture();
     await previous.clock.releaseTimerOwnership();
     previous.ownership.active = false;
     if (reload) {
@@ -152,7 +155,8 @@ it.each([0x60c10c, 0xc0ffee])("seeded real two-tab owner history, seed %i", asyn
     const accounted = new Map<string, number>();
     const completed = new Set<string>();
     const intervals = new Map<string, { start: number; end: number }[]>();
-    for (const chunk of chunks) {
+    expect(chunks.filter(c => c.away).reduce((sum, c) => sum + c.ms, 0)).toBe(expectedAway);
+    for (const chunk of chunks.filter(c => !c.away)) {
       expect(chunk.ms).toBeGreaterThanOrEqual(0);
       expect(chunk.segId).toBeTruthy();
       const id = chunk.segId!;
@@ -169,7 +173,7 @@ it.each([0x60c10c, 0xc0ffee])("seeded real two-tab owner history, seed %i", asyn
       parts.sort((a, b) => a.start - b.start);
       for (let index = 1; index < parts.length; index++) expect(parts[index]!.start, `overlapping credit intervals in ${id}`).toBeGreaterThanOrEqual(parts[index - 1]!.end);
     }
-    expect(entries(accounted), "every running interval is credited exactly once, or remains pending in the current segment").toEqual(entries(ledger));
+    expect(entries(accounted), `every running interval is credited exactly once: actual=${JSON.stringify(entries(accounted))} expected=${JSON.stringify(entries(ledger))}`).toEqual(entries(ledger));
     const now = elapsed(tab), last = elapsedSeen.get(current.segId) ?? 0;
     expect(now, `elapsed rolled back in ${current.segId}`).toBeGreaterThanOrEqual(last);
     elapsedSeen.set(current.segId, now);
@@ -187,7 +191,7 @@ it.each([0x60c10c, 0xc0ffee])("seeded real two-tab owner history, seed %i", asyn
     await invoke(() => lead().clock.timerActions.stop());
     await invoke(() => lead().clock.requestTinyBlock(lead().clock.recoveryCommand(), 1));
     advance(60_000);
-    lead().clock.checkRecoveryLifecycle(true);
+    lead().clock.timerActions.complete(lead().clock.timer.get().segId, true);
     await invoke(() => lead().clock.requestRecovery(lead().clock.recoveryCommand(), "stop"));
   }
 
@@ -231,7 +235,12 @@ it.each([0x60c10c, 0xc0ffee])("seeded real two-tab owner history, seed %i", asyn
         tabs[follower] = await loadTab(follower);
       } else if (operation === "reload" || operation === "expired-reload") await handoff(true, operation === "expired-reload");
       else if (operation === "handoff" || operation === "expired-handoff") await handoff(false, operation === "expired-handoff");
-      else if (operation === "sleep") { advance(90_000 + Math.floor(rng() * 86_400_000)); lead().clock.checkRecoveryLifecycle(true); }
+      else if (operation === "sleep") {
+        const gap = 90_000 + Math.floor(rng() * 86_400_000), running = lead().clock.timer.get().startedAt !== null;
+        await lead().clock.prepareTimerDeparture();
+        if (running) expectedAway += gap;
+        vi.setSystemTime(Date.now() + gap); lead().clock.checkRecoveryLifecycle(true);
+      }
       else if (operation === "elapsed") { advance(1 + Math.floor(rng() * 5000)); lead().clock.checkRecoveryLifecycle(); }
       else transport = operation === "delay" ? "delay" : operation === "drop" ? "drop" : "deliver";
       await drain();
@@ -242,7 +251,7 @@ it.each([0x60c10c, 0xc0ffee])("seeded real two-tab owner history, seed %i", asyn
     await invoke(() => lead().clock.timerActions.pause());
     invariant();
     const durable = await lead().db.dbGet<{ chunks: { ms: number }[] }>("stats");
-    expect(durable!.chunks.reduce((sum, chunk) => sum + chunk.ms, 0)).toBe([...ledger.values()].reduce((sum, ms) => sum + ms, 0));
+    expect(durable!.chunks.reduce((sum, chunk) => sum + chunk.ms, 0)).toBe([...ledger.values()].reduce((sum, ms) => sum + ms, 0) + expectedAway);
     expect(pendingLocks.size).toBeGreaterThanOrEqual(2);
     expect(ledger.size, "the seed must exercise several distinct credited segments").toBeGreaterThan(8);
     expect(writes.some(write => write.owner && write.keys.includes("stats"))).toBe(true);

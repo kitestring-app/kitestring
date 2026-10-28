@@ -18,7 +18,7 @@ export function AmbientTimer() {
       <span className="ambient-timer-segment">{label}</span>
       <span className="ambient-timer-time" role="timer" aria-label={v.hiddenTime ? `${label}: ${v.timeDescription}, ${v.running ? "running" : "paused"}` : `${label}: ${v.display}`} aria-live="off">{v.hiddenTime ? (v.running ? "Running" : "Paused") : v.display}</span>
     </div>
-    <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.toggle()} aria-label={v.running ? "Pause ambient timer" : "Start ambient timer"}>
+    <button className="iconbtn" disabled={v.hardLocked && v.running} title={v.hardLocked && v.running ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.toggle()} aria-label={v.running ? "Pause ambient timer" : "Start ambient timer"}>
       {v.running ? <Icon.pause /> : <Icon.play />}
     </button>
     <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.skip()} aria-label={mode === "stopwatch" ? "Finish ambient session" : "Skip ambient segment"}>

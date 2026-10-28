@@ -10,11 +10,12 @@ beforeEach(() => {
   vi.stubGlobal("BroadcastChannel", undefined);
   vi.resetModules();
   vi.useFakeTimers(); vi.setSystemTime(2_000_000); vi.clearAllMocks();
+  vi.spyOn(performance, "now").mockImplementation(() => Date.now() - 2_000_000);
   vi.stubGlobal("navigator", {});
   vi.stubGlobal("window", { desktop: { armAlarm, disarmAlarm, attention }, addEventListener: vi.fn(), speechSynthesis: { speak: speech } });
   vi.stubGlobal("document", { addEventListener: vi.fn() });
 });
-afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(() => { vi.restoreAllMocks(); vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 async function setup(follower = false) {
   const t = await import("./timer");
   const { settings, DEFAULT_SETTINGS } = await import("./settings");

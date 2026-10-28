@@ -252,3 +252,17 @@ it('mixed-version task estimates survive pull, unrelated edits and push without 
   await store.flushAll(); await sync.syncNow();
   expect(puts).toMatchObject([{ entries: expect.arrayContaining([{ key: 'tasks', value: value.map(t => ({ ...t, title: t.title + ' edited' })), updatedAt: expect.any(Number) }]) }]);
 });
+
+it('away chunks and future fields survive upload and remote application while presence stays local', async () => {
+  const { sync, store, puts } = await setup();
+  const value = { chunks: [{ id: 'away', kind: 'break', segment: 'short', start: Date.now(), ms: 3 * 86_400_000, completed: false, away: true, futureField: { kept: true } }], tasksDone: [] };
+  const stats = store.createStore('stats', { chunks: [] as unknown[], tasksDone: [] }); await stats.ready; stats.set(value);
+  const presence = store.createStore('clockPresence', null); await presence.ready;
+  await store.flushAll(); await sync.chooseInitialData('keep');
+  const entries = (puts[0] as { entries: { key: string; value: unknown }[] }).entries;
+  expect(entries.find(e => e.key === 'stats')?.value).toEqual(value);
+  expect(entries.some(e => e.key === 'clockPresence')).toBe(false);
+  const remote = { ...value, chunks: [{ ...value.chunks[0], id: 'remote' }] };
+  await store.applySyncedValue('stats', remote); expect(stats.get()).toEqual(remote);
+  expect(await (await import('./db')).dbGet('stats')).toEqual(remote); await sync.signOut();
+});

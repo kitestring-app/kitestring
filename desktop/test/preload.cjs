@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
 
-function loadBridge(argv = [], platform = "darwin") {
+function loadBridge(argv = [], platform = "darwin", syncReply = true) {
   const globals = {};
   const sent = [];
   const invoked = [];
@@ -16,7 +16,7 @@ function loadBridge(argv = [], platform = "darwin") {
       contextBridge: { exposeInMainWorld: (name, value) => { globals[name] = value; } },
       ipcRenderer: {
         send: (...args) => sent.push(args),
-        sendSync: (...args) => { sent.push(args); return true; },
+        sendSync: (...args) => { sent.push(args); return typeof syncReply === "function" ? syncReply(...args) : syncReply; },
         invoke: (...args) => { invoked.push(args); return Promise.resolve(args[1] ?? true); },
         on: (channel, listener) => events.on(channel, listener),
         removeListener: (channel, listener) => events.removeListener(channel, listener),
@@ -32,7 +32,7 @@ function loadBridge(argv = [], platform = "darwin") {
 test('main bridge is frozen and routes the supported native methods', async () => {
   const { bridge, sent, invoked } = loadBridge();
   assert.deepEqual(Object.keys(bridge).sort(), [
-    'armAlarm', 'attention', 'cancelSpeech', 'cloud', 'consumeSuspension', 'disarmAlarm', 'floatTimer',
+    'armAlarm', 'attention', 'cancelSpeech', 'cloud', 'consumeSuspension', 'consumeSuspensionAt', 'disarmAlarm', 'floatTimer',
     'getSecureDns', 'notificationStatus', 'onAudioAction', 'onAudioRequest', 'onFloatTimer', 'onFloatingPreferences', 'onFlush', 'onFullScreenTransition', 'onLifecycle', 'onMenuCommand', 'onParked', 'onTimerAction', 'onTimerRequest', 'parkingStatus', 'preventSleep', 'publishAudioState', 'publishTimerState', 'release',
     'platform', 'getFullScreen', 'onFullScreenChange', 'setFloatingPreferences', 'setSecureDns', 'setStatus', 'speak', 'testReminder', 'toggleFullScreen',
   ].sort());
@@ -266,4 +266,16 @@ test('main bridge identifies the platform and validates fullscreen state events'
     const mini = loadBridge(['--mini-timer'], platform).bridge;
     for (const key of ['platform', 'getFullScreen', 'onFullScreenChange']) assert.equal(Object.hasOwn(mini, key), false);
   }
+});
+
+
+test('away suspension bridge carries explicit suspend state and rejects malformed timestamps', () => {
+  for (const suspended of [true, false]) {
+    const { bridge } = loadBridge([], 'darwin', { at: 123456789, suspended });
+    assert.deepEqual(JSON.parse(JSON.stringify(bridge.consumeSuspensionAt())), { at: 123456789, suspended });
+  }
+  for (const invalid of [true, 123, null, { at: Infinity, suspended: false }, { at: '123', suspended: true }, { at: 123 }]) {
+    assert.equal(loadBridge([], 'darwin', invalid).bridge.consumeSuspensionAt(), null);
+  }
+  assert.equal(loadBridge(['--mini-timer']).bridge.consumeSuspensionAt, undefined);
 });

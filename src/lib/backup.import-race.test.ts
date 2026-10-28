@@ -152,7 +152,8 @@ it.each(["paused", "running", "follower promotion"])("migrates a pre-fix initial
   expect(m.timer.get().creditedUpTo).toBe(1000);
   m.startTicker(); await Promise.resolve();
   expect(m.timer.get().reentry).toBeTruthy();
-  expect(m.stats.get().chunks).toEqual([{ ...local, segId: id }]);
+  expect(m.stats.get().chunks.filter(c => !c.away)).toEqual([{ ...local, segId: id }]);
+  expect(m.stats.get().chunks.filter(c => c.away)).toMatchObject(mode === "running" ? [{ kind: "break", ms: 2000 }] : []);
   await m.flushReadyStores();
   expect((await m.dbGet<{ segId: string }>("timer"))?.segId).toBe(id);
   expect(await m.dbGet("stats")).toEqual(m.stats.get());
@@ -160,7 +161,8 @@ it.each(["paused", "running", "follower promotion"])("migrates a pre-fix initial
   m.timerActions.pause();
   expect(await m.restoreBackup(m.file, stamp)).toBe(true);
   expect(m.stats.get().chunks).toContainEqual(m.archive);
-  expect(m.stats.get().chunks.filter(c => c.segId === id).reduce((sum, c) => sum + c.ms, 0)).toBe(mode === "running" ? 3000 : 1000);
+  expect(m.stats.get().chunks.filter(c => c.segId === id && c.kind === "focus").reduce((sum, c) => sum + c.ms, 0)).toBe(1000);
+  expect(m.stats.get().chunks.filter(c => c.away)).toMatchObject(mode === "running" ? [{ ms: 2000, segId: id }] : []);
   expect(new Set(m.stats.get().chunks.map(c => c.id)).size).toBe(m.stats.get().chunks.length);
 });
 

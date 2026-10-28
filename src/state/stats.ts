@@ -17,12 +17,14 @@ export interface StatsData {
 
 export const stats = createStore<StatsData>("stats", { chunks: [], tasksDone: [] });
 
-/** Delete a whole segment run, or just the selected legacy chunk. */
+const matchesSession = (chunk: LoggedChunk, session: Pick<SessionLogEntry, "id" | "segId">) =>
+  session.id === JSON.stringify([chunk.segId ? "session" : "entry", chunk.segId ?? chunk.id, chunk.kind, chunk.segment]);
+
+/** Delete the selected log run across its chunks, or its single legacy chunk. */
 export function deleteSession(session: Pick<SessionLogEntry, "id" | "segId">): (() => void) | undefined {
   if (!canWriteClockStore("stats", true)) return;
   const original = stats.get().chunks;
-  const removed = original.filter(chunk => session.segId ? chunk.segId === session.segId :
-    !chunk.segId && session.id === JSON.stringify(["entry", chunk.id, chunk.kind, chunk.segment]));
+  const removed = original.filter(chunk => matchesSession(chunk, session));
   if (!removed.length) return;
   const originalIds = new Set(original.map(item => item.id));
   const ids = new Set(removed.map(chunk => chunk.id));
@@ -178,7 +180,7 @@ export function scoreInputs(data: StatsData, day: number, streakDays: number): S
     qualifyingSessions: qualifyingSessions(chunks),
     focusMin: chunks.filter((c) => c.kind === "focus").reduce((a, c) => a + c.ms, 0) / 60_000,
     tasks: data.tasksDone.filter((t) => t.at >= from && t.at <= to).length,
-    breakMin: chunks.filter((c) => c.kind === "break").reduce((a, c) => a + c.ms, 0) / 60_000,
+    breakMin: chunks.filter((c) => c.kind === "break" && !c.away).reduce((a, c) => a + c.ms, 0) / 60_000,
     streakDays,
   };
 }
@@ -224,7 +226,7 @@ export function formatStatsDuration(ms: number): string {
 /** Average only focused days; each day's boost uses its historical streak. */
 export function averageFocusScore(data: StatsData, from: number, to: number): number {
   const visible = {
-    chunks: data.chunks.filter((c) => c.start <= to),
+    chunks: data.chunks.filter((c) => c.start <= to && !c.away),
     tasksDone: data.tasksDone.filter((t) => t.at <= to),
   };
   const days = byDay(visible);
@@ -443,8 +445,7 @@ registerClockAction("task-stat", ({ taskId, at, done }) => {
   return { ok: true };
 });
 registerClockAction("delete-stat", ({ session, ids }) => {
-  const current = stats.get().chunks.filter(chunk => session.segId ? chunk.segId === session.segId :
-    !chunk.segId && session.id === JSON.stringify(["entry", chunk.id, chunk.kind, chunk.segment]));
+  const current = stats.get().chunks.filter(chunk => matchesSession(chunk, session));
   if (JSON.stringify(current.map(chunk => chunk.id)) !== JSON.stringify(ids)) return { ok: false };
   const undo = deleteSession(session);
   if (!undo) return { ok: false };
@@ -457,8 +458,7 @@ registerClockAction("undo-stat", ({ token }) => {
 });
 /** User edits to clock accounting are evaluated on the owner, including Undo. */
 export async function requestDeleteSession(session: Pick<SessionLogEntry, "id" | "segId">) {
-  const ids = stats.get().chunks.filter(chunk => session.segId ? chunk.segId === session.segId :
-    !chunk.segId && session.id === JSON.stringify(["entry", chunk.id, chunk.kind, chunk.segment])).map(chunk => chunk.id);
+  const ids = stats.get().chunks.filter(chunk => matchesSession(chunk, session)).map(chunk => chunk.id);
   const result = await requestClockAction("delete-stat", { session, ids });
   if (!result.ok) throw new Error("This session changed. Try deleting it again.");
   return () => { void requestClockAction("undo-stat", { token: result.undoToken }); };

@@ -22,7 +22,18 @@ import { transitionStore } from "../ui/timer/TransitionStore";
 import { alertTypingGuard } from "../lib/alertTypingGuard";
 
 registerPersistenceGroup(["timer", "stats"]);
-registerPersistenceGroup(["timer", "stats", "tinyStarts", "parkingReview"]);
+registerPersistenceGroup(["timer", "stats", "tinyStarts", "parkingReview", "clockPresence"]);
+
+interface ClockPresence { segId: string; lastAliveAt: number; departedAt?: number; ownerId: string }
+export const clockPresence = createStore<ClockPresence | null>("clockPresence", null, value => {
+  const p = value as ClockPresence | null;
+  return p && typeof p.segId === "string" && Number.isFinite(p.lastAliveAt) && typeof p.ownerId === "string" &&
+    (p.departedAt === undefined || Number.isFinite(p.departedAt)) ? p : null;
+});
+const ownerId = uid();
+let witnessedOwner: { segId: string; ownerId: string } | null = null;
+let departing = false;
+let settlingSnapshot = false;
 
 let reminderMessage = "";
 const reminderListeners = new Set<() => void>();
@@ -46,11 +57,16 @@ const T = () => settings.get().timer;
 export const HARD_MODE_MESSAGE = "Hard mode: this block runs to the end";
 export type TimerRefusal = { ok: false; reason: "hard-mode" | "hold-required" | "reason-required" | "stale-segment" | "typing-guard"; message: string };
 export type TimerCommandResult = { ok: true } | TimerRefusal;
-export const hardModeLocked = (s = timer.get()) => s.startedAt !== null && (s.hardLocked === true || T().hardMode);
+export const hardModeLocked = (s = timer.get()) => s.hardLocked === true || (s.startedAt !== null && T().hardMode);
 export const timerBusyForImport = () => hardModeLocked() || timer.get().startedAt !== null || timer.get().elapsedBefore > 0 || timer.get().frozen === true;
 /** The clock owner preserves its current block's credit while preparing an import. */
 export function prepareTimerRestore(entries: [string, unknown][], keptTimer = timerBusyForImport(), segments: ReadonlySet<string> = new Set([timer.get().segId])) {
   const restored = entries.filter(([key]) => !keptTimer || key !== "timer").map(([key, value]): [string, unknown] => {
+    if (!keptTimer && key === "timer") {
+      const portable = value as E.TimerState;
+      if (portable.startedAt !== null && portable.startedAt !== undefined) return [key, { ...portable, startedAt: null,
+        elapsedBefore: Math.max(portable.elapsedBefore ?? 0, portable.creditedUpTo ?? 0), reentry: E.newSegId() }];
+    }
     if (!keptTimer || key !== "stats") return [key, value];
     const imported = value as StatsData;
     const local = stats.get().chunks.filter(chunk => chunk.segId !== undefined && segments.has(chunk.segId));
@@ -103,13 +119,110 @@ function captureContext(previous = timer.get().context): SessionContext {
 }
 function credit(s: E.TimerState, now: number, completed: boolean) {
   const duration = totalMs(s);
-  const creditAt = duration !== null && s.startedAt !== null ? Math.min(now, s.startedAt + duration - s.elapsedBefore) : now;
+  const creditAt = s.segment === "focus" && duration !== null && s.startedAt !== null ? Math.min(now, s.startedAt + duration - s.elapsedBefore) : now;
+  noteAlive(now);
   const c = E.pendingCredit(s, creditAt, completed);
   if (!c) return;
-  // never credit more than the segment's length (tab asleep past the end, reopened hours later)
+  // Focus has a planned-length cap; recorded breaks retain their real length.
   const total = totalMs(s);
-  if (total !== null) c.ms = Math.max(0, Math.min(c.ms, total - s.creditedUpTo));
+  if (s.segment === "focus" && total !== null) c.ms = Math.max(0, Math.min(c.ms, total - s.creditedUpTo));
   logChunk(c, s.segment === "focus" ? (s.taskId ?? currentTask(tasks.get())?.id) : undefined);
+}
+
+/** Presence is local accounting state, never a synced timer or portable setting. */
+function noteAlive(at = Date.now(), force = true) {
+  const s = timer.get(), p = clockPresence.get();
+  if (!recoveryHydrated || !canWriteClockStore("clockPresence") || s.startedAt === null || departing) return;
+  if (!force && p?.segId === s.segId && at >= p.lastAliveAt && at - p.lastAliveAt < 15_000) return;
+  if (p?.segId !== s.segId) {
+    heartbeat = { wall: at, mono: performance.now() }; interruptedClock = undefined;
+  }
+  clockPresence.set({ segId: s.segId, lastAliveAt: at, ownerId });
+  commands?.postMessage({ type: "clock-alive", segId: s.segId, ownerId });
+}
+function quietRecovery() {
+  armedKey = "";
+  cancelAllChimes(); cancelEnd(); cancelSpeech(); ticks.stop();
+  void disarmCompanion(); void boundaryAlert.stop();
+  transitionStore.dismiss(); window.desktop?.release?.();
+}
+function settleAway(at: number, now = Date.now()) {
+  const s = timer.get();
+  if (!canWriteClockStore("timer") || !recoveryHydrated || s.startedAt === null) return false;
+  const total = totalMs(s), cutoff = Math.max(s.startedAt, Math.min(at, now));
+  const worked = Math.max(s.creditedUpTo, E.elapsed(s, cutoff));
+  const expired = total !== null && E.elapsed(s, now) >= total;
+  const finished = total !== null && E.elapsed(s, cutoff) >= total;
+  // The cursor may already prove more work if the clock moved backwards.
+  const paused = { ...s, startedAt: null, elapsedBefore: worked };
+  credit(paused, cutoff, finished);
+  const awayMs = Math.max(0, now - Math.max(at, s.startedAt));
+  if (awayMs > 0) logChunk({ kind: "break", segment: s.segment === "focus" ? "short" : s.segment,
+    start: Math.max(at, s.startedAt), ms: awayMs, completed: false, away: true, segId: s.segId });
+  const context = s.context ?? captureContext();
+  const focusMs = context.spentMs + (s.segment === "focus" ? Math.min(worked, total ?? Infinity) : 0);
+  let next: E.TimerState;
+  if (expired) {
+    next = E.advance(paused, { ...T(), autoRun: "off", countdownRepeat: false }, cutoff, finished);
+    next.context = { ...context, spentMs: focusMs };
+    next.boundary = { id: s.segId, ended: s.segment, at: now, missed: true };
+    if (finished) {
+      if (s.segment === "focus") {
+        if (s.tinyStart) recordTinyFinish(s.segId);
+        queueParkingReview("block", s.segId);
+      }
+      if (E.endsSession(T().mode, s.segment) || E.endsCycle(T().mode, s.segment)) queueParkingReview("session", s.segId);
+    }
+  } else {
+    next = { ...E.markCredited(paused, cutoff, s.segment === "focus" ? total : null), context,
+      hardLocked: s.hardLocked || T().hardMode, reentry: E.newSegId() };
+  }
+  next.recoveryRecord = { focusMs, awayMs };
+  interruptedClock = undefined;
+  heartbeat = { wall: now, mono: performance.now() };
+  clockPresence.set(null);
+  departing = false;
+  timer.set(next);
+  quietRecovery();
+  return true;
+}
+/** Bank a known native suspend or clean departure before its grouped save. */
+async function bankDeparture(at: number) {
+  const s = timer.get();
+  if (!canWriteClockStore("timer") || !recoveryHydrated || s.startedAt === null) return;
+  credit(s, at, false);
+  departing = true;
+  clockPresence.set({ segId: s.segId, lastAliveAt: at, departedAt: at, ownerId });
+  timer.set({ ...E.markCredited(s, at, s.segment === "focus" ? totalMs(s) : null), reentry: E.newSegId() });
+  quietRecovery();
+  await flushReadyStores();
+}
+function suspensionRecovery() {
+  if (typeof window === "undefined" || !canWriteClockStore("timer") || !recoveryHydrated) return false;
+  const latch = window.desktop?.consumeSuspensionAt?.();
+  if (!latch) return false;
+  witnessedOwner = null;
+  if (latch.suspended) {
+    if (clockPresence.get()?.departedAt !== latch.at) void bankDeparture(latch.at).catch(reportRequestError);
+    return true;
+  }
+  return settleAway(latch.at);
+}
+/** Every accounting mutation checks absence before it can advance the cutoff. */
+function recoverBeforeMutation() {
+  if (typeof window === "undefined" || !recoveryHydrated || !canWriteClockStore("timer")) return false;
+  if (suspensionRecovery()) return true;
+  const s = timer.get(), p = clockPresence.get();
+  if (s.startedAt === null) return false;
+  if (departing && p?.segId === s.segId) return true;
+  missedEnding();
+  if (interruptedClock?.segId !== s.segId) return false;
+  return settleAway(interruptedClock.at);
+}
+/** Clean Quit waits for both departure bookkeeping and its durable commit. */
+export async function prepareTimerDeparture(at = Date.now()) {
+  if (recoverBeforeMutation()) { await flushReadyStores(); return; }
+  await bankDeparture(at);
 }
 
 // ---------- one leader tab owns the clock, the chime and stats bookkeeping ----------
@@ -173,7 +286,8 @@ function announce(kind: AlertKind, announcement?: DesktopAnnouncement) {
 
 /** Arm or disarm the end chime + end watch to match the timer. Idempotent; only the leader tab plays audio. */
 function syncAudio() {
-  if (!canWriteClockStore("timer") || !recoveryHydrated) return;
+  if (!canWriteClockStore("timer") || !recoveryHydrated || departing || settlingSnapshot) return;
+  if (suspensionRecovery()) return;
   if (pageAnnouncement && timerAnnouncement(T().display).genericSpeech) cancelSpeech();
   syncTicks();
   const s = timer.get();
@@ -181,7 +295,7 @@ function syncAudio() {
   // A Web Lock may be granted after hydration tried to settle. Do not arm an
   // expired saved run as a live boundary when this renderer finally becomes leader.
   if (recoveryHydrated && s.segId === loadedExpiredSeg && s.startedAt !== null && total !== null && E.elapsed(s, Date.now()) >= total) {
-    timerActions.complete(s.segId, true);
+    settleOwnedSnapshot();
     return;
   }
   if (quietTimer(T()) || s.boundary?.missed) {
@@ -252,7 +366,9 @@ const currentTaskId = () => currentTask(tasks.get())?.id;
 
 /** Switching tasks mid-session: bank the time so far to the old task, then attribute the rest to the new one. */
 function onTaskChange(explicit = false) {
+  const recovering = recoverBeforeMutation();
   const s = timer.get();
+  if (recovering && s.startedAt !== null) return;
   if (!canWriteClockStore("timer") || s.segment !== "focus" || !s.context) return;
   const id = currentTaskId();
   if (id === s.taskId || (!explicit && s.taskId && !tasks.get().some(task => task.id === s.taskId))) return;
@@ -271,11 +387,15 @@ const localTimerActions = {
   },
   cancelEndHold() { endHold = null; },
   endHardSession(reason: string): TimerCommandResult {
-    const s = timer.get();
+    let s = timer.get();
     if (!hardModeLocked(s) || endHold?.segId !== s.segId) return { ok: false, reason: "stale-segment", message: "This block has changed." };
     if (performance.now() - endHold.at < 10_000) return { ok: false, reason: "hold-required", message: "Hold for 10 seconds first." };
     const clean = cleanThought(reason);
     if (clean.length < 3 || clean.length > 500 || /[\r\n]/.test(reason)) return { ok: false, reason: "reason-required", message: "Enter a single-line reason of at least 3 characters." };
+    recoverBeforeMutation();
+    const current = timer.get();
+    if (current.segId !== s.segId || !hardModeLocked(current)) return { ok: false, reason: "stale-segment", message: "This block has changed." };
+    s = current;
     const now = Date.now();
     endHold = null;
     credit(s, now, false);
@@ -333,8 +453,11 @@ const localTimerActions = {
     const s = E.start({ ...cur, reentry: undefined, context, frozen: true,
       frozenTotal: cur.frozen ? (cur.frozenTotal ?? null) : liveTotal(cur),
       taskId: cur.elapsedBefore > 0 ? cur.taskId : context.taskId, hardLocked: cur.hardLocked || T().hardMode }, Date.now());
+    departing = false;
+    heartbeat = { wall: Date.now(), mono: performance.now() }; interruptedClock = undefined;
     boundaryAlert.resumeTicks();
     timer.set(s);
+    noteAlive();
     if (!window.desktop?.armAlarm && T().notify && "Notification" in window && Notification.permission === "default") void Notification.requestPermission();
   },
   pause() {
@@ -382,8 +505,11 @@ const localTimerActions = {
   },
   /** End of segment. Called by the audio-clock watch or the ticker; `segId` makes repeat calls harmless. */
   complete(segId?: string, missed = false) {
-    if (!canWriteClockStore("timer")) return;
+    if (!canWriteClockStore("timer") || suspensionRecovery() || departing) return;
     const s = timer.get();
+    if (missed && interruptedClock?.segId === s.segId) {
+      const at = interruptedClock.at; interruptedClock = undefined; settleAway(at); return;
+    }
     if (s.boundary || (segId && segId !== s.segId)) return;
     const total = totalMs(s);
     if (total === null || (s.startedAt === null && s.elapsedBefore < total)) return;
@@ -477,7 +603,10 @@ export const timerActions: typeof localTimerActions = new Proxy(localTimerAction
   get(target, key: keyof typeof localTimerActions) {
     const action = target[key];
     return (...args: unknown[]) => {
-      if (canWriteClockStore("timer")) return (action as (...values: unknown[]) => unknown)(...args);
+      if (canWriteClockStore("timer")) {
+        if (!["complete", "beginEndHold", "cancelEndHold", "endHardSession"].includes(key) && recoverBeforeMutation()) return;
+        return (action as (...values: unknown[]) => unknown)(...args);
+      }
       if (key === "complete") return; // Only the owner's own clocks may complete a block.
       void sharedTimerRequest({ kind: "control", expected: recoveryCommand(), action: key, args,
         noticeId: transitionStore.get()?.segId ?? null }).catch(reportRequestError);
@@ -505,18 +634,23 @@ const tickSubs = new Set<() => void>();
 let ticker: ReturnType<typeof setInterval> | null = null;
 let tickNow = Date.now();
 let heartbeat = { wall: Date.now(), mono: performance.now() };
+let interruptedClock: { segId: string; at: number } | undefined;
 // Throttled callbacks can be late while both clocks advance normally. Only a
 // wall/monotonic mismatch indicates a clock jump; the native latch proves sleep
 // even on systems where both clocks advance together.
 function missedEnding(woke = false) {
   const current = { wall: Date.now(), mono: performance.now() };
   const suspended = window.desktop?.consumeSuspension?.() ?? false;
-  const missed = woke || suspended || Math.abs((current.wall - heartbeat.wall) - (current.mono - heartbeat.mono)) > 5000;
+  const jumped = Math.abs((current.wall - heartbeat.wall) - (current.mono - heartbeat.mono)) > 5000;
+  const missed = woke || suspended || jumped;
+  const p = clockPresence.get();
+  if ((jumped || woke) && p && !window.desktop?.consumeSuspension) interruptedClock = { segId: p.segId, at: p.lastAliveAt };
   heartbeat = current;
   return missed;
 }
 let recoveryHydrated = false;
 let loadedExpiredSeg: string | undefined;
+let savedCutoff: { segId: string; at: number } | undefined;
 let promotionReady: Promise<void> | null = null;
 // Only the clock owner renames legacy IDs, with their existing credit in the same save group.
 function migrateInitialSegment() {
@@ -533,10 +667,15 @@ function migrateInitialSegment() {
 }
 export const timerHydrationReady = Promise.all([
   timer.ready, settings.ready, tasks.ready, focusPick.ready, storeReady("stats"), intent.ready,
-  returnActivity.ready, tinyStarts.ready, parkingReview.ready, storeReady("parked"), calmFoundationReady,
+  returnActivity.ready, tinyStarts.ready, parkingReview.ready, clockPresence.ready, storeReady("parked"), calmFoundationReady,
 ]).then(() => {
+  const saved = timer.get(), p = clockPresence.get();
+  if (saved.startedAt !== null && ["disk", "received"].includes(storeSource("timer") ?? "")) {
+    savedCutoff = { segId: saved.segId, at: p?.segId === saved.segId ? p.departedAt ?? p.lastAliveAt : saved.startedAt + Math.max(0, saved.creditedUpTo - saved.elapsedBefore) };
+  }
   migrateInitialSegment();
   const s = timer.get(), total = totalMs(s);
+  if (savedCutoff) savedCutoff.segId = s.segId;
   // Remember only a run that was already over when loaded. A saved run with
   // time left can later finish live even if nothing has written the store yet.
   if (s.startedAt !== null && total !== null && E.elapsed(s, Date.now()) >= total) loadedExpiredSeg = s.segId;
@@ -545,13 +684,24 @@ export const timerHydrationReady = Promise.all([
 
 function settleOwnedSnapshot() {
   if (!canWriteClockStore("timer") || !recoveryHydrated) return;
-  migrateInitialSegment();
-  const s = timer.get(), total = totalMs(s);
-  if (s.startedAt !== null && total !== null && E.elapsed(s, Date.now()) >= total) {
-    loadedExpiredSeg = s.segId;
-    timerActions.complete(s.segId, true);
-  }
-  else if (storeSource("timer") === "disk" && (s.startedAt !== null || s.elapsedBefore > 0) && !s.boundary && !s.reentry) {
+  const before = timer.get(), presence = clockPresence.get();
+  const saved = ["disk", "received"].includes(storeSource("timer") ?? "") || savedCutoff?.segId === before.segId;
+  const cutoff = presence?.segId === before.segId ? presence.departedAt ?? presence.lastAliveAt :
+    savedCutoff?.segId === before.segId ? savedCutoff.at : (before.startedAt ?? Date.now()) + Math.max(0, before.creditedUpTo - before.elapsedBefore);
+  // Renaming a legacy ID must not publish it as a new live run before recovery.
+  settlingSnapshot = true;
+  try { migrateInitialSegment(); } finally { settlingSnapshot = false; }
+  const s = timer.get(), total = totalMs(s), p = clockPresence.get();
+  if (s.startedAt !== null) {
+    const liveHandoff = p?.segId === s.segId && witnessedOwner?.segId === s.segId && witnessedOwner.ownerId === p.ownerId;
+    if (liveHandoff && (total === null || E.elapsed(s, Date.now()) < total)) {
+      departing = false; savedCutoff = undefined;
+      timer.set({ ...s, reentry: undefined }); noteAlive();
+    } else if (saved || p?.departedAt !== undefined) {
+      savedCutoff = undefined;
+      settleAway(cutoff);
+    } else if (total !== null && E.elapsed(s, Date.now()) >= total) timerActions.complete(s.segId, true);
+  } else if (storeSource("timer") === "disk" && s.elapsedBefore > 0 && !s.boundary && !s.reentry) {
     timer.set({ ...s, context: s.context ?? captureContext(), reentry: E.newSegId() });
   }
   checkReturnActivity();
@@ -593,8 +743,15 @@ export async function releaseTimerOwnership() {
 /** Native wake and web lifecycle paths share the same settlement and gap checks. */
 export function checkRecoveryLifecycle(woke = false) {
   if (!recoveryHydrated) return;
-  const missed = missedEnding(woke);
   checkReturnActivity(woke);
+  if (suspensionRecovery()) return;
+  const p = clockPresence.get();
+  if (departing && p && settleAway(p.departedAt ?? p.lastAliveAt)) return;
+  const missed = missedEnding(woke);
+  if (missed) {
+    witnessedOwner = null;
+    if (p && !window.desktop?.consumeSuspension && settleAway(p.lastAliveAt)) return;
+  }
   const s = timer.get(), total = totalMs(s);
   if (canWriteClockStore("timer") && s.startedAt !== null && total !== null && E.elapsed(s, Date.now()) >= total) timerActions.complete(s.segId, missed || s.segId === loadedExpiredSeg);
 }
@@ -616,7 +773,10 @@ export function startTicker({ follower = false }: { follower?: boolean } = {}) {
       return promotionReady.then(() => new Promise<void>(() => {})); // hold for the life of the tab
     }).catch(reportRequestError);
   }
-  timer.subscribe(syncAudio);
+  timer.subscribe(() => {
+    if (recoveryHydrated && canWriteClockStore("timer") && !departing && !settlingSnapshot && timer.get().startedAt !== null && clockPresence.get()?.segId !== timer.get().segId) noteAlive();
+    syncAudio();
+  });
   settings.subscribe(syncAudio);
   localPreferences.subscribe(syncTicks);
   boundaryAlert.subscribe(syncTicks);
@@ -624,33 +784,33 @@ export function startTicker({ follower = false }: { follower?: boolean } = {}) {
   focusPick.subscribe(() => onTaskChange(true));
   ticker = setInterval(() => {
     const now = Date.now();
+    if (suspensionRecovery() || departing) return;
     const missed = missedEnding();
+    if (missed) {
+      witnessedOwner = null;
+      const p = clockPresence.get();
+      if (p && !window.desktop?.consumeSuspension && settleAway(p.lastAliveAt)) return;
+    }
     tickNow = now;
     const s = timer.get();
     if (s.startedAt === null || !recoveryHydrated) return;
     const total = totalMs(s);
     if (canWriteClockStore("timer") && total !== null && E.elapsed(s, tickNow) >= total) timerActions.complete(s.segId, missed || s.segId === loadedExpiredSeg);
+    noteAlive(now, false);
     tickSubs.forEach((fn) => fn());
   }, 250);
 
   setInterval(() => { if (recoveryHydrated) checkReturnActivity(); }, 30_000);
   window.addEventListener("focus", () => checkRecoveryLifecycle());
   window.addEventListener("pageshow", () => checkRecoveryLifecycle());
-  window.desktop?.onLifecycle?.(event => checkRecoveryLifecycle(event === "resume"));
+  window.desktop?.onLifecycle?.(event => {
+    if (event === "suspend") suspensionRecovery();
+    else checkRecoveryLifecycle(event === "resume");
+  });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkRecoveryLifecycle(); });
 
-  // bank partial credit when the page goes away, so closing the tab never loses time
-  const bank = () => {
-    const now = Date.now();
-    const s = timer.get();
-    if (!canWriteClockStore("timer") || !recoveryHydrated || s.startedAt === null) return;
-    const total = totalMs(s);
-    if (total !== null && E.elapsed(s, now) >= total) return timerActions.complete(s.segId, missedEnding());
-    credit(s, now, false);
-    timer.set({ ...E.markCredited(s, now, total), reentry: E.newSegId() });
-  };
-  window.addEventListener("pagehide", bank);
-  document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && bank());
+  window.addEventListener("pagehide", () => { void prepareTimerDeparture().catch(reportRequestError); });
+  commands?.postMessage({ type: "clock-hello" });
 
   // after a reload while running: finish if time ran out, otherwise re-arm
   void timerHydrationReady.then(settleOwnedSnapshot);
@@ -702,7 +862,7 @@ export async function runTimerCommand(command: DesktopTimerCommand, origin?: Des
     return { ok: false, reason: "typing-guard", message: "Wait until typing has stopped." };
   }
   if (!canWriteClockStore("timer")) {
-    if (hardModeLocked() && typeof command === "string" && ["pause", "toggle", "reset", "skip", "stop", "stopAndPause"].includes(command) && !(command === "skip" && totalMs() === null)) return hardRefusal();
+    if (hardModeLocked() && !(command === "toggle" && timer.get().startedAt === null) && typeof command === "string" && ["pause", "toggle", "reset", "skip", "stop", "stopAndPause"].includes(command) && !(command === "skip" && totalMs() === null)) return hardRefusal();
     const action = typeof command === "object" ? "endHardSession" : command;
     const result = await sharedTimerRequest({ kind: "control", expected: recoveryCommand(), action,
       args: typeof command === "object" ? [command.reason] : [], noticeId: transitionStore.get()?.segId ?? null });
@@ -789,7 +949,7 @@ export function answerRecovery(expected: RecoveryCommand, action: RecoveryAnswer
 /** A one-off tiny block. Repeated or stale Start clicks cannot replace a run. */
 export function startTinyBlock(expectedSegId: string, minutes: number): boolean {
   const s = timer.get();
-  if (!canWriteClockStore("timer") || s.segId !== expectedSegId || s.startedAt !== null || s.segment !== "focus" || s.elapsedBefore > 0 || s.boundary || s.reentry ||
+  if (!canWriteClockStore("timer") || hardModeLocked(s) || s.segId !== expectedSegId || s.startedAt !== null || s.segment !== "focus" || s.elapsedBefore > 0 || s.boundary || s.reentry ||
     !Number.isFinite(minutes) || minutes < 1 || minutes > 1440) return false;
   timer.set({ ...s, tinyStart: true, frozen: true, frozenTotal: minutes * 60_000, context: captureContext() });
   timerActions.start();
@@ -828,6 +988,7 @@ const commands = typeof BroadcastChannel === "undefined" ? null : new BroadcastC
 const commandWaiters = new Map<string, { request: SharedTimerRequest; resolve: (result: SharedTimerResult) => void; reject: (error: Error) => void; timeout: ReturnType<typeof setTimeout> }>();
 const reviewUndos = new Map<string, () => void>();
 async function executeSharedTimerRequest(request: SharedTimerRequest): Promise<SharedTimerResult> {
+  if (recoverBeforeMutation()) return { ok: false };
   if (!canWriteClockStore("timer", true)) return { ok: false };
   if (request.kind === "control" || request.kind === "owned" || request.kind === "longer") {
     const actual = recoveryCommand();
@@ -891,7 +1052,11 @@ async function executeSharedTimerRequest(request: SharedTimerRequest): Promise<S
 }
 commands?.addEventListener("message", (event: MessageEvent) => {
   const message = event.data;
-  if (message?.type === "timer-result") {
+  if (message?.type === "clock-hello" && canWriteClockStore("timer") && timer.get().startedAt !== null && !departing) {
+    commands?.postMessage({ type: "clock-alive", segId: timer.get().segId, ownerId });
+  } else if (message?.type === "clock-alive" && !canWriteClockStore("timer") && typeof message.segId === "string" && typeof message.ownerId === "string") {
+    witnessedOwner = { segId: message.segId, ownerId: message.ownerId };
+  } else if (message?.type === "timer-result") {
     const waiting = commandWaiters.get(message.id);
     if (!waiting) return;
     clearTimeout(waiting.timeout); commandWaiters.delete(message.id);

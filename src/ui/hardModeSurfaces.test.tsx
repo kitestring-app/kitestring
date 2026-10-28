@@ -190,3 +190,14 @@ it("shows deferred disable in Timer settings and a saved reason in the session l
   const html = renderToStaticMarkup(<SessionLog />);
   expect(html).toContain("Hard mode: ended early"); expect(html).toContain("Meeting");
 });
+
+it('dismissed paused Hard recovery keeps visible Resume available without unlocking reset or skip', async () => {
+  timer.set({ ...timer.get(), startedAt: null, elapsedBefore: 10_000, creditedUpTo: 10_000 });
+  for (const node of [FocusView({ captureOpen: false, onPark: vi.fn(), onCaptureClose: vi.fn() }), AmbientTimer()]) {
+    const buttons = elements(node).filter(el => el.type === 'button');
+    const start = buttons.find(el => /^Start/.test(el.props['aria-label'] ?? ''))!;
+    expect(start.props.disabled).toBe(false);
+    for (const button of buttons.filter(el => /Reset this|Skip/.test(el.props['aria-label'] ?? ''))) expect(button.props.disabled).toBe(true);
+  }
+  expect(await runTimerCommand('toggle')).toEqual({ ok: true }); expect(timer.get().startedAt).toBe(Date.now());
+});

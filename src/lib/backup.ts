@@ -36,6 +36,7 @@ export const STORE_CLASS = {
   floatingGlass: { class: "device", section: "device" },
   customBgs: { class: "content", section: "images" },
   deviceCalmPreset: { class: "internal", section: null },
+  clockPresence: { class: "internal", section: null },
   returnActivity: { class: "internal", section: null },
   tinyStarts: { class: "internal", section: null },
   parkingReview: { class: "internal", section: null },
@@ -82,7 +83,8 @@ function checkChunk(c: unknown): string | null {
   if (c.kind !== "focus" && c.kind !== "break") return "stats kind";
   if (c.segment !== "focus" && c.segment !== "short" && c.segment !== "long") return "stats segment";
   if (!isNum(c.start, EPOCH_MIN, EPOCH_MAX)) return "stats start";
-  if (!isNum(c.ms, 0, DAY)) return "stats duration";
+  if (!optional(c.away, x => typeof x === "boolean") || (c.away === true && c.kind !== "break")) return "away flag";
+  if (!isNum(c.ms, 0, c.kind === "break" ? Number.MAX_SAFE_INTEGER : DAY)) return "stats duration";
   if (!optional(c.earlyEndReason, (x) => isStr(x, 500) && (x as string).trim().length >= 3 && !/[\r\n]/.test(x as string))) return "session exit reason";
   if (typeof c.completed !== "boolean") return "stats completed flag";
   if (!optional(c.segId, (x) => isStr(x, 64)) || !optional(c.taskId, (x) => isStr(x, 64))) return "stats ids";

@@ -142,3 +142,22 @@ test('task estimates and old tasks pass unchanged through the native cloud bridg
     assert.deepEqual((await cloud.request('GET', '/api/sync')).data.entries, entries);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('away breaks and unknown fields round-trip unchanged through native cloud sync', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'cloud-away-test-'));
+  const token = randomBytes(32).toString('hex');
+  const entries = [{ key: 'stats', updatedAt: 1, value: { chunks: [{ id: 'away', kind: 'break', segment: 'short', start: 1, ms: 3 * 86400000, completed: false, away: true, futureField: { kept: true } }], tasksDone: [] } }];
+  let saved;
+  try {
+    const cloud = createCloud({ origin: ORIGIN, userData: dir, safeStorage: {
+      isEncryptionAvailable: () => true, encryptString: s => Buffer.from(s), decryptString: b => b.toString(),
+    }, fetch: async (url, init) => {
+      if (url.endsWith('/login')) return Response.json({ ok: true, token });
+      if (init.method === 'PUT') saved = JSON.parse(init.body);
+      return Response.json(init.method === 'GET' ? saved : { ok: true });
+    } });
+    await cloud.signIn('test@example.invalid', randomBytes(20).toString('hex'));
+    assert.equal((await cloud.request('PUT', '/api/sync', { entries })).status, 200);
+    assert.deepEqual((await cloud.request('GET', '/api/sync')).data.entries, entries);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

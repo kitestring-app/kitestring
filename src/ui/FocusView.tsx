@@ -114,7 +114,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
       <NextAction />
       {reminder && <p className="muted small" role="status">{reminder}</p>}
       <div className="controls chrome">
-        <button className="iconbtn primary" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.toggle()} aria-label={v.running ? "Pause · Space" : "Start · Space"}>
+        <button className="iconbtn primary" disabled={v.hardLocked && v.running} title={v.hardLocked && v.running ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.toggle()} aria-label={v.running ? "Pause · Space" : "Start · Space"}>
           {v.running ? <Icon.pause /> : <Icon.play />}
         </button>
         <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.reset()} aria-label="Reset this session · R">

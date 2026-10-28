@@ -129,10 +129,10 @@ describe.skipIf(process.env.EVIDENCE_BROWSER !== "1")("bundled evidence page", (
     await chrome.evaluate("document.querySelector('.credits a[href=\"./research.html\"]').click()");
     await chrome.waitFor("document.querySelector('.evidence-reader iframe')?.contentDocument?.querySelector('h1')");
     expect(await chrome.evaluate("!!document.querySelector('.evidence-reader[open]') && window.evidenceDashboard.isConnected")).toBe(true);
-    await chrome.evaluate("window.evidenceTitle = document.title; window.evidenceNow = Date.now; Date.now = () => window.evidenceNow() + 5000");
+    await chrome.evaluate("window.evidenceTitle = document.title; window.evidenceNow = Date.now; window.evidenceMono = performance.now.bind(performance); Date.now = () => window.evidenceNow() + 5000; performance.now = () => window.evidenceMono() + 5000");
     await chrome.waitFor("document.title !== window.evidenceTitle");
     expect(await chrome.evaluate("!!document.querySelector('[aria-label=\"Pause · Space\"]') && location.pathname === '/'")).toBe(true);
-    await chrome.evaluate("Date.now = window.evidenceNow; document.querySelector('.evidence-reader button').click()");
+    await chrome.evaluate("Date.now = window.evidenceNow; performance.now = window.evidenceMono; document.querySelector('.evidence-reader button').click()");
     await chrome.waitFor("!document.querySelector('.evidence-reader')");
     await chrome.evaluate("document.querySelector('[aria-label=\"Pause · Space\"]').click()");
   }, 30000);

@@ -3,6 +3,7 @@ import { alertTypingGuard } from "../lib/alertTypingGuard";
 import { useStore } from "../lib/store";
 import { intent, updateIntent } from "../state/intent";
 import { settings } from "../state/settings";
+import { recoveryRecordText } from "../state/recoveryPolicy";
 import { stats } from "../state/stats";
 import { tasks } from "../state/tasks";
 import { returnActivity } from "../state/returnActivity";
@@ -88,7 +89,8 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
   </div>;
   // The pinned action, why and cue already sit just above the controls; the card only names what is not on screen.
   const showContext = !!context?.action && context.action !== pin.action;
-  const showSpent = !view.hiddenTime && offer !== "gap-return" && spent >= 60_000;
+  const record = offer !== "gap-return" ? recoveryRecordText(s.recoveryRecord?.focusMs ?? spent, s.recoveryRecord?.awayMs, view.hiddenTime) : "";
+  const showSpent = !!record;
   const body = offer === "gap-return" || (offer && (showContext || showSpent)) || message ? <>
     {offer === "gap-return" && <p className="recovery-action">{pin.action || "Choose a next action whenever you’re ready."}</p>}
     {offer && offer !== "gap-return" && showContext && <>
@@ -97,7 +99,7 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
       {context?.why && <p className="muted small">{context.why}</p>}
       {context?.cue && <p className="muted small recovery-cue">{context.cue}</p>}
     </>}
-    {showSpent && <p className="faint small">{Math.floor(spent / 60_000)} min recorded so far</p>}
+    {showSpent && <p className="faint small">{record}</p>}
     {message && <p className="muted small" role="status">{message}</p>}
   </> : null;
   return <FocusCard title={offer ? title : "Next action cleared"} icon={offer === "gap-return" ? "sun" : "clock"}
