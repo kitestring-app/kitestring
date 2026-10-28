@@ -118,6 +118,12 @@ export class Chrome {
     }
     throw new Error(`Page did not reach: ${expression}`);
   }
+  async reload(expression) {
+    const previousDocument = await this.evaluate('performance.timeOrigin');
+    await this.send('Page.reload');
+    // CDP acknowledges reload before the old document has necessarily gone away.
+    await this.waitFor(`performance.timeOrigin !== ${previousDocument} && document.readyState === 'complete' && (${expression})`);
+  }
   assertHealthy() {
     if (this.errors.length) throw new Error(`Browser errors: ${JSON.stringify(this.errors)}`);
   }

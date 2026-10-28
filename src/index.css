@@ -184,8 +184,8 @@ input, textarea, select { font: inherit; color: inherit; }
 .scrim { position: fixed; inset: 0; z-index: 1; background: var(--scrim); pointer-events: none; }
 
 /* ---------- layout ---------- */
-.app { position: relative; z-index: 2; height: 100%; display: grid; grid-template-rows: auto 1fr auto; color: var(--on-bg); }
-.topbar { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; gap: 12px; }
+.app { position: relative; z-index: 2; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; color: var(--on-bg); }
+.topbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 18px 22px; gap: 12px; }
 .chrome { transition: opacity 0.5s; }
 .app.idle .chrome { opacity: 0; pointer-events: none; }
 .row { display: flex; gap: 10px; align-items: center; }
@@ -319,7 +319,7 @@ input[type="checkbox"]:not(.switch), input[type="radio"] { accent-color: var(--a
 .choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 .choice .lbl { display: block; margin-top: 8px; font-weight: 600; font-size: 14px; }
 .close-x { position: absolute; top: 14px; left: 14px; }
-@media (max-width: 760px) { .drawer { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } .drawer nav { flex-direction: row; overflow-x: auto; } }
+@media (max-width: 760px) { .drawer { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; } .drawer nav { flex-direction: row; overflow-x: auto; } }
 
 /* ---------- animated wallpapers ---------- */
 .anim-aurora, .anim-lava { animation: theme-pan 40s ease-in-out infinite; }

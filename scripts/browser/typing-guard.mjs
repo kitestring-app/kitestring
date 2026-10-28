@@ -117,8 +117,8 @@ try {
   }
   // Register through main.tsx, then drive the same callback used by native IPC.
   await c.send('Page.addScriptToEvaluateOnNewDocument', {source:`window.desktop={onTimerRequest(callback){window.nativeTimerRequest=callback;return()=>{}}}`});
-  await c.send('Page.reload');
-  await c.waitFor("document.querySelector('.next-action') && window.nativeTimerRequest");
+  await c.reload("document.querySelector('.next-action') && window.nativeTimerRequest");
+  await c.waitFor("import('/src/state/timer.ts').then(async t => { await t.timerHydrationReady; return (await import('/src/lib/store.ts')).canWriteClockStore('timer'); })");
   await seed(true, false); await finish();
   await c.waitFor("document.querySelector('.recovery-card')");
   const nativeBefore = await snapshot();
