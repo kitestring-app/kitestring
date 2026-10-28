@@ -40,7 +40,7 @@ export function BreathingBreak({ hiddenTime, children }: { hiddenTime: boolean; 
     <div className="recovery-buttons">{([1, 5] as const).map(minutes => <button className="btn small" key={minutes}
       onClick={() => { setElapsed(0); setRun({ minutes, at: performance.now(), wallAt: Date.now() }); }}>Breathe for {minutes} {minutes === 1 ? "minute" : "minutes"}</button>)}</div>;
   return children(<><div className="breathing-host" ref={mountHeading} tabIndex={-1} onKeyDown={e => { if (e.key === "Escape") { e.stopPropagation(); close(); } }}>
-    <FocusCard title="Breathing break" icon="wind" label="Breathing break" className="breathing-card"
+    <FocusCard title="Breathing break" icon="wind" label="Breathing break" className="breathing-card" keepVisible={!!run}
       note="Use a comfortable pace. Stop if it feels uncomfortable." onClose={close} actions={actions}>
       {run ? <div className="breathing-active">
         <p className="sr-only">{instruction}</p>

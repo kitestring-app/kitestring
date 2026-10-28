@@ -13,7 +13,6 @@
 .breathing-host { min-height: 0; display: flex; flex-direction: column; border-radius: var(--radius); }
 .breathing-host:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .breathing-active { display: grid; gap: 8px; }
-.app.idle .breathing-card.chrome:has(.breathing-active) { opacity: 1; pointer-events: auto; }
 .breathing-static { display: none; }
 .breathing-paced { font-size: 18px; }
 :root.reduce-motion .breathing-static { display: block; }

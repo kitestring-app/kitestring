@@ -4,10 +4,10 @@ import type { GlyphName } from "./Glyph";
 import { Icon } from "./icons";
 import "./RecoveryCard.css";
 
-export function FocusCard({ title, icon, label, note, onClose, children, actions, className = "" }: {
-  title: string; icon: GlyphName; label: string; note: string; onClose: () => void; children?: ReactNode; actions?: ReactNode; className?: string;
+export function FocusCard({ title, icon, label, note, onClose, children, actions, className = "", keepVisible = false }: {
+  title: string; icon: GlyphName; label: string; note: string; onClose: () => void; children?: ReactNode; actions?: ReactNode; className?: string; keepVisible?: boolean;
 }) {
-  return <aside className={`recovery-card chrome ${className}`} aria-label={label}>
+  return <aside className={`recovery-card ${keepVisible ? "" : "chrome"} ${className}`} inert={keepVisible ? false : undefined} aria-label={label}>
     <div className="recovery-heading"><Glyph name={icon} size={20} /><h2>{title}</h2>
       <button className="iconbtn" aria-label="Close" onClick={onClose}><Icon.close /></button>
     </div>

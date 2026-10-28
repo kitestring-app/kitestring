@@ -118,6 +118,9 @@ describe.skipIf(process.env.BREATHING_BROWSER !== "1")("optional breathing insid
       await chrome.waitFor("document.querySelector('.app.idle')");
       await chrome.evaluate("new Promise(r=>setTimeout(r,600))");
       expect(await chrome.evaluate("(()=>{const s=getComputedStyle(document.querySelector('.breathing-card'));return {opacity:s.opacity,pointerEvents:s.pointerEvents}})()")).toEqual({opacity:'1',pointerEvents:'auto'});
+      expect(await chrome.evaluate("document.querySelector('.breathing-card').inert")).toBe(false);
+      await chrome.evaluate("document.querySelector('.breathing-card [aria-label=Close]').focus()");
+      expect(await chrome.evaluate("document.activeElement===document.querySelector('.breathing-card [aria-label=Close]')")).toBe(true);
       await chrome.evaluate("document.querySelector('.breathing-card [aria-label=Close]').click()");
       await page(`t.timerActions.stop();`);
     }
