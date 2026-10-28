@@ -7,7 +7,11 @@ describe.skipIf(process.env.FIT_BROWSER !== "1")("narrow layouts with different 
   const chrome = new Chrome();
   let server: ViteDevServer;
   beforeAll(async () => {
-    server = await createServer({ configLoader: "runner", server: { host: "127.0.0.1", port: 0, hmr: false, watch: null }, logLevel: "error" });
+    server = await createServer({ configLoader: "runner", server: { host: "127.0.0.1", port: 0, hmr: false, watch: null }, logLevel: "error",
+      plugins: [{name: "layout-signed-out", configureServer(s) {
+        s.middlewares.use('/api/me', (_req, res) => { res.statusCode = 401; res.setHeader('Content-Type', 'application/json'); res.end('{}'); });
+      }}],
+    });
     await server.listen();
     const address = server.httpServer!.address();
     if (!address || typeof address === "string") throw new Error("No test server");
@@ -16,6 +20,8 @@ describe.skipIf(process.env.FIT_BROWSER !== "1")("narrow layouts with different 
     await chrome.send("Fetch.enable", { patterns: [{ urlPattern: "*", requestStage: "Request" }] });
     await chrome.send("Page.navigate", { url: chrome.origin });
     await chrome.waitFor("document.querySelector('.next-action')");
+    await chrome.evaluate("import('/src/lib/sync.ts').then(s => s.cloudRequest('GET', '/api/me').catch(() => {}))");
+    await chrome.waitFor("document.querySelector('.topbar .btn')");
   }, 30000);
   afterAll(async () => { await chrome.close(); await server?.close(); });
 
@@ -23,10 +29,11 @@ describe.skipIf(process.env.FIT_BROWSER !== "1")("narrow layouts with different 
     for (const native of [false, true]) for (const font of ["system-ui", "monospace"]) {
       await chrome.send("Emulation.setDeviceMetricsOverride", { width: 320, height: 820, deviceScaleFactor: 1, mobile: false });
       await chrome.evaluate(`(async () => {
-        const s = await import('/src/state/settings.ts'); await s.calmFoundationReady;
+        const s = await import('/src/state/settings.ts'); await s.calmFoundationReady; s.settingsUpdate('appearance', {look: 'classic'});
         document.documentElement.dataset.desktop = '${native}';
         document.documentElement.style.setProperty('--ui', '${font}');
         document.documentElement.style.setProperty('--display', '${font}');
+        document.querySelectorAll('.topbar button').forEach(b => b.style.letterSpacing = '${font == 'monospace' ? '1px' : 'normal'}');
         s.settingsUpdate('extras', {defaultTab: 'stats', reduceMotion: true});
       })()`);
       await chrome.evaluate("document.fonts.ready");
@@ -46,6 +53,19 @@ describe.skipIf(process.env.FIT_BROWSER !== "1")("narrow layouts with different 
       expect(await chrome.evaluate("document.querySelector('.drawer main').scrollWidth <= document.querySelector('.drawer main').clientWidth")).toBe(true);
       await chrome.evaluate("document.querySelector('.settings-close').click()");
       await chrome.waitFor("!document.querySelector('.drawer')");
+      if (!native) {
+        await chrome.evaluate(`import('/src/state/tasks.ts').then(t => t.tasks.set(Array.from({length: 30}, (_, i) => ({id: 'layout-' + i, title: 'Review paragraph ' + i, etaMin: 15, done: false, createdAt: Date.now()}))))`);
+        await chrome.evaluate("document.querySelector('[data-panel=tasks]').click()");
+        await chrome.waitFor("document.querySelector('.tasks-panel')");
+        const sheet = await chrome.evaluate(`(() => {
+          const panel = document.querySelector('.tasks-panel').getBoundingClientRect();
+          return {top: panel.top, bottom: panel.bottom, header: document.querySelector('.topbar').getBoundingClientRect().bottom, footer: document.querySelector('.bottombar').getBoundingClientRect().top};
+        })()`);
+        expect(sheet.top, JSON.stringify({font, sheet})).toBeGreaterThanOrEqual(sheet.header);
+        expect(sheet.bottom).toBeLessThanOrEqual(sheet.footer);
+        await chrome.evaluate("document.querySelector('.tasks-close').click()");
+        await chrome.waitFor("!document.querySelector('.tasks-panel')");
+      }
     }
     chrome.assertHealthy();
   }, 30000);

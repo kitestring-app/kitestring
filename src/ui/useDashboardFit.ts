@@ -9,6 +9,10 @@ export function useDashboardFit() {
     if (!center) return;
     let frame = 0;
     const measure = () => {
+      // Phone sheets share the space between the real bars, even after a header wraps.
+      const bounds = center.getBoundingClientRect();
+      document.documentElement.style.setProperty("--dashboard-space", `${center.clientHeight}px`);
+      document.documentElement.style.setProperty("--dashboard-bottom", `${Math.max(0, innerHeight - bounds.bottom)}px`);
       const face = center.querySelector<HTMLElement>(":scope > .time-display .timer.big, :scope > .time-display .timer-face.is-big, :scope > .timer.big, :scope > .timer-face.is-big, .clock-row > .timer.big, .clock-row > .timer-face.is-big");
       const row = face?.closest<HTMLElement>(".clock-row, .time-display") ?? face ?? center.querySelector<HTMLElement>(".time-display");
       if (!row) return;
