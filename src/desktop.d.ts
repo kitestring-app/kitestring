@@ -42,8 +42,9 @@ declare global {
       setSecureDns?: (url: string) => Promise<boolean>;
       onMenuCommand?: (callback: (command: DesktopMenuCommand) => void) => () => void;
       parkingStatus?: () => Promise<{ registered: boolean } | null>;
+      consumeSuspensionAt?: () => { at: number; suspended: boolean } | null;
       consumeSuspension?: () => boolean;
-      onLifecycle?: (callback: (event: "resume" | "activate") => void) => () => void;
+      onLifecycle?: (callback: (event: "resume" | "activate" | "suspend") => void) => () => void;
       onParked?: (callback: (text: string) => void) => () => void;
       mini?: boolean;
       setFloatingPreferences?: (value: FloatingPreferences) => Promise<boolean>;

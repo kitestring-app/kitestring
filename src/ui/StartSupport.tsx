@@ -11,7 +11,7 @@ export function StartSupport() {
   const view = useTimerView(), recovery = useRecoveryOffer();
   const [choice, setChoice] = useState("5"), [custom, setCustom] = useState("5");
   const [menu, setMenu] = useState(false), [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  const idle = !view.running && view.state.segment === "focus" && view.elapsed === 0 && !recovery;
+  const idle = !view.hardLocked && !view.running && view.state.segment === "focus" && view.elapsed === 0 && !recovery;
   if (!idle) return null;
   const command = recoveryCommand();
   const minutes = Number(choice === "custom" ? custom : choice);
@@ -39,7 +39,7 @@ export function LongerOfferCard() {
   const progression = useStore(tinyStarts);
   const view = useTimerView();
   const [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  if (view.running || view.state.segment !== "focus" || view.elapsed > 0 || !longerOfferAvailable()) return null;
+  if (view.hardLocked || view.running || view.state.segment !== "focus" || view.elapsed > 0 || !longerOfferAvailable()) return null;
   const expected = recoveryCommand();
   const answer = async (choice: "accepted" | "dismissed") => {
     setBusy(true);

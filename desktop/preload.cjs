@@ -43,8 +43,9 @@ contextBridge.exposeInMainWorld('desktop', Object.freeze(mini ? {
   parkingStatus: () => ipcRenderer.invoke('desktop:parking-status'),
   toggleFullScreen: () => ipcRenderer.invoke('desktop:toggle-fullscreen'),
   onFullScreenTransition: (callback) => subscribe('desktop:fullscreen-transition', value => { if (value === 'start' || value === 'end') callback(value); }),
+  consumeSuspensionAt: () => { const value = ipcRenderer.sendSync('desktop:consume-suspension-at'); return value && typeof value.at === 'number' && Number.isFinite(value.at) && typeof value.suspended === 'boolean' ? { at: value.at, suspended: value.suspended } : null; },
   consumeSuspension: () => ipcRenderer.sendSync('desktop:consume-suspension') === true,
-  onLifecycle: (callback) => subscribe('desktop:lifecycle', value => { if (value === 'resume' || value === 'activate') callback(value); }),
+  onLifecycle: (callback) => subscribe('desktop:lifecycle', value => { if (value === 'resume' || value === 'activate' || value === 'suspend') callback(value); }),
   onParked: (callback) => subscribe('desktop:parked', callback),
   publishTimerState: (value) => ipcRenderer.send('desktop:timer-state', value),
   setStatus(text) {

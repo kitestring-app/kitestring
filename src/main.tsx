@@ -7,7 +7,7 @@ import "./ui/Phone.css";
 import { calmFoundationReady, localPreferencesReady, settings } from "./state/settings";
 import { applyFont } from "./ui/settings/ClockTab";
 import { MiniTimer } from "./ui/MiniTimer";
-import { startTicker, timerActions, runTimerCommand } from "./state/timer";
+import { startTicker, timerActions, runTimerCommand, prepareTimerDeparture } from "./state/timer";
 import { flushReadyStores } from "./lib/store";
 import { startSync } from "./lib/sync";
 
@@ -20,7 +20,7 @@ else {
   void connectFloatingSettings();
   window.desktop?.onTimerRequest?.(runTimerCommand);
   window.desktop?.onTimerAction?.((action) => timerActions[action]());
-  window.desktop?.onFlush?.(flushReadyStores);
+  window.desktop?.onFlush?.(async () => { await prepareTimerDeparture(); await flushReadyStores(); });
 }
 if (!mini) void Promise.all([localPreferencesReady, calmFoundationReady]).then(startSync); // hosted version only: syncs to your account through Cloudflare Access + D1
 

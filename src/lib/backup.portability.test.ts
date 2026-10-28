@@ -187,3 +187,15 @@ it('round-trips every task leaf and its recorded work with Focus data, including
   } }));
   expect(legacy.data.tasks).toEqual([{ id: 'old', title: 'No guess', done: false, createdAt: at }]);
 });
+
+it.each([1, 2])("preserves every away chunk field in v%s backups, including multi-day gaps", async version => {
+  const b = await import("./backup"); const { stats } = await import("../state/stats"); const { dbGet } = await import("./db");
+  await stats.ready;
+  const chunk = { id: "away", kind: "break", segment: "short", start: Date.now(), ms: 3 * 86_400_000, completed: false, away: true, futureField: { kept: true } };
+  const file = { format: b.BACKUP_FORMAT, version, ...(version === 2 ? { sections: ["settings", "focus"] } : {}), data: { settings: {}, stats: { chunks: [chunk], tasksDone: [] } } };
+  await b.restoreBackup(b.parseBackup(JSON.stringify(file)), metadata);
+  expect((await dbGet<any>("stats")).chunks).toEqual([chunk]);
+  expect(b.parseBackup(await b.createBackup({ sections: ["focus"] })).data.stats).toEqual({ chunks: [chunk], tasksDone: [] });
+  expect(b.STORE_CLASS).toHaveProperty("clockPresence", { class: "internal", section: null });
+  expect(JSON.parse(await b.createBackup({ sections: ["focus", "device"] })).data).not.toHaveProperty("clockPresence");
+});

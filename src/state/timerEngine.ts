@@ -4,6 +4,7 @@ import type { Settings, TimerMode } from "./settings";
 export type Segment = "focus" | "short" | "long";
 
 export interface TimerState {
+  recoveryRecord?: { focusMs: number; awayMs: number };
   tinyStart?: boolean;
   context?: SessionContext;
   boundary?: RecoveryBoundary;
@@ -21,6 +22,7 @@ export interface TimerState {
 }
 
 export interface Chunk {
+  away?: boolean;
   kind: "focus" | "break";
   segment: Segment;
   start: number; // epoch ms the chunk began (approximate for multi-run segments)
@@ -88,7 +90,7 @@ export function endsCycle(mode: TimerMode, segment: Segment): boolean {
 }
 
 export function start(s: TimerState, now: number): TimerState {
-  return s.startedAt !== null ? s : { ...s, startedAt: now };
+  return s.startedAt !== null ? s : { ...s, recoveryRecord: undefined, startedAt: now };
 }
 
 export function pause(s: TimerState, now: number): TimerState {
@@ -150,7 +152,7 @@ export function carryContext(s: TimerState, now: number): SessionContext | undef
 
 /** Restart the current segment only (Flocus "reset segment"). */
 export function resetSegment(s: TimerState, now = s.startedAt ?? 0): TimerState {
-  return { ...s, context: carryContext(s, now), reentry: undefined, boundary: undefined, startedAt: null, elapsedBefore: 0, creditedUpTo: 0, segId: newSegId(), frozen: false, frozenTotal: null, hardLocked: false };
+  return { ...s, recoveryRecord: undefined, context: carryContext(s, now), reentry: undefined, boundary: undefined, startedAt: null, elapsedBefore: 0, creditedUpTo: 0, segId: newSegId(), frozen: false, frozenTotal: null, hardLocked: false };
 }
 
 /** Countdowns round up (never show 00:00 early); count-ups round down (00:00 for the first second). */

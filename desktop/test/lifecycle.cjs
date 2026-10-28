@@ -824,6 +824,22 @@ test('round3 native wake clears an expired alarm before renderer delivery and ne
   } finally { Date.now = originalNow; window.webContents.send = send; }
 });
 
+test('away suspend timestamp is trusted, exact, retained before sleep and consumed after wake', () => {
+  const originalNow = Date.now, send = window.webContents.send;
+  const read = (sender = event()) => { ipc.emit('desktop:consume-suspension-at', sender); return sender.returnValue; };
+  try {
+    Date.now = () => 123456789;
+    powerMonitor.emit('suspend');
+    assert.equal(read({ sender: {}, senderFrame: {} }), null);
+    assert.deepEqual(read(), { at: 123456789, suspended: true }); assert.deepEqual(read(), { at: 123456789, suspended: true });
+    window.webContents.send = (channel, ...values) => {
+      if (channel === 'desktop:lifecycle' && values[0] === 'resume') { assert.deepEqual(read(), { at: 123456789, suspended: false }); assert.equal(read(), null); }
+      send(channel, ...values);
+    };
+    powerMonitor.emit('resume');
+  } finally { Date.now = originalNow; window.webContents.send = send; }
+});
+
 test('round4 main holds the suspend latch until a trusted post-wake read, before resume delivery', () => {
   const read = (sender = event()) => { ipc.emit('desktop:consume-suspension', sender); return sender.returnValue; };
   const send = window.webContents.send;

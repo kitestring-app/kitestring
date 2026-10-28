@@ -84,12 +84,11 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
   }
   function suspend() {
     suspended = true;
-    if (timer !== null) clearTimer(timer);
-    timer = null;
+    disarm();
   }
   function resume() {
     // Do this before notifying the renderer: IPC cannot settle synchronously.
-    if (pending && pending.at <= now()) disarm();
+    disarm();
     suspended = false;
     check();
   }
@@ -130,7 +129,7 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
   return {
     testReminder,
     arm, disarm, check, suspend, resume, cancelSpeech, speak, notificationStatus,
-    restore() { const saved = read(stateFile); if (valid(saved) && saved.at > now()) arm(saved); else { pending = null; save(); } },
+    restore() { read(stateFile); disarm(); },
     preventSleep(enabled) { if (enabled === true && power === null) power = powerSaveBlocker.start('prevent-display-sleep'); else if (enabled === false) releasePower(); },
     releasePower,
     dispose() { if (timer !== null) clearTimer(timer); timer = null; cancelSpeech(); stopSound(); releasePower(); notification?.close(); },

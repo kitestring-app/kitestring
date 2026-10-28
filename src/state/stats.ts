@@ -178,7 +178,7 @@ export function scoreInputs(data: StatsData, day: number, streakDays: number): S
     qualifyingSessions: qualifyingSessions(chunks),
     focusMin: chunks.filter((c) => c.kind === "focus").reduce((a, c) => a + c.ms, 0) / 60_000,
     tasks: data.tasksDone.filter((t) => t.at >= from && t.at <= to).length,
-    breakMin: chunks.filter((c) => c.kind === "break").reduce((a, c) => a + c.ms, 0) / 60_000,
+    breakMin: chunks.filter((c) => c.kind === "break" && !c.away).reduce((a, c) => a + c.ms, 0) / 60_000,
     streakDays,
   };
 }
@@ -224,7 +224,7 @@ export function formatStatsDuration(ms: number): string {
 /** Average only focused days; each day's boost uses its historical streak. */
 export function averageFocusScore(data: StatsData, from: number, to: number): number {
   const visible = {
-    chunks: data.chunks.filter((c) => c.start <= to),
+    chunks: data.chunks.filter((c) => c.start <= to && !c.away),
     tasksDone: data.tasksDone.filter((t) => t.at <= to),
   };
   const days = byDay(visible);

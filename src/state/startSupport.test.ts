@@ -18,10 +18,11 @@ beforeEach(async () => {
   vi.stubGlobal("document", { addEventListener: vi.fn(), visibilityState: "visible" });
   m = await setup();
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout", "setInterval", "clearInterval"] }); vi.setSystemTime(Date.UTC(2026, 9, 26, 12));
+  vi.spyOn(performance, "now").mockImplementation(() => Date.now() - Date.UTC(2026, 9, 26, 12));
   m.settingsUpdate("timer", { autoRun: "off", takeover: false });
   m.timer.set({ ...m.INITIAL_TIMER, segId: "first" });
 });
-afterEach(async () => { vi.clearAllTimers(); vi.useRealTimers(); await m?.flushReadyStores(); vi.unstubAllGlobals(); });
+afterEach(async () => { vi.restoreAllMocks(); vi.clearAllTimers(); vi.useRealTimers(); await m?.flushReadyStores(); vi.unstubAllGlobals(); });
 const tiny = (minutes = 5) => m.startTinyBlock(m.timer.get().segId, minutes);
 function finish() { const id = m.timer.get().segId; vi.setSystemTime(Date.now() + m.totalMs()!); m.timerActions.complete(id); return id; }
 

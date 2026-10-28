@@ -346,7 +346,7 @@ if (!app.requestSingleInstanceLock()) {
     });
     ipcMain.handle('desktop:park-save', (event, text) => parking.submit(event, text));
     ipcMain.on('desktop:park-close', event => { if (parking.trusted(event)) parking.close(); });
-    let suspended = false, suspensionPending = false;
+    let suspended = false, suspensionPending = false, suspendedAt = null;
     // A synchronous read sees sleep even if the overdue renderer tick beats resume IPC.
     // Keep the latch through pre-sleep reads, then consume it once after wake.
     ipcMain.on('desktop:consume-suspension', event => {
@@ -355,7 +355,13 @@ if (!app.requestSingleInstanceLock()) {
       event.returnValue = suspensionPending;
       if (!suspended) suspensionPending = false;
     });
-    powerMonitor.on('suspend', () => { suspended = true; suspensionPending = true; native.suspend(); });
+    ipcMain.on('desktop:consume-suspension-at', event => {
+      event.returnValue = null;
+      if (!trustedSender(event)) return;
+      event.returnValue = suspendedAt === null ? null : { at: suspendedAt, suspended };
+      if (!suspended) { suspendedAt = null; suspensionPending = false; }
+    });
+    powerMonitor.on('suspend', () => { suspended = true; suspensionPending = true; suspendedAt = Date.now(); native.suspend(); if (window && !window.isDestroyed()) window.webContents.send('desktop:lifecycle', 'suspend'); });
     powerMonitor.on('resume', () => { suspended = false; native.resume(); if (window && !window.isDestroyed()) window.webContents.send('desktop:lifecycle', 'resume'); });
     const cloud = createCloud({ origin: CLOUD_ORIGIN, fallbackOrigin: LEGACY_CLOUD_ORIGIN, userData: app.getPath('userData'), safeStorage });
     registerCloud(ipcMain, trustedSender, cloud, () => shell.openExternal(CLOUD_ORIGIN + '/account/reset/').then(() => true).catch(() => false));

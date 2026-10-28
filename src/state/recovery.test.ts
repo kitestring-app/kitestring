@@ -17,6 +17,8 @@ beforeEach(async () => {
   vi.stubGlobal("window", { addEventListener: vi.fn(), desktop: { armAlarm: vi.fn().mockResolvedValue(true), disarmAlarm: vi.fn(), release: vi.fn(), cancelSpeech: vi.fn(), onLifecycle: vi.fn() } });
   vi.stubGlobal("document", { addEventListener: vi.fn(), visibilityState: "visible" });
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout", "setInterval", "clearInterval"] }); vi.setSystemTime(Date.UTC(2026, 9, 20, 12));
+  // Live-time jumps advance both clocks; sleep/clock-jump cases override this sample.
+  vi.spyOn(performance, "now").mockImplementation(() => Date.now() - Date.UTC(2026, 9, 20, 12));
   modules = await setup();
   modules.settings.set({ ...modules.DEFAULT_SETTINGS, timer: { ...modules.DEFAULT_SETTINGS.timer, display, autoRun: "always", takeover: false, speak: false, notify: false, bringToFront: false } });
   modules.intent.set({ action: "Write the first paragraph", why: "Send a draft", cue: "After tea", rev: 3, updatedAt: Date.now() });
@@ -262,7 +264,8 @@ it("C5 late leader election settles the restored run before arming an alarm or a
   expect(grant).toEqual(expect.any(Function));
   await modules.acquireTimerOwnership();
   expect(modules.timer.get()).toMatchObject({ startedAt: null, boundary: { id: "late-election", missed: true } });
-  expect(focusMs()).toBe(60_000);
+  expect(focusMs()).toBe(0);
+  expect(modules.stats.get().chunks).toMatchObject([{ kind: "break", away: true, ms: 120_000 }]);
   expect(modules.recoveryOffer()).toBe("missed-end");
 });
 it("C4 a stale card cannot even settle or credit a newer expired session", () => {
@@ -472,8 +475,9 @@ it.each(["audio", "pause", "lifecycle", "ticker", "hide"] as const)("round3 a th
   } else if (path === "pause") modules.timerActions.pause();
   else if (path === "lifecycle") modules.checkRecoveryLifecycle();
   else if (path === "hide") {
-    const bank = vi.mocked(window.addEventListener).mock.calls.filter(([event]) => event === "pagehide").at(-1)![1] as () => void;
-    bank();
+    Object.assign(document, { visibilityState: "hidden" });
+    const hidden = vi.mocked(document.addEventListener).mock.calls.filter(([event]) => event === "visibilitychange").at(-1)![1] as () => void;
+    hidden(); vi.advanceTimersByTime(250);
   } else vi.advanceTimersByTime(250);
   expect(modules.timer.get().boundary).toBeUndefined();
   expect(modules.timer.get()).toMatchObject({ segment: "short", startedAt: expect.any(Number) });
@@ -482,13 +486,15 @@ it.each(["audio", "pause", "lifecycle", "ticker", "hide"] as const)("round3 a th
 it.each([false, true])("round3 real clock jumps and native wake remain quiet (nativeWake=%s)", async nativeWake => {
   modules.startTicker(); await new Promise<void>(resolve => queueMicrotask(resolve));
   modules.timerActions.start();
+  vi.spyOn(performance, "now").mockReturnValue(performance.now());
   vi.setSystemTime(Date.now() + 120_000);
   modules.checkRecoveryLifecycle(nativeWake);
   expect(modules.timer.get()).toMatchObject({ startedAt: null, boundary: { missed: true } });
-  expect(focusMs()).toBe(60_000);
+  expect(focusMs()).toBe(0);
+  expect(modules.stats.get().chunks).toMatchObject([{ kind: "break", away: true, ms: 120_000 }]);
 });
 
-it("round3 reloading an unfinished break resumes its remaining time", async () => {
+it("round3 reloading an unfinished break records the gap and waits for explicit resume", async () => {
   modules.timerActions.goTo("short"); modules.timerActions.start();
   const id = modules.timer.get().segId;
   vi.setSystemTime(Date.now() + 60_000);
@@ -498,7 +504,8 @@ it("round3 reloading an unfinished break resumes its remaining time", async () =
   expect(modules.recoveryOffer()).toBe("re-entry");
   expect(modules.answerRecovery(modules.recoveryCommand(), "resume")).toBe(true);
   expect(modules.timer.get()).toMatchObject({ segId: id, segment: "short", frozenTotal: 300_000 });
-  expect(modules.elapsed(modules.timer.get(), Date.now())).toBe(60_000);
+  expect(modules.elapsed(modules.timer.get(), Date.now())).toBe(0);
+  expect(modules.stats.get().chunks).toMatchObject([{ kind: "break", away: true, ms: 60_000 }]);
   vi.setSystemTime(Date.now() + 1000); modules.timerActions.pause();
   expect(modules.stats.get().chunks.filter(c => c.kind === "break").reduce((sum, c) => sum + c.ms, 0)).toBe(61_000);
 });
@@ -537,7 +544,7 @@ it.each(["together", "stopped"] as const)("round4 suspend latch beats a post-wak
 it.each([
   ["web", "ticker"], ["web", "lifecycle"], ["web", "syncAudio"], ["web", "audio"],
   ["Mac", "ticker"], ["Mac", "lifecycle"], ["Mac", "syncAudio"],
-] as const)("round7 a banked running block reopened on %s ends live through %s", async (platform, path) => {
+] as const)("away return on %s waits for Resume, then ends live through %s", async (platform, path) => {
   if (platform === "web") window.desktop = undefined;
   modules.settingsUpdate("timer", { ...modules.STRONG_PATCH, autoRun: "always" });
   modules.startTicker(); await modules.timerHydrationReady;
@@ -558,8 +565,10 @@ it.each([
   vi.spyOn(performance, "now").mockImplementation(() => mono + Date.now() - now);
   modules.startTicker(); await modules.timerHydrationReady;
   await new Promise<void>(resolve => queueMicrotask(resolve));
-  expect(modules.timer.get()).toEqual(saved);
-  expect(modules.storeSource("timer")).toBe("disk");
+  expect(modules.timer.get()).toMatchObject({ segId: saved.segId, startedAt: null, elapsedBefore: 15_000, recoveryRecord: { focusMs: 15_000, awayMs: 0 } });
+  expect(modules.recoveryOffer()).toBe("re-entry");
+  expect(modules.answerRecovery(modules.recoveryCommand(), "resume")).toBe(true);
+  const resumed = modules.timer.get().startedAt;
   const audio = await import("../audio/core");
   const companion = await import("../audio/companion");
   if (platform === "Mac") expect(window.desktop!.armAlarm).toHaveBeenLastCalledWith(expect.objectContaining({ at: saved.startedAt! + 60_000 }));
@@ -574,7 +583,7 @@ it.each([
     if (path === "lifecycle") modules.checkRecoveryLifecycle();
     else if (path === "syncAudio") {
       modules.settingsUpdate("timer", { alertVolume: 0.6 });
-      expect(modules.timer.get()).toMatchObject({ segId: saved.segId, startedAt: saved.startedAt });
+      expect(modules.timer.get()).toMatchObject({ segId: saved.segId, startedAt: resumed });
       expect(modules.timer.get().boundary).toBeUndefined();
       vi.advanceTimersByTime(250);
     }

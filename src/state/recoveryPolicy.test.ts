@@ -50,3 +50,11 @@ it("C5 Continue duration: override, ETA, mode length including stopwatch", () =>
   expect(continueDuration(undefined, null, null)).toBeNull();
   for (const ms of [0, -1, NaN, Infinity]) expect(() => continueDuration(ms, null, null)).toThrow();
 });
+
+it('recovery text names past focus and away, hides zero values and keeps hidden time free of live digits', async () => {
+  const { recoveryRecordText } = await import('./recoveryPolicy');
+  expect(recoveryRecordText(600_000, 3_840_000)).toBe('You focused 10 min. Away 1 h 4 min.');
+  expect(recoveryRecordText(0, 83_100_000)).toBe('Away 23 h 5 min.');
+  expect(recoveryRecordText(600_000, 3_840_000, true)).toBe('Away 1 h 4 min.');
+  expect(recoveryRecordText(0, 0)).toBe('');
+});

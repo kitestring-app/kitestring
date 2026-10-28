@@ -181,7 +181,7 @@ test('native audio uses only fixed executables, bounded volume and bundled alarm
   }
 });
 
-test('each selected sound and phase uses its fixed bundled file and survives restore', () => {
+test('each selected sound and phase uses its fixed bundled file and requires explicit re-arm after restore', () => {
   for (const alertSound of ['signature', 'bell', 'chime', 'digital', 'wood']) {
     for (const kind of ['focus-done', 'break-over']) {
       const h = harness();
@@ -189,6 +189,8 @@ test('each selected sound and phase uses its fixed bundled file and survives res
       assert.equal(h.saved().alertSound, alertSound);
       const restored = harness({ saved: h.saved() });
       restored.services.restore();
+      assert.equal(restored.services.snapshot().pending, null);
+      restored.services.arm(h.saved());
       restored.setTime(h.saved().at);
       restored.services.check();
       assert.deepEqual(sounds(restored)[0].args, ['-v', '0.7', path.join('/test-assets/alerts', `${alertSound}-${kind}.wav`)]);
@@ -300,16 +302,16 @@ test('disarm stops active native audio and clears the next persisted alarm', () 
   assert.equal(h.timers.size, 0);
 });
 
-test('restore schedules a saved alarm once and drops invalid or stale persisted state', () => {
+test('restore drops saved alarms, including valid future alarms, until explicit start', () => {
   const saved = { at: 1_030_000, kind: 'break-over', volume: 0.4, speak: false };
   const h = harness({ saved });
   h.services.restore();
   h.services.restore();
-  for (const key of Object.keys(saved)) assert.deepEqual(h.services.snapshot().pending[key], saved[key]);
-  assert.equal(h.timers.size, 1);
+  assert.equal(h.services.snapshot().pending, null);
+  assert.equal(h.timers.size, 0);
   h.setTime(saved.at);
-  h.runTimer();
-  assert.equal(sounds(h).length, 1);
+  h.services.check();
+  assert.equal(sounds(h).length, 0);
   for (const invalid of [{ ...saved, at: 900_000 }, { ...saved, at: 999_999 }, { ...saved, at: 1_000_000 }, { ...saved, kind: '../../alarm' }, { ...saved, speak: 'yes' }]) {
     const bad = harness({ saved: invalid });
     bad.services.restore();
@@ -531,13 +533,27 @@ test('round3 suspend blocks overdue callbacks and resume settles missed alarms w
   assert.deepEqual(h.notifications, []);
   assert.deepEqual(h.attention, []);
 });
-test('round3 wake before the deadline preserves the future native reminder', () => {
+test('away wake before the deadline cancels the future native reminder', () => {
   const h = harness();
   const a = alarm(h, { at: h.now() + 60000, alertSound: 'signature' });
   h.services.arm(a); h.services.suspend();
   h.setTime(a.at - 1000); h.services.resume();
-  assert.equal(h.services.snapshot().pending.at, a.at);
-  h.setTime(a.at); h.runTimer();
-  assert.equal(sounds(h).length, 1);
-  assert.equal(h.notifications.length, 1);
+  assert.equal(h.services.snapshot().pending, null);
+  h.setTime(a.at); h.services.check();
+  assert.equal(sounds(h).length, 0);
+  assert.equal(h.notifications.length, 0);
+});
+
+test('away recovery keeps saved and suspended future alarms silent until an explicit new arm', () => {
+  for (const kind of ['startup', 'wake']) {
+    const a = { at: 1_030_000, kind: 'break-over', alertSound: 'signature', volume: 0.4, speak: false };
+    const h = harness({ saved: a });
+    if (kind === 'startup') h.services.restore();
+    else { h.services.arm(a); h.services.suspend(); h.setTime(a.at - 1000); h.services.resume(); }
+    assert.equal(h.services.snapshot().pending, null);
+    h.setTime(a.at + 1); h.services.check();
+    assert.equal(sounds(h).length, 0); assert.equal(h.notifications.length, 0);
+    const next = alarm(h, { at: h.now() + 1000 }); h.services.arm(next); h.setTime(next.at); h.runTimer();
+    assert.equal(sounds(h).length, 1);
+  }
 });

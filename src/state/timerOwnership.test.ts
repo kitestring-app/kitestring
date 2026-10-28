@@ -141,7 +141,9 @@ it.each(["received", "disk"])("Grok 2: an expired %s run cannot auto-run when th
   settings.settingsUpdate("timer", { ...settings.STRONG_PATCH, autoRun: "always" });
   await vi.waitFor(() => expect(clock.timer.get()).toMatchObject({ startedAt: null, boundary: { id: expired.segId, missed: true } }));
   expect(window.desktop!.armAlarm).not.toHaveBeenCalled();
-  expect((await import("./stats")).stats.get().chunks.reduce((sum, chunk) => sum + chunk.ms, 0)).toBe(60_000);
+  const chunks = (await import("./stats")).stats.get().chunks;
+  expect(chunks.filter(c => c.kind === "focus").reduce((sum, chunk) => sum + chunk.ms, 0)).toBe(0);
+  expect(chunks).toMatchObject([{ kind: "break", away: true, ms: expect.any(Number) }]);
   m = { ...m, ...clock, ...(await import("../lib/store")) };
 });
 it.each(["accepted", "dismissed"] as const)("Grok 3: a follower's %s offer is applied only by the owner and refuses a stale run", async choice => {
@@ -165,6 +167,38 @@ it.each(["accepted", "dismissed"] as const)("Grok 3: a follower's %s offer is ap
   expect(await m.requestLongerOffer(expected, "accepted", progression.finished)).toBe(false);
   expect(m.timer.get()).toBe(current);
   expect(tiny.tinyStarts.get().offer).toBe("available");
+});
+
+it("away presence is clock-owned and a follower cannot declare departure", async () => {
+  const clock = m as typeof m & { clockPresence: { get(): unknown; set(value: unknown): void }; prepareTimerDeparture(): Promise<void> };
+  expect(m.CLOCK_OWNED_KEYS).toContain("clockPresence");
+  const presence = { segId: "present", lastAliveAt: Date.now(), ownerId: "leader" };
+  Channel.all[0].receive({ type: "write", entries: [["clockPresence", presence], ["timer", { ...m.INITIAL_TIMER, segId: "present", startedAt: Date.now(), frozen: true, frozenTotal: 60_000 }]] });
+  clock.clockPresence.set({ ...presence, departedAt: Date.now() });
+  await clock.prepareTimerDeparture();
+  expect(clock.clockPresence.get()).toEqual(presence);
+});
+it("an already open follower continues the live run when its owner closes", async () => {
+  const at = Date.now();
+  await (await import("../lib/db")).dbSetMany([["timer", { ...m.INITIAL_TIMER, segId: "handoff", startedAt: at - 10_000, frozen: true, frozenTotal: 60_000 }], ["clockPresence", { segId: "handoff", lastAliveAt: at, departedAt: at, ownerId: "old-owner" }]]);
+  commandChannel().receive({ type: "clock-alive", segId: "handoff", ownerId: "old-owner" });
+  await m.acquireTimerOwnership();
+  expect(m.timer.get().startedAt).toBe(at - 10_000); expect(m.timer.get().reentry).toBeUndefined();
+  expect((await import("./stats")).stats.get().chunks).toEqual([]);
+});
+
+it('promotion of a running legacy initial segment retains its cutoff before migration subscribers run', async () => {
+  const now = Date.now(), db = await import('../lib/db');
+  await db.dbSetMany([
+    ['timer', { ...m.INITIAL_TIMER, startedAt: now - 2000, elapsedBefore: 1000, creditedUpTo: 1000 }],
+    ['stats', { chunks: [{ id: 'known', segId: 'initial', kind: 'focus', segment: 'focus', start: now - 3000, ms: 1000, completed: false }], tasksDone: [] }],
+  ]);
+  vi.mocked(window.desktop!.armAlarm!).mockClear(); await m.acquireTimerOwnership();
+  expect(m.timer.get()).toMatchObject({ startedAt: null, elapsedBefore: 1000 });
+  expect(m.timer.get().segId).not.toBe('initial'); expect(window.desktop!.armAlarm).not.toHaveBeenCalled();
+  const chunks = (await import('./stats')).stats.get().chunks;
+  expect(chunks.filter(c=>c.kind==='focus').reduce((n,c)=>n+c.ms,0)).toBe(1000);
+  expect(chunks.filter(c=>c.away)).toMatchObject([{ ms: 2000 }]);
 });
 
 it.each(["web", "desktop"])("runs an early %s Start when this renderer wins the pending leader lock", async surface => {

@@ -132,11 +132,11 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     await click("Resume");
     await waitFor("!document.querySelector('.recovery-card')");
     expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().startedAt !== null)")).toBe(true);
-    // Reload an active session. Its context is offered without pausing the clock.
+    // Reloading an active session stops at departure and waits for explicit Resume.
     await evaluate("import('/src/lib/store.ts').then(s => s.flushReadyStores())");
     await send("Page.reload"); await waitForOwner();
     await waitFor("document.querySelector('[aria-label=\"Session context\"]')");
-    expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().startedAt !== null)")).toBe(true);
+    expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().startedAt !== null)")).toBe(false);
     await click("Resume");
     // Reopen a saved, expired run with Strong auto-run. It must wait for Continue.
     await evaluate(`Promise.all([import('/src/state/settings.ts'), import('/src/state/timer.ts'), import('/src/lib/store.ts')]).then(async ([s,t,p]) => {
@@ -149,7 +149,8 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     await send("Page.reload"); await waitForOwner();
     await waitFor("document.querySelector('[aria-label=\"Finished block\"]')");
     expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().startedAt)")).toBeNull();
-    expect(await evaluate("import('/src/state/stats.ts').then(s => s.stats.get().chunks.filter(c => c.segId === 'closed-run' && c.completed).length)")).toBe(1);
+    expect(await evaluate("import('/src/state/stats.ts').then(s => s.stats.get().chunks.filter(c => c.segId === 'closed-run' && c.completed).length)")).toBe(0);
+    expect(await evaluate("import('/src/state/stats.ts').then(s => s.stats.get().chunks.filter(c => c.segId === 'closed-run' && c.away).length)")).toBe(1);
     for (const [width, height] of [[1000, 800], [1280, 720]]) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
     for (const look of ["classic", "glass", "sketch", "companion", "sunrise"]) {
