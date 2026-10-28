@@ -84,13 +84,19 @@ function TaskPopover({ anchor, label, onClose, children }: {
   useLayoutEffect(() => {
     const button = anchor.current, popup = ref.current;
     if (!button || !popup) return;
-    const box = button.getBoundingClientRect();
-    const { width, height } = popup.getBoundingClientRect();
-    setPosition({
-      left: Math.max(8, Math.min(box.right - width, window.innerWidth - width - 8)),
-      top: box.bottom + height + 8 < window.innerHeight ? box.bottom + 6 : Math.max(8, box.top - height - 6),
-    });
+    const place = () => {
+      const box = button.getBoundingClientRect();
+      const { width, height } = popup.getBoundingClientRect();
+      setPosition({
+        left: Math.max(8, Math.min(box.right - width, window.innerWidth - width - 8)),
+        top: box.bottom + height + 8 < window.innerHeight ? box.bottom + 6 : Math.max(8, box.top - height - 6),
+      });
+    };
+    place();
+    const resize = new ResizeObserver(place);
+    resize.observe(popup);
     popup.querySelector<HTMLElement>("button:not(:disabled), input")?.focus();
+    return () => resize.disconnect();
   }, [anchor]);
   useEffect(() => {
     const outside = (event: PointerEvent) => {

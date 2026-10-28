@@ -71,4 +71,26 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('task estimates and recorded 
     expect(await chrome.evaluate("document.activeElement.getAttribute('aria-label')")).toBe('Estimate for Draft project outline');
     chrome.assertHealthy();
   }, 30000);
+  it('keeps expanded similar-task history inside the viewport near the bottom row', async () => {
+    await chrome.send('Emulation.setDeviceMetricsOverride', { width: 320, height: 820, deviceScaleFactor: 1, mobile: true });
+    await page(`s.settingsUpdate('appearance',{look:'classic'});
+      const title='Draft project outline with detailed notes for the next planning review and concrete examples from earlier chapters';
+      k.tasks.set([...Array.from({length:8},(_,i)=>({id:'filler-'+i,title:'Open task '+i,done:false,createdAt:i})),
+        {id:'target',title,done:false,createdAt:10},
+        ...Array.from({length:3},(_,i)=>({id:'history-'+i,title:title+' version '+i,done:true,etaMin:20,createdAt:i}))]);
+      h.stats.set({tasksDone:[],chunks:Array.from({length:3},(_,i)=>({id:'chunk-'+i,taskId:'history-'+i,kind:'focus',segment:'focus',start:0,ms:60000,completed:false}))});`);
+    await chrome.waitFor("document.querySelector('[data-task-id=target] .task-eta')");
+    await chrome.evaluate("document.querySelector('[data-task-id=target] .task-eta').scrollIntoView({block:'end'})");
+    await chrome.evaluate("document.querySelector('[data-task-id=target] .task-eta').click()");
+    await chrome.waitFor("document.querySelector('.tasks-popover details')");
+    await chrome.evaluate("document.querySelector('.tasks-popover details').open=true");
+    await chrome.evaluate("new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))");
+    const bounds = await chrome.evaluate("(()=>{const r=document.querySelector('.tasks-popover').getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:innerHeight};})()");
+    expect(bounds.top).toBeGreaterThanOrEqual(8);
+    expect(bounds.bottom).toBeLessThanOrEqual(bounds.height - 8);
+    await chrome.evaluate("document.querySelector('.tasks-popover li:last-child').scrollIntoView({block:'nearest'})");
+    expect(await chrome.evaluate("(()=>{const row=document.querySelector('.tasks-popover li:last-child').getBoundingClientRect();return row.top>=8 && row.bottom<=innerHeight-8;})()")).toBe(true);
+    chrome.assertHealthy();
+  }, 30000);
+
 });
