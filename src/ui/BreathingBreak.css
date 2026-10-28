@@ -1,0 +1,23 @@
+/* Reuse the decorative tally row on breaks, keeping the resting timer in place. */
+.focus-center > .tallies:has(.breathing-live) { position: relative; min-width: 60px; display: flex; }
+.focus-center > .tallies:has(.breathing-entry) :is(.dot, .tally) { visibility: hidden; }
+.focus-center > .tallies .breathing-entry.btn {
+  position: absolute; inset: -3px 0; min-height: 24px; padding: 0; font-size: 13px; line-height: 18px;
+  color: var(--on-bg); background: transparent; border: 0; box-shadow: none;
+}
+.focus-center > .tallies .breathing-entry.btn::before { display: none; }
+@media (pointer: coarse) {
+  .focus-center > .tallies:has(.breathing-live) { min-height: 44px; }
+  .focus-center > .tallies .breathing-entry.btn { inset-block: 0; }
+}
+.breathing-host { min-height: 0; display: flex; flex-direction: column; border-radius: var(--radius); }
+.breathing-host:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.breathing-active { display: grid; gap: 8px; }
+.breathing-static { display: none; }
+.breathing-paced { font-size: 18px; }
+:root.reduce-motion .breathing-static { display: block; }
+:root.reduce-motion .breathing-paced { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .breathing-static { display: block; }
+  .breathing-paced { display: none; }
+}

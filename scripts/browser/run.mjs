@@ -7,7 +7,7 @@ import { join } from 'node:path';
 
 const chrome = [process.env.CHROME_BIN, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find(path => path && existsSync(path));
 if (!chrome) throw new Error('Chrome not found. Set CHROME_BIN to a Chrome/Chromium executable.');
-const flags = ['AMBIENT', 'CALM', 'CATALOG', 'HARD_MODE', 'LOG', 'NOTEPAD', 'PARKING', 'RETURN', 'START_CUES', 'TOOLTIP', 'FIT', 'BACKUP', 'TYPING_GUARD', 'PHONE', 'TITLEBAR', 'WALLPAPER'];
+const flags = ['BREATHING', 'AMBIENT', 'CALM', 'CATALOG', 'HARD_MODE', 'LOG', 'NOTEPAD', 'PARKING', 'RETURN', 'START_CUES', 'TOOLTIP', 'FIT', 'BACKUP', 'TYPING_GUARD', 'PHONE', 'TITLEBAR', 'WALLPAPER'];
 const temp = await mkdtemp(join(tmpdir(), 'pomodoro-browser-'));
 try {
   const child = spawn(process.execPath, ['node_modules/vitest/vitest.mjs', 'run', '--no-file-parallelism', ...process.argv.slice(2), '.browser.test.ts'], {

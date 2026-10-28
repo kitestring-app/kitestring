@@ -74,3 +74,7 @@ Minimal runtime deps (react, react-dom). Persistence: IndexedDB via a ~60-line w
 - Remaining is the default. Elapsed counts active time up, including overtime; Stopwatch stays a count-up. Timer settings offers Remaining / Elapsed / Hidden. Tapping the timer face cycles the same setting.
 - Hidden removes the timer digits and progress faces from Focus, Ambient, Document PiP, the native floating timer, tab title, menu bar and transition reminders. Segment and running/paused status remain visible. Automatic screen-reader time updates stop; a manual timer query remains available. Recovery cards keep their choices without showing the current recorded duration.
 - The choice is part of shared settings, syncs, persists and travels in settings exports and backups. Existing profiles and v1 files without it use Remaining. All five looks share the same controls; hidden faces unmount their animations.
+
+## Optional breathing inside breaks (slice 3)
+- Short and long breaks offer a silent, optional 1 or 5 minute guide in the existing card slot. In/out and cyclic sigh (two short inhales, one long exhale) offer gentle or slower pacing without holds. Static guidance respects system and app reduced motion. Hidden display removes the guide countdown.
+- Start, Pause and Skip remain available. Close or Escape leaves without changing the timer, awarding anything or writing a new record. Segment changes, navigation and reload discard the guide. Copy describes the controls without efficacy claims. Shared source serves web and Mac.
