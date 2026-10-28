@@ -2,6 +2,13 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { createTimerCommands, validTimerCommand } = require('../timer-commands.cjs');
 const { timerMenuItems, applicationMenu } = require('../menu.cjs');
+test('attention commands require an exact segment identity and allowlisted action', () => {
+  for (const choice of ['continue', 'stop', 'dismiss']) assert.equal(validTimerCommand({ action: 'answerAttention', segId: 'next-break', choice }), true);
+  for (const value of [{ action: 'answerAttention', choice: 'stop' },
+    { action: 'answerAttention', segId: '', choice: 'stop' },
+    { action: 'answerAttention', segId: 's', choice: 'skip' },
+    { action: 'answerAttention', segId: 's', choice: 'stop', bypass: true }]) assert.equal(validTimerCommand(value), false);
+});
 test('all native timer requests return the authoritative typed hard-mode refusal', async () => {
   const sent = [];
   const commands = createTimerCommands({ send: payload => { sent.push(payload); return true; } });

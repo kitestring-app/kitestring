@@ -230,6 +230,21 @@ test('timer request callbacks receive the validated native input origin', async 
   assert.equal(sent.length, 2);
 });
 
+test('settled attention identity crosses the bridge and only exact attention commands reach the renderer', async () => {
+  const { bridge, events, sent } = loadBridge();
+  bridge.attention('focus-done', 'next-break');
+  assert.deepEqual(sent, [['desktop:attention', 'focus-done', 'next-break']]);
+  const received = [];
+  bridge.onTimerRequest(async command => { received.push(command); return { ok: true }; });
+  const command = { action: 'answerAttention', segId: 'next-break', choice: 'continue' };
+  events.emit('desktop:timer-request', {}, { id: 70, command, origin: 'pointer' });
+  events.emit('desktop:timer-request', {}, { id: 71, command: { ...command, bypass: true }, origin: 'pointer' });
+  events.emit('desktop:timer-request', {}, { id: 72, command: { ...command, segId: '' }, origin: 'pointer' });
+  await new Promise(setImmediate);
+  assert.deepEqual(received, [command]);
+  assert.deepEqual(sent.at(-1), ['desktop:timer-result', 70, { ok: true }]);
+});
+
 
 test('lifecycle subscription validates payloads, omits IPC details, and stays out of mini windows', () => {
   const { bridge, events } = loadBridge();

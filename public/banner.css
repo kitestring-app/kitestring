@@ -1,9 +1,12 @@
 :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #14121c; color: #f6f4ff; }
 * { box-sizing: border-box; }
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; border: 1px solid #7c5cff; }
+strong { font-size: 16px; }
+nav { display: flex; gap: 6px; }
 button {
-  width: 100%; height: 100%; border: 1px solid #7c5cff; border-radius: 0;
-  background: #14121c; color: inherit; font: 600 18px system-ui, sans-serif;
+  min-height: 40px; padding: 4px 12px; border: 1px solid #7c5cff; border-radius: 6px;
+  background: #14121c; color: inherit; font: 600 14px system-ui, sans-serif;
   cursor: pointer; animation: arrival 2.4s ease-out 1;
 }
 button:hover { background: #252039; }
@@ -11,3 +14,4 @@ button:focus-visible { outline: 3px solid #c8baff; outline-offset: -4px; }
 @keyframes arrival { 0%, 100% { background: #14121c; } 35% { background: #44316c; } }
 @media (prefers-reduced-motion: reduce) { button { animation: none; } }
 .reduce-motion button { animation: none; }
+@media (max-width: 650px) { body { padding: 4px; gap: 4px; } strong { font-size: 12px; } button { padding: 4px; font-size: 12px; } nav { gap: 3px; } }

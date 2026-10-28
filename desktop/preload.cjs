@@ -1,7 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 const mini = process.argv.includes('--mini-timer');
-const validTimerCommand = value => typeof value === 'string' ? ['toggle', 'pause', 'reset', 'skip', 'stop', 'stopSound', 'stopAndPause', 'beginEndHold', 'cancelEndHold'].includes(value) : !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 2 && value.action === 'endHardSession' && typeof value.reason === 'string' && value.reason.length <= 500;
+const validAttentionCommand = value => !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 3 && value.action === 'answerAttention' && ['continue', 'stop', 'dismiss'].includes(value.choice) && typeof value.segId === 'string' && value.segId.length > 0 && value.segId.length <= 128;
+const validTimerCommand = value => validAttentionCommand(value) || (typeof value === 'string' ? ['toggle', 'pause', 'reset', 'skip', 'stop', 'stopSound', 'stopAndPause', 'beginEndHold', 'cancelEndHold'].includes(value) : !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 2 && value.action === 'endHardSession' && typeof value.reason === 'string' && value.reason.length <= 500);
 function subscribe(channel, callback) {
   if (typeof callback !== 'function') return () => {};
   const listener = (_event, value) => callback(value);
@@ -51,8 +52,10 @@ contextBridge.exposeInMainWorld('desktop', Object.freeze(mini ? {
   setStatus(text) {
     if (typeof text === 'string') ipcRenderer.send('desktop:status', text.slice(0, 64));
   },
-  attention(kind) {
-    if (kind === 'focus-done' || kind === 'break-over') ipcRenderer.send('desktop:attention', kind);
+  attention(kind, segId) {
+    if (kind !== 'focus-done' && kind !== 'break-over') return;
+    if (typeof segId === 'string' && segId.length > 0 && segId.length <= 128) ipcRenderer.send('desktop:attention', kind, segId);
+    else ipcRenderer.send('desktop:attention', kind);
   },
   release() { ipcRenderer.send('desktop:release'); },
   floatTimer,

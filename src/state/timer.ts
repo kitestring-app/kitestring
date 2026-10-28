@@ -250,6 +250,7 @@ function syncTicks() {
   ticks.sync(timer.get(), totalMs(), T(), localPreferences.get().muted || alert.sounding || alert.silenced);
 }
 let wasQuiet = false;
+let nativeAttentionSegment: string | null = null;
 let snoozedBreak: { segId: string; count: number } | null = null;
 
 function cancelSpeech() {
@@ -567,7 +568,8 @@ const localTimerActions = {
     });
     if (T().bringToFront && window.desktop?.attention) {
       alertTypingGuard.begin();
-      window.desktop.attention(kind);
+      nativeAttentionSegment = next.segId;
+      window.desktop.attention(kind, next.segId);
     }
     announce(kind, cycleComplete ? { phase: "cycle" } : next.startedAt !== null ?
       { phase: next.segment === "focus" ? "focus" : "break", minutes: totalMs()! / 60_000 } : undefined);
@@ -861,6 +863,7 @@ export async function runTimerCommand(command: DesktopTimerCommand, origin?: Des
   if (origin === "accelerator" && alertTypingGuard.accelerator(command === "stopSound")) {
     return { ok: false, reason: "typing-guard", message: "Wait until typing has stopped." };
   }
+  if (typeof command === "object" && command.action === "answerAttention") return answerNativeAttention(command);
   if (!canWriteClockStore("timer")) {
     if (hardModeLocked() && !(command === "toggle" && timer.get().startedAt === null) && typeof command === "string" && ["pause", "toggle", "reset", "skip", "stop", "stopAndPause"].includes(command) && !(command === "skip" && totalMs() === null)) return hardRefusal();
     const action = typeof command === "object" ? "endHardSession" : command;
@@ -875,6 +878,30 @@ export async function runTimerCommand(command: DesktopTimerCommand, origin?: Des
   }
   const result = await timerActions[command]();
   return result && typeof result === "object" && "ok" in result && result.ok === false ? result as TimerRefusal : { ok: true };
+}
+
+/** Native panels can answer only their own settled boundary, never a newer block. */
+export async function answerNativeAttention(command: DesktopAttentionCommand): Promise<TimerCommandResult> {
+  const s = timer.get(), total = totalMs(s);
+  const stale = (): TimerCommandResult => ({ ok: false, reason: "stale-segment", message: "The active block changed. Open Kitestring." });
+  if (!canWriteClockStore("timer") || command.segId !== s.segId || nativeAttentionSegment !== s.segId ||
+      s.startedAt !== null && total !== null && E.elapsed(s, Date.now()) >= total) return stale();
+  let result;
+  if (command.choice === "stop") result = timerActions.stop();
+  else if (command.choice === "dismiss") {
+    result = timerActions.stopSound();
+    if (transitionStore.get()?.nextSegId === s.segId) timerActions.answerTransition("dismiss");
+  } else if (transitionStore.get()?.nextSegId === s.segId) result = timerActions.answerTransition("start");
+  else if (s.boundary) {
+    if (!answerRecovery(recoveryCommand(), s.boundary.ended === "focus" ? "break" : "continue")) return stale();
+  } else if (s.reentry) {
+    if (!answerRecovery(recoveryCommand(), "resume")) return stale();
+  } else if (s.startedAt !== null) result = timerActions.stopSound();
+  else return stale();
+  if (result && typeof result === "object" && "ok" in result && result.ok === false) return result as TimerRefusal;
+  nativeAttentionSegment = null;
+  await result;
+  return { ok: true };
 }
 
 

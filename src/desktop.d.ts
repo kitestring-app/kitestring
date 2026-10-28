@@ -3,7 +3,8 @@ export {};
 declare global {
   type DesktopMenuCommand = "settings" | "home" | "focus" | "ambient" | "tasks" | "sounds" | "notes" | "toggle" | "skip" | "reset" | "shortcuts" | "stopSound" | "stopAndPause" | "stop" | "endSession";
   type DesktopTimerAction = "toggle" | "pause" | "reset" | "skip" | "stop" | "stopSound" | "stopAndPause";
-  type DesktopTimerCommand = DesktopTimerAction | "beginEndHold" | "cancelEndHold" | { action: "endHardSession"; reason: string };
+  type DesktopAttentionCommand = { action: "answerAttention"; segId: string; choice: "continue" | "stop" | "dismiss" };
+  type DesktopTimerCommand = DesktopTimerAction | "beginEndHold" | "cancelEndHold" | { action: "endHardSession"; reason: string } | DesktopAttentionCommand;
   type DesktopTimerOrigin = "accelerator" | "pointer";
   type DesktopTimerResult = import("./state/timer").TimerCommandResult | { ok: false; reason: "unavailable" | "invalid-command" };
   interface DesktopTimerState { segment: "focus" | "short" | "long"; running: boolean; hasProgress: boolean; ringing: boolean; sounding: boolean; hardLocked?: boolean }
@@ -59,7 +60,7 @@ declare global {
       requestTimerState?: () => void;
       onTimerState?: (callback: (state: DesktopTimerState) => void) => () => void;
       setStatus?: (text: string) => void;
-      attention?: (kind: "focus-done" | "break-over") => void;
+      attention?: (kind: "focus-done" | "break-over", segId?: string) => void;
       release?: () => void;
       toggleFullScreen?: () => Promise<boolean | null>;
       onFullScreenTransition?: (callback: (phase: "start" | "end") => void) => () => void;

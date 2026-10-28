@@ -75,7 +75,10 @@ class FakeWindow extends EventEmitter {
   show() { this.visible = true; (this.presentationCalls ||= []).push('show'); }
   hide() { this.visible = false; this.emit('hide'); }
   setAlwaysOnTop(value, level) { this.onTop = value; this.level = level; }
-  setVisibleOnAllWorkspaces(value, options) { this.allWorkspaces = value; this.workspaceOptions = options; }
+  setVisibleOnAllWorkspaces(value, options) {
+    this.allWorkspaces = value; this.workspaceOptions = options;
+    (this.workspaceCalls ||= []).push([value, options]);
+  }
   moveTop() { this.movedTop = true; (this.presentationCalls ||= []).push('moveTop'); }
   focus() { (this.presentationCalls ||= []).push('focus'); }
 }
@@ -309,7 +312,7 @@ test('test reminder shows only six-second banners without raising or focusing th
   assert.equal(nativeNotifications.length, notificationCount);
   assert.deepEqual(ipc.invoke('desktop:test-reminder', event()), { supported: true, failed: false, displays: 2 });
   const banner = bannerWindows.at(-1);
-  assert.equal(bannerWindows.length, bannerCount + 1);
+  assert.equal(bannerWindows.length, bannerCount + 2);
   assert.deepEqual(nativeNotifications.at(-1).options.actions, []);
   assert.equal(nativeNotifications.at(-1).shown, true);
   advance(5999);
@@ -358,6 +361,23 @@ test('test reminders neither consume the attention rate limit nor replace or rel
   advance(45000);
 });
 
+test('explicit Show Kitestring temporarily joins Spaces before show and resets without clearing new attention', () => {
+  const show = tray.menu.find(item => item.label === 'Show Kitestring').click;
+  window.hide(); window.minimized = true;
+  window.workspaceCalls = []; window.presentationCalls = [];
+  show();
+  assert.deepEqual(window.workspaceCalls, [[true, { visibleOnFullScreen: true, skipTransformProcessType: true }]]);
+  assert.deepEqual(window.presentationCalls, ['restore', 'show', 'moveTop', 'focus']);
+  advance(250);
+  assert.deepEqual(window.workspaceCalls.at(-1), [false, { skipTransformProcessType: true }]);
+  show();
+  ipc.emit('desktop:attention', event(), 'focus-done');
+  advance(250);
+  assert.equal(window.allWorkspaces, true);
+  ipc.emit('desktop:release', event());
+  advance(45000);
+});
+
 test('attention restores and floats only for trusted main-frame requests without stealing keyboard focus, then releases', () => {
   window.hide();
   window.minimized = true;
@@ -372,7 +392,7 @@ test('attention restores and floats only for trusted main-frame requests without
   assert.equal(window.visible, true);
   assert.equal(window.minimized, false);
   assert.deepEqual(window.bounds, { x: 80, y: 52, width: 1280, height: 820 });
-  assert.equal(bannerWindows.filter((banner) => !banner.isDestroyed()).length, 1);
+  assert.equal(bannerWindows.filter((banner) => !banner.isDestroyed()).length, 2);
   const firstBanner = bannerWindows.at(-1);
   assert.equal(window.onTop, true);
   assert.equal(window.level, 'floating');
@@ -438,6 +458,26 @@ test('a banner click moves and focuses the dashboard on that banner display and 
   ipc.emit('desktop:release', event());
 });
 
+test('banner pointer actions use guarded timer IPC without showing or focusing the dashboard', async () => {
+  for (const [action, running] of [['continue', false], ['continue', true], ['stop', false], ['dismiss', true]]) {
+    advance(45000);
+    ipc.emit('desktop:timer-state', event(), { segment: 'short', running, hasProgress: true, ringing: true, sounding: false });
+    ipc.emit('desktop:attention', event(), 'focus-done', 'settled-segment');
+    const panel = bannerWindows.at(-1);
+    window.presentationCalls = [];
+    ipc.emit('desktop:banner-open', { sender: panel.webContents, senderFrame: panel.webContents.mainFrame }, action);
+    assert.equal(window.sent, 'desktop:timer-request');
+    assert.deepEqual(window.sentArgs[0].command, { action: 'answerAttention', segId: 'settled-segment', choice: action });
+    assert.equal(window.sentArgs[0].origin, 'pointer');
+    ipc.emit('desktop:timer-result', event(), window.sentArgs[0].id, { ok: true });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(panel.isDestroyed(), true);
+    assert.deepEqual(window.presentationCalls, []);
+    assert.equal(window.onTop, false);
+  }
+  ipc.emit('desktop:timer-state', event(), { segment: 'focus', running: false, hasProgress: false, ringing: false, sounding: false });
+});
+
 test('tray controls dispatch each action directly without simulated Space or focus changes', () => {
   const toggle = tray.menu.find(entry => entry.label === 'Start').click;
   window.hide();
@@ -474,13 +514,13 @@ test('attention waits for full-screen exit before showing and cannot reshow afte
     assert.equal(window.visible, false);
     assert.deepEqual(window.presentationCalls, []);
     assert.equal(app.focusCalls ?? 0, focusCalls);
-    assert.equal(bannerWindows.filter((banner) => !banner.isDestroyed()).length, 0);
+    assert.equal(bannerWindows.filter((banner) => !banner.isDestroyed()).length, 2);
     if (releaseBeforeExit) ipc.emit('desktop:release', event());
     window.emit('leave-full-screen');
     assert.equal(window.visible, !releaseBeforeExit);
     assert.deepEqual(window.presentationCalls, releaseBeforeExit ? [] : ['showInactive', 'moveTop']);
     assert.equal(app.focusCalls ?? 0, focusCalls);
-    assert.equal(bannerWindows.filter((banner) => !banner.isDestroyed()).length, releaseBeforeExit ? 0 : 1);
+    assert.equal(bannerWindows.filter((banner) => !banner.isDestroyed()).length, releaseBeforeExit ? 0 : 2);
     ipc.emit('desktop:release', event());
   }
 });

@@ -34,6 +34,9 @@ let quitting = false;
 let attention = initialAttention();
 let releaseTimer;
 let bounceId = null;
+let workspaceReset;
+let attentionSegment = null;
+let attentionKind = null;
 let currentStatus = '';
 let timerMenuState = { segment: 'focus', running: false, hasProgress: false, ringing: false, sounding: false };
 let globalStopRegistered = false;
@@ -93,6 +96,9 @@ function changeAttention(type, kind) {
     return;
   }
   attention = next;
+  attentionSegment = null;
+  attentionKind = attention.releaseAt !== null ? kind : null;
+  clearTimeout(workspaceReset);
   banners?.stop();
   clearTimeout(releaseTimer);
   if (bounceId !== null) { app.dock?.cancelBounce(bounceId); bounceId = null; }
@@ -103,6 +109,8 @@ function changeAttention(type, kind) {
       attentionDisplay = display;
       const requestedWindow = window;
       const requestedAttention = attention;
+      // Panels must not wait for the ordinary dashboard to leave its own Space.
+      banners?.start(kind, display.id, { allDisplays: true });
       moveMainToDisplay(window, display, () => {
         if (window !== requestedWindow || attention !== requestedAttention || window.isDestroyed()) return;
         window.setAlwaysOnTop(true, 'floating');
@@ -111,7 +119,6 @@ function changeAttention(type, kind) {
         if (window.isMinimized()) window.restore();
         if (!window.isVisible()) window.showInactive();
         window.moveTop();
-        banners?.start(kind, display.id);
         bounceId = app.dock?.bounce('critical') ?? null;
       });
     } else {
@@ -128,9 +135,22 @@ function scheduleRelease(now) {
 }
 function showWindow() {
   if (!window || window.isDestroyed()) return;
+  const shown = window;
+  clearTimeout(workspaceReset);
+  if (!shown.isFullScreen()) {
+    shown.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+  }
   if (window.isMinimized()) window.restore();
   window.show();
+  window.moveTop();
   window.focus();
+  // This is an explicit user request. Automatic attention never activates the app.
+  app.focus({ steal: true });
+  workspaceReset = setTimeout(() => {
+    if (shown.isDestroyed() || attention.releaseAt !== null) return;
+    shown.setVisibleOnAllWorkspaces(false, { skipTransformProcessType: true });
+  }, 250);
+  workspaceReset.unref?.();
 }
 function createWindow() {
   if (quitting || (window && !window.isDestroyed())) return;
@@ -310,6 +330,15 @@ if (!app.requestSingleInstanceLock()) {
         app.focus({ steal: true });
         window.moveTop();
       });
+    }, onAction: async action => {
+      if (attention.releaseAt === null) return true; // A preview never controls the timer.
+      if (!attentionSegment) return false; // Native alarms may beat renderer settlement.
+      const requestedAttention = attention;
+      const command = { action: 'answerAttention', segId: attentionSegment, choice: action };
+      const result = await menuCommand(command, 'pointer');
+      if (!result.ok) return false;
+      if (attention === requestedAttention) changeAttention('release');
+      return true;
     } });
     native = createNativeServices({ Notification, powerSaveBlocker, execFile,
       stateFile: path.join(app.getPath('userData'), 'pending-alarm.json'),
@@ -388,19 +417,22 @@ if (!app.requestSingleInstanceLock()) {
       if (floating.trusted(event)) floating.send('desktop:timer-state', timerMenuState);
     });
     ipcMain.on('desktop:flushed', (event, id) => { if (trustedSender(event)) quitGuard.acknowledge(id); });
-    ipcMain.on('desktop:banner-open', (event) => banners.open(event));
+    ipcMain.on('desktop:banner-open', (event, action) => { void banners.open(event, action); });
     ipcMain.on('desktop:status', (event, text) => {
       if (!trustedSender(event)) return;
       const status = statusText(text);
       if (status !== null) { currentStatus = status; floatingControls.setStatus(status); }
     });
-    ipcMain.on('desktop:attention', (event, kind) => {
-      if (trustedSender(event)) changeAttention('attention', kind);
+    ipcMain.on('desktop:attention', (event, kind, segId) => {
+      if (!trustedSender(event)) return;
+      changeAttention('attention', kind);
+      if (attention.releaseAt !== null && attentionKind === kind && typeof segId === 'string' && segId.length > 0 && segId.length <= 128 &&
+          (attentionSegment === null || attentionSegment === segId)) attentionSegment = segId;
     });
     ipcMain.on('desktop:release', (event) => {
       if (trustedSender(event)) changeAttention('release');
     });
-    // Settings > Alerts: fire the real notification and the banners on other displays, then let go after 6 s.
+    // Settings > Alerts: fire the real notification and panels, then let go after 6 s.
     let testRelease = null;
     ipcMain.handle('desktop:test-reminder', (event) => {
       if (!trustedSender(event)) return null;
@@ -409,7 +441,7 @@ if (!app.requestSingleInstanceLock()) {
       native.testReminder('focus-done');
       const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
       if (attention.releaseAt === null) {
-        banners?.start('focus-done', display.id);
+        banners?.start('focus-done', display.id, { allDisplays: true });
         clearTimeout(testRelease);
         testRelease = setTimeout(() => { if (attention.releaseAt === null) banners?.stop(); }, 6000);
       }
