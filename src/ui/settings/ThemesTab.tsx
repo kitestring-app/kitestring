@@ -4,13 +4,14 @@ import { customBgs, findTheme, saveCustomBackground, removeCustomBackground, THE
 import type { CustomBackground, ThemeCategory } from "../../data/themes";
 import { dbGet } from "../../lib/db";
 import { useStore } from "../../lib/store";
-import { settings, settingsUpdate } from "../../state/settings";
+import { DEFAULT_SETTINGS, settings, settingsUpdate } from "../../state/settings";
 import type { DashMode, ThemeRef } from "../../state/settings";
 import { themeStyle } from "../Background";
 import { formatClock, useClock } from "../ClockView";
 import { Toggle } from "./SettingsDrawer";
 import "./ThemesTab.css";
-import { LookSection } from "./LookSection";
+import { PAPER_LOOKS } from "../Look";
+import { LookSection, LOOK_INFO } from "./LookSection";
 
 const MODES: { id: DashMode; label: string }[] = [
   { id: "home", label: "Home" }, { id: "focus", label: "Focus" }, { id: "ambient", label: "Ambient" },
@@ -63,9 +64,13 @@ export function ThemesTab() {
   const now = useClock(s.clock.seconds);
   const name = ref.kind === "library" ? findTheme(ref.id)?.name ?? "Dusk Glass"
     : ref.kind === "color" ? ref.id : saved.find((bg) => bg.id === ref.id)?.name ?? "Custom background";
+  const paper = PAPER_LOOKS.includes(s.appearance.look);
+  const defaultRef = DEFAULT_SETTINGS.themes[mode];
+  const atDefault = paper ? s.appearance.lookBackdrop : ref.kind === defaultRef.kind && ref.id === defaultRef.id;
+  const defaultLabel = `Use ${LOOK_INFO[s.appearance.look].name} default`;
   const selected = (kind: ThemeRef["kind"], id: string) => ref.kind === kind && ref.id === id;
   const pick = (next: ThemeRef) => {
-    settingsUpdate("themes", { [mode]: next });
+    settings.set(current => ({ ...current, themes: { ...current.themes, [mode]: next }, appearance: { ...current.appearance, lookBackdrop: false } }));
     setMessage(`Applied to ${mode}.`);
   };
 
@@ -108,8 +113,15 @@ export function ThemesTab() {
         </div>
       </div>
       <div className="theme-actions">
+        {!atDefault && <button className="btn" aria-label={defaultLabel} disabled={!ready || busy} onClick={() => {
+          settings.set(current => ({ ...current,
+            appearance: { ...current.appearance, lookBackdrop: true },
+            themes: paper ? current.themes : { ...current.themes, [mode]: defaultRef },
+          }));
+          setMessage(`${LOOK_INFO[s.appearance.look].name} default restored.`);
+        }}>{defaultLabel}</button>}
         <button className="btn primary" disabled={!ready || busy} onClick={() => {
-          settingsUpdate("themes", { home: ref, focus: ref, ambient: ref }); setMessage("Applied to all modes.");
+          settings.set(current => ({ ...current, themes: { home: ref, focus: ref, ambient: ref }, appearance: { ...current.appearance, lookBackdrop: false } })); setMessage("Applied to all modes.");
         }}>Apply to all modes</button>
         <button className="btn" disabled={!ready || busy} onClick={() => {
           const pool = THEMES.filter((t) => (!s.extras.disableAnimated || !t.animated) && !(ref.kind === "library" && ref.id === t.id));

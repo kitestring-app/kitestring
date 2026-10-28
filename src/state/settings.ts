@@ -66,7 +66,7 @@ export interface Settings {
   };
   sounds: { master: number };
   /** The whole look of the app, and an optional effect drawn over any wallpaper. */
-  appearance: { look: LookId; fx: WallpaperFx; fxStrength: number; reminderGlass: "clear" | "frosted" };
+  appearance: { lookBackdrop: boolean; look: LookId; fx: WallpaperFx; fxStrength: number; reminderGlass: "clear" | "frosted" };
   dash: DashMode;
   lastTab: SettingsTab;
 }
@@ -127,7 +127,7 @@ export const DEFAULT_SETTINGS: Settings = {
     reduceMotion: false,
   },
   sounds: { master: 0.7 },
-  appearance: { look: "glass", fx: "none", fxStrength: 0.5, reminderGlass: "frosted" },
+  appearance: { lookBackdrop: true, look: "glass", fx: "none", fxStrength: 0.5, reminderGlass: "frosted" },
   dash: "focus",
   lastTab: "timer",
 };
@@ -208,6 +208,7 @@ export function sanitizeSettings(stored: unknown): Settings {
     sounds: { ...s.sounds, master: clamp(s.sounds.master, 0, 1, d.sounds.master) },
     appearance: {
       ...s.appearance,
+      lookBackdrop: typeof s.appearance.lookBackdrop === "boolean" ? s.appearance.lookBackdrop : true,
       // Fresh installs get Glass. A saved setup from before looks existed keeps the Classic look.
       look: hasAppearance ? oneOf(s.appearance.look, LOOKS, d.appearance.look) : stored && typeof stored === "object" ? "classic" : d.appearance.look,
       fx: oneOf(s.appearance.fx, WALLPAPER_FX, "none"),

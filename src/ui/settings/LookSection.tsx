@@ -4,7 +4,7 @@ import { applyFont } from "./ClockTab";
 import "./LookSection.css";
 
 /** What each look is called and how its preview card is painted. Colours mirror index.css. */
-const LOOK_INFO: Record<LookId, { name: string; blurb: string; bg: string; ink: string; chip: string; chipInk: string; accent: string; accentInk: string; font: string; weight: number }> = {
+export const LOOK_INFO: Record<LookId, { name: string; blurb: string; bg: string; ink: string; chip: string; chipInk: string; accent: string; accentInk: string; font: string; weight: number }> = {
   classic: { name: "Classic", blurb: "The original dark glass with a violet accent.", bg: "linear-gradient(135deg,#1b1640,#0b0c18 70%)", ink: "#f4f2fb", chip: "rgb(18 20 38 / 78%)", chipInk: "#c9c7d6", accent: "#7c5cff", accentInk: "#ffffff", font: "var(--preview-sans)", weight: 800 },
   glass: { name: "Glass", blurb: "See-through frosted glass over your photo.", bg: "linear-gradient(160deg,#9fb1b1,#4f6b5d 55%,#1d2e26)", ink: "#ffffff", chip: "rgb(26 30 38 / 40%)", chipInk: "#ffffff", accent: "#ffffff", accentInk: "#15191d", font: "var(--preview-sans)", weight: 800 },
   sketch: { name: "Sketchbook", blurb: "Paper, ink outlines and a marigold highlighter.", bg: "radial-gradient(circle, rgb(51 48 43 / 9%) 1px, transparent 1.2px) 0 0 / 12px 12px, #faf5ea", ink: "#33302b", chip: "#fffdf6", chipInk: "#33302b", accent: "#f2b63c", accentInk: "#33302b", font: "var(--preview-round)", weight: 800 },
