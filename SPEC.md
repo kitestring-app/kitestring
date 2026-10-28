@@ -81,4 +81,4 @@ Minimal runtime deps (react, react-dom). Persistence: IndexedDB via a ~60-line w
 
 ## Evidence page (slice 3)
 - About and footer link to a bundled, static “Why it works this way” page. Each feature has a conservative evidence-strength link, sources and population/intervention limits. None is rated strong; no app efficacy is inferred from other programs.
-- Explanations work offline from built files, without scripts, fonts or network requests. External papers are optional. System light/dark and reduced motion are respected. The Mac app opens the page in its existing app view.
+- Explanations work offline from built files, without scripts, fonts or network requests. External papers are optional. System light/dark and reduced motion are respected. Both entry links open a modal reader inside the app while the dashboard, timer and audio stay mounted. The reader embeds the same static document with scripts disabled; Close, Escape and its return links restore the dashboard.

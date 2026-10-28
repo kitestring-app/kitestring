@@ -1,18 +1,21 @@
 // Disposable, muted headless Chrome only. No Electron or personal browser.
 // @ts-expect-error Shared JavaScript harness has no declaration file.
 import { Chrome } from "../../scripts/golden.mjs";
-import { preview, type PreviewServer } from "vite";
+import { build, preview, type PreviewServer } from "vite";
 import { pathToFileURL } from "node:url";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 import { mkdir, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 describe.skipIf(process.env.EVIDENCE_BROWSER !== "1")("bundled evidence page", () => {
   const chrome = new Chrome();
   let server: PreviewServer;
   beforeAll(async () => {
-    server = await preview({ configLoader: "runner", preview: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
+    await build({ configLoader: "runner", logLevel: "error" });
+    const csp = readFileSync("public/_headers", "utf8").match(/Content-Security-Policy: (.+)/)![1];
+    server = await preview({ configLoader: "runner", preview: { host: "127.0.0.1", port: 0, headers: { "Content-Security-Policy": csp } }, logLevel: "error" });
     const address = server.httpServer.address();
     if (!address || typeof address === "string") throw new Error("No preview server");
     chrome.origin = `http://127.0.0.1:${address.port}`;
@@ -69,6 +72,26 @@ describe.skipIf(process.env.EVIDENCE_BROWSER !== "1")("bundled evidence page", (
       }
     }
   }, 30000);
+  it("keeps rating and citation jumps inside the embedded evidence document", async () => {
+    await chrome.send("Page.navigate", { url: chrome.origin });
+    await chrome.waitFor("document.querySelector('.credits a[href=\"./research.html\"]')");
+    await chrome.evaluate("document.querySelector('.credits a[href=\"./research.html\"]').click()");
+    await chrome.waitFor("document.querySelector('.evidence-reader iframe')?.contentDocument?.querySelectorAll('article').length === 13");
+    await chrome.evaluate("void (window.evidenceDocument = document.querySelector('.evidence-reader iframe').contentDocument)");
+    for (const id of ["moderate", "S1"]) {
+      await chrome.evaluate(`window.evidenceDocument.querySelector('a[href$="#${id}"]').click()`);
+      await chrome.waitFor(`document.querySelector('.evidence-reader iframe')?.contentDocument?.location.hash === '#${id}'`);
+      expect(await chrome.evaluate(`(() => {
+        const doc = document.querySelector('.evidence-reader iframe').contentDocument;
+        const target = doc.querySelector(':target');
+        return doc === window.evidenceDocument && target?.id === '${id}' &&
+          target.getBoundingClientRect().top >= 0 && target.getBoundingClientRect().top < doc.defaultView.innerHeight &&
+          location.pathname === '/' && location.hash === '';
+      })()`)).toBe(true);
+    }
+    await chrome.evaluate("document.querySelector('.evidence-reader button').click()");
+    chrome.assertHealthy();
+  }, 30000);
   it("opens from footer and About in the same app view and returns to the dashboard", async () => {
     await chrome.send("Network.emulateNetworkConditions", { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
     await chrome.send("Fetch.enable", { patterns: [{ urlPattern: "*", requestStage: "Request" }] });
@@ -76,16 +99,40 @@ describe.skipIf(process.env.EVIDENCE_BROWSER !== "1")("bundled evidence page", (
     await chrome.waitFor("document.querySelector('.credits a[href=\"./research.html\"]')");
     expect(await chrome.evaluate("document.querySelector('.credits a[href=\"./research.html\"]').getBoundingClientRect().width > 0")).toBe(true);
     await chrome.evaluate("document.querySelector('.credits a[href=\"./research.html\"]').click()");
-    await chrome.waitFor("location.pathname === '/research.html' && document.querySelector('h1')?.textContent === 'Why it works this way'");
-    await chrome.evaluate("document.querySelector('nav a').click()");
+    await chrome.waitFor("document.querySelector('.evidence-reader iframe')?.contentDocument?.querySelector('h1')?.textContent === 'Why it works this way'");
+    await chrome.evaluate("document.querySelector('.evidence-reader iframe').contentDocument.querySelector('nav a').click()");
     await chrome.waitFor("document.querySelector('[aria-label=\"Settings (S)\"]')");
     await chrome.evaluate("document.querySelector('[aria-label=\"Settings (S)\"]').click()");
     await chrome.waitFor("document.querySelector('.drawer')");
     await chrome.evaluate("[...document.querySelectorAll('.drawer nav button')].find(b=>b.textContent.trim()==='About').click()");
     await chrome.waitFor("document.querySelector('.drawer a[href=\"./research.html\"]')");
-    await chrome.evaluate("document.querySelector('.drawer a[href=\"./research.html\"]').click()");
-    await chrome.waitFor("location.pathname === '/research.html' && document.querySelectorAll('article').length === 13");
+    await chrome.evaluate("document.querySelector('.drawer a[href=\"./research.html\"]').focus(); document.querySelector('.drawer a[href=\"./research.html\"]').click()");
+    await chrome.waitFor("document.querySelector('.evidence-reader iframe')?.contentDocument?.querySelectorAll('article').length === 13");
+    await chrome.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+    await chrome.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+    expect(await chrome.evaluate("document.querySelector('.evidence-reader iframe').contentDocument.activeElement.tagName")).toBe("A");
+    await chrome.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+    await chrome.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+    await chrome.waitFor("!document.querySelector('.evidence-reader') && document.querySelector('.drawer')");
+    expect(await chrome.evaluate("document.activeElement === document.querySelector('.drawer a[href=\"./research.html\"]')")).toBe(true);
     expect([...chrome.blocked]).toEqual([]);
     chrome.assertHealthy();
+  }, 30000);
+  it("keeps the running dashboard alive while reading the evidence", async () => {
+    await chrome.send("Page.navigate", { url: chrome.origin });
+    await chrome.waitFor("document.querySelector('.credits a[href=\"./research.html\"]')");
+    await chrome.waitFor("document.querySelector('[aria-label=\"Start · Space\"]')");
+    await chrome.evaluate("document.querySelector('[aria-label=\"Start · Space\"]').click()");
+    await chrome.waitFor("document.querySelector('[aria-label=\"Pause · Space\"]')");
+    await chrome.evaluate("void (window.evidenceDashboard = document.querySelector('#root').firstElementChild)");
+    await chrome.evaluate("document.querySelector('.credits a[href=\"./research.html\"]').click()");
+    await chrome.waitFor("document.querySelector('.evidence-reader iframe')?.contentDocument?.querySelector('h1')");
+    expect(await chrome.evaluate("!!document.querySelector('.evidence-reader[open]') && window.evidenceDashboard.isConnected")).toBe(true);
+    await chrome.evaluate("window.evidenceTitle = document.title; window.evidenceNow = Date.now; Date.now = () => window.evidenceNow() + 5000");
+    await chrome.waitFor("document.title !== window.evidenceTitle");
+    expect(await chrome.evaluate("!!document.querySelector('[aria-label=\"Pause · Space\"]') && location.pathname === '/'")).toBe(true);
+    await chrome.evaluate("Date.now = window.evidenceNow; document.querySelector('.evidence-reader button').click()");
+    await chrome.waitFor("!document.querySelector('.evidence-reader')");
+    await chrome.evaluate("document.querySelector('[aria-label=\"Pause · Space\"]').click()");
   }, 30000);
 });
