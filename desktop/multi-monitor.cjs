@@ -8,8 +8,8 @@ function centeredRect(workArea, size) {
   return { x: workArea.x + Math.floor((workArea.width - width) / 2),
     y: workArea.y + Math.floor((workArea.height - height) / 2), width, height };
 }
-function bannerRects(displays, mainDisplayId) {
-  return displays.filter((display) => display.id !== mainDisplayId).map(({ id, workArea }) => ({
+function bannerRects(displays, mainDisplayId, allDisplays = false) {
+  return displays.filter((display) => allDisplays || display.id !== mainDisplayId).map(({ id, workArea }) => ({
     displayId: id, x: workArea.x, y: workArea.y, width: workArea.width, height: Math.min(64, workArea.height),
   }));
 }
@@ -36,7 +36,7 @@ function moveMainToDisplay(window, display, onPlaced = () => {}) {
   } else place();
 }
 
-function createBanners({ BrowserWindow, screen, onOpen, getDisplays = () => screen.getAllDisplays() }) {
+function createBanners({ BrowserWindow, screen, onOpen, onAction = async () => false, getDisplays = () => screen.getAllDisplays() }) {
   const windows = new Map();
   const shown = new WeakSet();
   let active = null;
@@ -54,9 +54,9 @@ function createBanners({ BrowserWindow, screen, onOpen, getDisplays = () => scre
     if (!displays.some((display) => display.id === active.mainDisplayId)) {
       const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
       active.mainDisplayId = display.id;
-      onOpen(display);
+      if (!active.allDisplays) onOpen(display);
     }
-    const rects = bannerRects(displays, active.mainDisplayId);
+    const rects = bannerRects(displays, active.mainDisplayId, active.allDisplays);
     const wanted = new Set(rects.map((rect) => rect.displayId));
     for (const [id, window] of windows) {
       if (!wanted.has(id)) { windows.delete(id); if (!window.isDestroyed()) window.destroy(); }
@@ -65,14 +65,14 @@ function createBanners({ BrowserWindow, screen, onOpen, getDisplays = () => scre
       if (windows.has(displayId)) { windows.get(displayId).setBounds(bounds); continue; }
       const url = `${APP_ORIGIN}/banner.html?kind=${active.kind}`;
       const window = new BrowserWindow({
-        ...bounds, show: false, frame: false, transparent: false, backgroundColor: '#14121c',
+        ...bounds, type: 'panel', show: false, frame: false, transparent: false, backgroundColor: '#14121c',
         focusable: false, skipTaskbar: true, hasShadow: true, resizable: false,
         minimizable: false, maximizable: false, fullscreenable: false,
         webPreferences: { preload: path.join(__dirname, 'banner-preload.cjs'), sandbox: true,
           contextIsolation: true, nodeIntegration: false, webSecurity: true },
       });
       windows.set(displayId, window);
-      window.setAlwaysOnTop(true, 'floating');
+      window.setAlwaysOnTop(true, 'screen-saver');
       window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
       const preventNavigation = (event, legacyURL) => {
         if ((event.url ?? legacyURL) !== url) event.preventDefault();
@@ -94,21 +94,27 @@ function createBanners({ BrowserWindow, screen, onOpen, getDisplays = () => scre
     }
   }
   return {
-    start(kind, mainDisplayId) {
+    start(kind, mainDisplayId, { allDisplays = false } = {}) {
       stop();
       if (!['focus-done', 'break-over'].includes(kind)) return;
-      active = { kind, mainDisplayId };
+      active = { kind, mainDisplayId, allDisplays, busy: false };
       for (const event of events) screen.on(event, reconcile);
       reconcile();
     },
     stop,
-    open(event) {
+    async open(event, action = 'open') {
+      if (!['open', 'continue', 'stop', 'dismiss'].includes(action) || !active || active.busy) return;
       for (const [id, window] of windows) {
         if (!window.isDestroyed() && event.sender === window.webContents &&
             event.senderFrame === window.webContents.mainFrame && isBannerURL(event.senderFrame?.url)) {
           const display = getDisplays().find((item) => item.id === id);
-          if (display) onOpen(display);
-          stop();
+          if (!display) return;
+          if (action === 'open') { onOpen(display); stop(); return; }
+          const request = active;
+          request.busy = true;
+          try {
+            if (await onAction(action) && active === request) stop();
+          } finally { request.busy = false; }
           return;
         }
       }

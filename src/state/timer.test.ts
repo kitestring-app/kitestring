@@ -63,7 +63,7 @@ describe("timer transitions", () => {
       expect(transitionStore.get()).toMatchObject({ segId: ids[i], nextSegId: timer.get().segId, autoStarted: i < 7, cycleComplete: i === 7 });
       expect(timer.get().startedAt).toBe(i === 7 ? null : Date.now());
       expect(attention).toHaveBeenCalledTimes(i + 1);
-      expect(attention).toHaveBeenLastCalledWith(i % 2 === 0 ? "focus-done" : "break-over");
+      expect(attention).toHaveBeenLastCalledWith(i % 2 === 0 ? "focus-done" : "break-over", timer.get().segId);
     }
     expect(timer.get()).toMatchObject({ segment: "focus", round: 0 });
     const done = timer.get();
@@ -135,7 +135,7 @@ describe("timer transitions", () => {
     timerActions.complete(id);
     expect(timer.get()).toBe(next);
     expect(transitionStore.get()).toMatchObject({ segId: id, ended: "focus", at: Date.now() });
-    expect(attention).toHaveBeenCalledExactlyOnceWith("focus-done");
+    expect(attention).toHaveBeenCalledExactlyOnceWith("focus-done", next.segId);
     timerActions.answerTransition("start");
     expect(timer.get()).toMatchObject({ segment: "short", startedAt: Date.now(), frozenTotal: 300_000 });
     expect(transitionStore.get()).toBeNull();

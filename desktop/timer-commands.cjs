@@ -1,5 +1,6 @@
 const TIMER_COMMANDS = Object.freeze(['toggle', 'pause', 'skip', 'reset', 'stop', 'stopSound', 'stopAndPause', 'beginEndHold', 'cancelEndHold']);
-const validTimerCommand = value => typeof value === 'string' ? TIMER_COMMANDS.includes(value) : !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 2 && value.action === 'endHardSession' && typeof value.reason === 'string' && value.reason.length <= 500;
+const validAttentionCommand = value => !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 3 && value.action === 'answerAttention' && ['continue', 'stop', 'dismiss'].includes(value.choice) && typeof value.segId === 'string' && value.segId.length > 0 && value.segId.length <= 128;
+const validTimerCommand = value => validAttentionCommand(value) || (typeof value === 'string' ? TIMER_COMMANDS.includes(value) : !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 2 && value.action === 'endHardSession' && typeof value.reason === 'string' && value.reason.length <= 500);
 const refusal = reason => ({ ok: false, reason });
 
 /** The authoritative renderer executes timerActions and returns its typed result. */
@@ -25,4 +26,4 @@ function createTimerCommands({ send, timeoutMs = 5000 }) {
     },
   };
 }
-module.exports = { TIMER_COMMANDS, validTimerCommand, createTimerCommands };
+module.exports = { TIMER_COMMANDS, validTimerCommand, validAttentionCommand, createTimerCommands };

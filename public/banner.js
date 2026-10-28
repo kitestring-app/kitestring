@@ -1,4 +1,6 @@
-const button = document.getElementById('open');
-button.textContent = new URLSearchParams(location.search).get('kind') === 'break-over'
-  ? 'Back to focus · click to open' : 'Break time · click to open';
-button.addEventListener('click', () => window.banner?.open());
+const breakOver = new URLSearchParams(location.search).get('kind') === 'break-over';
+document.getElementById('label').textContent = breakOver ? 'Break over' : 'Focus complete';
+document.getElementById('continue').textContent = 'Continue';
+for (const action of ['continue', 'stop', 'open', 'dismiss']) {
+  document.getElementById(action).addEventListener('click', () => window.banner?.open(action));
+}
