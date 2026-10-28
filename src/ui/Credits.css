@@ -22,3 +22,7 @@
   .credits-links { display: none; }
   .credits { font-size: 11px; }
 }
+
+@media (max-width: 560px) {
+  .credits-made { display: none; }
+}

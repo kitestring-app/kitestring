@@ -1,8 +1,10 @@
 import { SUPPORT_LINKS } from "../Credits";
+import { EvidenceLink } from "../EvidenceLink";
 export function AboutTab() {
   return (
     <>
       <h1>About</h1>
+      <p><EvidenceLink /></p>
       <div className="card">
         <h3>Made with care by Prax</h3>
         <p className="help">Kitestring is free. If it helps you focus, you can say thanks here.</p>
