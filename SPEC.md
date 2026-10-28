@@ -82,3 +82,8 @@ Minimal runtime deps (react, react-dom). Persistence: IndexedDB via a ~60-line w
 ## Evidence page (slice 3)
 - About and footer link to a bundled, static “Why it works this way” page. Each feature has a conservative evidence-strength link, sources and population/intervention limits. None is rated strong; no app efficacy is inferred from other programs.
 - Explanations work offline from built files, without scripts, fonts or network requests. External papers are optional. System light/dark and reduced motion are respected. Both entry links open a modal reader inside the app while the dashboard, timer and audio stay mounted. The reader embeds the same static document with scripts disabled; Close, Escape and its return links restore the dashboard.
+
+## Task estimates and recorded time (slice 3)
+- Task ETA is an optional whole-task guess, entered through preset minutes or a custom number. Completed tasks show the guess beside saved active focus time, including partial blocks and subtask work. Pauses, breaks and gaps are excluded. Missing guesses and missing recorded work are labelled plainly.
+- The estimate picker and completed rows offer up to three similar completed tasks, matched locally by title, with their guesses and recorded active time. There is no score or judgement. These records use the existing task ETA and raw history, so old data, v1/v2 backups and mixed-version sync retain them without new keys.
+- Hidden display removes the task summary's live remaining-time and finish-time projection. Completed records remain readable. Shared controls serve web and Mac across all five looks.

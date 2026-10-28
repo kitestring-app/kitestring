@@ -8,6 +8,8 @@ import {
   tasks, toggleTaskGroup, topLevel, updateTask,
 } from "../../state/tasks";
 import type { Task } from "../../state/tasks";
+import { stats } from "../../state/stats";
+import { activeMinutes, recordedTaskMs, similarTasks } from "../../state/estimates";
 import { settings } from "../../state/settings";
 import type { Settings } from "../../state/settings";
 import { useTimerView } from "../../state/timer";
@@ -119,7 +121,7 @@ function TaskPopover({ anchor, label, onClose, children }: {
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === "Tab") {
-          const controls = [...e.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled), input")];
+          const controls = [...e.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled), input, summary")];
           const edge = e.shiftKey ? controls[0] : controls.at(-1);
           if (!controls.length || document.activeElement === edge) {
             e.preventDefault();
@@ -132,11 +134,11 @@ function TaskPopover({ anchor, label, onClose, children }: {
   );
 }
 
-function EtaPicker({ task, onClose }: { task: Task; onClose: () => void }) {
+function EtaPicker({ task, all, onClose }: { task: Task; all: Task[]; onClose: () => void }) {
   const [custom, setCustom] = useState(String(task.etaMin ?? 25));
   const choose = (minutes: number | undefined) => { updateTask(task.id, { etaMin: minutes }); onClose(); };
   return <>
-    <span className="tasks-popover-label">Estimated minutes</span>
+    <span className="tasks-popover-label">Optional guess in minutes</span>
     <div className="tasks-estimates">
       {ESTIMATES.map((minutes) => <button key={minutes} aria-pressed={task.etaMin === minutes} onClick={() => choose(minutes)}>{minutes}</button>)}
     </div>
@@ -149,7 +151,25 @@ function EtaPicker({ task, onClose }: { task: Task; onClose: () => void }) {
       <button className="btn small" type="submit">Set</button>
     </form>
     <button className="tasks-menu-item" onClick={() => choose(undefined)}>Remove estimate</button>
+    <EstimateHistory task={task} all={all} />
   </>;
+}
+
+function EstimateHistory({ task, all, completed = false }: { task: Task; all: Task[]; completed?: boolean }) {
+  const data = useStore(stats);
+  const similar = similarTasks(task, all, data);
+  const comparison = (item: Task) => {
+    const ms = recordedTaskMs(item, all, data);
+    return <>{item.etaMin === undefined ? "No guess" : `Guess: about ${item.etaMin} min`} · {ms > 0 ? `Recorded active time: ${activeMinutes(ms)}` : "No active time recorded"}</>;
+  };
+  return <div className="task-comparison">
+    {completed && <p>{comparison(task)}</p>}
+    {similar.length > 0 && <details>
+      <summary>Similar completed tasks</summary>
+      <p className="faint">Matched by title. Recorded time shows timer use.</p>
+      <ul>{similar.map(item => <li key={item.id}><span>{item.title}</span><br />{comparison(item)}</li>)}</ul>
+    </details>}
+  </div>;
 }
 
 function TaskRow({ task, all, isCurrent, collapsed, onCollapse, onCreate, onToggle, onDelete, onNavigate, onDrag, dragTarget }: {
@@ -197,13 +217,14 @@ function TaskRow({ task, all, isCurrent, collapsed, onCollapse, onCreate, onTogg
         <button ref={etaRef} className="task-eta" aria-label={`Estimate for ${title}`} aria-expanded={picker === "eta"} aria-haspopup="dialog" onClick={() => setPicker(picker === "eta" ? null : "eta")}>{task.etaMin ? `${task.etaMin}m` : "+ ETA"}</button>}
       <button ref={actionsRef} className="task-more" aria-label={`Actions for ${title}`} aria-expanded={picker === "actions"} aria-haspopup="dialog" onClick={() => setPicker(picker === "actions" ? null : "actions")}><Icon.more /></button>
     </div>
+    {task.done && <EstimateHistory task={task} all={all} completed />}
     {kids.length > 0 && <button className="task-collapse" aria-expanded={!collapsed} aria-controls={`task-children-${task.id}`} onClick={onCollapse}>
       <span aria-hidden="true">{collapsed ? "▸" : "▾"}</span> {kids.filter((t) => t.done).length}/{kids.length} subtasks
     </button>}
     {picker && <TaskPopover anchor={{ emoji: emojiRef, color: colorRef, eta: etaRef, actions: actionsRef }[picker]} label={`${picker === "actions" ? "Task actions" : `Choose ${picker}`} for ${title}`} onClose={close}>
       {picker === "emoji" && <><div className="tasks-emojis">{TASK_ICONS.map((icon) => <button key={icon} aria-label={`Use ${icon.replace(/-/g, " ")} icon`} aria-pressed={glyphFor(task.emoji) === icon} onClick={() => { updateTask(task.id, { emoji: icon }); close(); emojiRef.current?.focus(); }}><Glyph name={icon} size={18} /></button>)}</div><button className="tasks-menu-item" onClick={() => { updateTask(task.id, { emoji: undefined }); close(); emojiRef.current?.focus(); }}>Remove icon</button></>}
       {picker === "color" && <><span className="tasks-popover-label">Colour tag</span><div className="tasks-colors">{TASK_COLORS.map((color, i) => <button key={color} style={{ background: color }} aria-label={`Use ${COLOR_NAMES[i]} colour tag`} aria-pressed={task.color === color} onClick={() => { updateTask(task.id, { color }); close(); colorRef.current?.focus(); }}>{task.color === color && <Icon.check />}</button>)}</div><button className="tasks-menu-item" onClick={() => { updateTask(task.id, { color: undefined }); close(); colorRef.current?.focus(); }}>Remove colour</button></>}
-      {picker === "eta" && <EtaPicker task={task} onClose={() => { close(); etaRef.current?.focus(); }} />}
+      {picker === "eta" && <EtaPicker task={task} all={all} onClose={() => { close(); etaRef.current?.focus(); }} />}
       {picker === "actions" && <div className="tasks-actions">
         <button className="tasks-menu-item" disabled={task.done} onClick={() => act(pick)}>{picked ? "Clear focus selection" : "Focus on this"}</button>
         <button className="tasks-menu-item" onClick={() => act(() => onCreate(addSubtask(task.id)))}><Icon.plus />Add subtask</button>
@@ -258,9 +279,9 @@ function TaskSummary({ all }: { all: Task[] }) {
   const nextDay = finish.toDateString() !== date.toDateString();
   const done = all.filter((t) => t.done).length;
   return <div className="tasks-summary">
-    <div className="tasks-summary-line"><span><strong>{remaining < 60 ? `${remaining} min` : `${Math.floor(remaining / 60)}h${remaining % 60 ? ` ${remaining % 60}m` : ""}`}</strong> remaining</span>
+    {config.display !== "hidden" && <><div className="tasks-summary-line"><span><strong>{remaining < 60 ? `${remaining} min` : `${Math.floor(remaining / 60)}h${remaining % 60 ? ` ${remaining % 60}m` : ""}`}</strong> remaining</span>
       <span>Done by {nextDay ? `${finish.toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ` : ""}{finish.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true })}</span></div>
-    <p className="tasks-estimate-note">Estimate uses task ETAs, current focus progress and {Math.ceil(estimate.breakMinutes)} min of scheduled breaks between sessions. Assumes continuous work.</p>
+    <p className="tasks-estimate-note">Estimate uses task ETAs, current focus progress and {Math.ceil(estimate.breakMinutes)} min of scheduled breaks between sessions. Assumes continuous work.</p></>}
     {all.length > 0 && <div className="tasks-progress" role="progressbar" aria-label="Task progress" aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={done}><span style={{ width: `${done / all.length * 100}%` }} /></div>}
   </div>;
 }

@@ -160,3 +160,30 @@ it("a failed selective import rolls live stores and disk back, and an empty sele
   await expect(b.restoreBackup(parsed, metadata, ["settings"])).rejects.toThrow("Storage is full");
   expect(s.settings.get()).toEqual(before); expect(await db.dbGet("settings")).toEqual(diskBefore);
 });
+
+it('round-trips every task leaf and its recorded work with Focus data, including legacy v1', async () => {
+  const b = await import('./backup'); const { tasks } = await import('../state/tasks');
+  const { stats } = await import('../state/stats'); const db = await import('./db');
+  await Promise.all([tasks.ready, stats.ready]);
+  await (await import('../state/timer')).timerHydrationReady;
+  const at = Date.now();
+  const value = [{ id: 'estimated', title: 'Write project outline', emoji: 'pen-line', color: '#abcdef', etaMin: 20,
+    done: true, parentId: 'parent', createdAt: at }];
+  const recorded = { chunks: [{ id: 'work', taskId: 'estimated', kind: 'focus' as const, segment: 'focus' as const,
+    start: at, ms: 900000, completed: false }], tasksDone: [{ taskId: 'estimated', at }] };
+  expect(b.STORE_CLASS.tasks).toEqual({ class: 'content', section: 'focus' });
+  expect(b.STORE_CLASS.stats).toEqual({ class: 'content', section: 'focus' });
+  tasks.set(value); stats.set(recorded);
+  for (const version of [1, 2]) {
+    const file = JSON.parse(await b.createBackup({ sections: ['focus'] })); file.version = version;
+    const parsed = b.parseBackup(JSON.stringify(file));
+    tasks.set([]); stats.set({ chunks: [], tasksDone: [] });
+    await b.restoreBackup(parsed, metadata, ['focus']);
+    expect(tasks.get()).toEqual(value); expect(await db.dbGet('tasks')).toEqual(value);
+    expect(stats.get()).toEqual(recorded); expect(await db.dbGet('stats')).toEqual(recorded);
+  }
+  const legacy = b.parseBackup(JSON.stringify({ format: b.BACKUP_FORMAT, version: 1, data: {
+    tasks: [{ id: 'old', title: 'No guess', done: false, createdAt: at }],
+  } }));
+  expect(legacy.data.tasks).toEqual([{ id: 'old', title: 'No guess', done: false, createdAt: at }]);
+});

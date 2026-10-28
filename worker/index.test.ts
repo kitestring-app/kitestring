@@ -332,3 +332,13 @@ it.each([null, {}, { action: 'a', why: 'b', rev: 0, updatedAt: 0, taskId: 'unkno
   expect(reply.status).toBe(400);
   expect(db.prepare('SELECT * FROM kv').all()).toHaveLength(0);
 });
+
+it('preserves task guesses verbatim beside older tasks through the worker validator', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const headers = { Authorization: 'Bearer ' + token };
+  const value = [{ id: 'new', title: 'Draft', done: false, createdAt: Date.now(), etaMin: 20 },
+    { id: 'old', title: 'Read', done: false, createdAt: Date.now() }];
+  expect((await worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'tasks', value, updatedAt: Date.now() }] }, headers), env)).status).toBe(200);
+  const saved = await (await worker.fetch(req('/api/sync', 'GET', undefined, headers), env)).json() as { entries: { value: unknown }[] };
+  expect(saved.entries[0].value).toEqual(value);
+});

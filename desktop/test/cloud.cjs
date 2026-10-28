@@ -120,3 +120,25 @@ for (const status of [401, 403, 429]) for (const json of [true, false]) test(`ne
   assert.equal((await cloud.signIn('test@example.invalid', randomBytes(20).toString('hex'))).status, status);
   assert.deepEqual(urls, [ORIGIN + '/api/auth/login']);
 });
+
+test('task estimates and old tasks pass unchanged through the native cloud bridge', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'cloud-estimates-test-'));
+  const token = randomBytes(32).toString('hex');
+  const entries = [{ key: 'tasks', updatedAt: 1, value: [
+    { id: 'new', title: 'Draft', etaMin: 20, done: false, createdAt: 1 },
+    { id: 'old', title: 'Read', done: false, createdAt: 1 },
+  ] }];
+  let saved;
+  try {
+    const cloud = createCloud({ origin: ORIGIN, userData: dir, safeStorage: {
+      isEncryptionAvailable: () => true, encryptString: s => Buffer.from(s), decryptString: b => b.toString(),
+    }, fetch: async (url, init) => {
+      if (url.endsWith('/login')) return Response.json({ ok: true, token });
+      if (init.method === 'PUT') saved = JSON.parse(init.body);
+      return Response.json(init.method === 'GET' ? saved : { ok: true });
+    } });
+    await cloud.signIn('test@example.invalid', randomBytes(20).toString('hex'));
+    assert.equal((await cloud.request('PUT', '/api/sync', { entries })).status, 200);
+    assert.deepEqual((await cloud.request('GET', '/api/sync')).data.entries, entries);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
