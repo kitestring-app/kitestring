@@ -157,7 +157,7 @@ export default function App() {
           </div>
         </header>
 
-        {dash === "focus" ? <FocusView onRecall={openRecall} captureOpen={parking} onPark={openParking} onCaptureClose={closeParking} onChooseTask={() => setPanel("tasks")} /> : <ClockView ambient={dash === "ambient"} />}
+        {dash === "focus" ? <FocusView closeOutVisible={panel === null && !settingsOpen} onRecall={openRecall} captureOpen={parking} onPark={openParking} onCaptureClose={closeParking} onChooseTask={() => setPanel("tasks")} /> : <ClockView ambient={dash === "ambient"} />}
 
         <DashboardStreak />
         <footer className="bottombar chrome">
