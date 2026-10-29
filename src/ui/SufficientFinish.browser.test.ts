@@ -46,7 +46,8 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('optional sufficient finish',
     await input('.next-action input', 'Draft the introduction');
     await chrome.evaluate("document.querySelector('.next-action summary').focus()"); await key(' ', 'Space');
     await chrome.waitFor("document.querySelector('.next-action details').open");
-    await input('.next-action details input', 'Three rough paragraphs is enough for this pass'); await key('Enter');
+    await input('.next-action details input:nth-of-type(1)', 'Three rough paragraphs is enough for this pass');
+    await input('.next-action details label:last-of-type input', 'Draft just the introduction'); await key('Enter');
     await chrome.waitFor("document.querySelector('.next-action-finish')?.textContent.includes('Three rough paragraphs') && !document.querySelector('.next-action input')");
     expect(await chrome.evaluate('document.activeElement.textContent')).toBe('Edit next action');
     await page("await (await import('/src/lib/store.ts')).flushReadyStores();");
@@ -58,6 +59,7 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('optional sufficient finish',
       await page(`s.settingsUpdate('appearance',{look:'${look}'});`);
       await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);
       expect(await chrome.evaluate("document.querySelector('.next-action-finish').textContent")).toContain('Three rough paragraphs');
+      expect(await chrome.evaluate("document.querySelector('.next-action-portion').textContent")).toContain('Draft just the introduction');
       expect(await chrome.evaluate('document.documentElement.scrollWidth <= innerWidth')).toBe(true);
       await assertFocusFit((expression: string) => chrome.evaluate(expression));
       if (!native && width === 320) {
@@ -68,6 +70,8 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('optional sufficient finish',
         expect(await chrome.evaluate('document.documentElement.scrollWidth <= innerWidth')).toBe(true);
         await writeFile(join(shots, `${look}-editor-320.png`), await chrome.png());
         await chrome.evaluate("document.querySelector('.next-action details input').focus()");
+        await key('Tab');
+        expect(await chrome.evaluate('document.activeElement.value')).toBe('Draft just the introduction');
         await key('Tab');
         expect(await chrome.evaluate('document.activeElement.textContent')).toBe('Done');
         expect(await chrome.evaluate("(()=>{const r=document.activeElement.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight})()")).toBe(true);
@@ -97,10 +101,11 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('optional sufficient finish',
   it.each(["Three paragraphs", ""])("keeps the original criterion in Hidden recovery after editing it to %j", async sufficientFinish => {
     await chrome.send('Page.navigate', { url: chrome.origin }); await owner();
     await page(`await s.calmFoundationReady;s.settingsUpdate('dash','focus');s.settingsUpdate('timer',{...s.CALM_PATCH,display:'hidden'});
-      t.timerActions.stop();i.updateIntent({action:'Draft',sufficientFinish:'One paragraph'});t.timerActions.start();
-      i.updateIntent({sufficientFinish:${JSON.stringify(sufficientFinish)}});t.timerActions.pause();`);
+      t.timerActions.stop();i.updateIntent({action:'Draft',sufficientFinish:'One paragraph',portion:'Opening line'});t.timerActions.start();
+      i.updateIntent({sufficientFinish:${JSON.stringify(sufficientFinish)},portion:'Different piece'});t.timerActions.pause();`);
     await chrome.waitFor("document.querySelector('[aria-label=\"Session context\"]')");
     expect(await chrome.evaluate("document.querySelector('.recovery-card').textContent")).toContain('One paragraph');
+    expect(await chrome.evaluate("document.querySelector('.recovery-card').textContent")).toContain('Opening line');
     expect(await page('return i.intent.get().sufficientFinish;')).toBe(sufficientFinish);
     await page('t.timerActions.stop();');
   });

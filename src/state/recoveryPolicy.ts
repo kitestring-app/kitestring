@@ -7,6 +7,7 @@ export interface SessionContext {
   why: string;
   cue?: string;
   sufficientFinish?: string;
+  portion?: string;
   taskId?: string;
   taskTitle: string;
   spentMs: number;
@@ -58,7 +59,7 @@ export function isSessionContext(value: unknown): value is SessionContext {
   return [c.actionId, c.action, c.why, c.taskTitle].every(s => typeof s === "string" && s.length <= 500 && !/[\r\n]/.test(s)) &&
     Number.isSafeInteger(c.actionRevision) && c.actionRevision >= 0 && Number.isFinite(c.spentMs) && c.spentMs >= 0 &&
     (c.taskId === undefined || typeof c.taskId === "string" && c.taskId.length <= 64) &&
-    [c.cue, c.sufficientFinish].every(s => s === undefined || typeof s === "string" && s.length <= 500 && !/[\r\n]/.test(s));
+    [c.cue, c.sufficientFinish, c.portion].every(s => s === undefined || typeof s === "string" && s.length <= 500 && !/[\r\n]/.test(s));
 }
 export function isRecoveryBoundary(value: unknown): value is RecoveryBoundary {
   if (!value || typeof value !== "object") return false;

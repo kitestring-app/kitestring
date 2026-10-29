@@ -8,7 +8,7 @@ export function NextAction() {
   const value = useStore(intent);
   const all = useStore(tasks);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<Partial<Pick<typeof value, "action" | "why" | "cue" | "reward" | "sufficientFinish">>>({});
+  const [draft, setDraft] = useState<Partial<Pick<typeof value, "action" | "why" | "cue" | "reward" | "sufficientFinish" | "portion">>>({});
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const pending = useRef<typeof draft>({});
@@ -94,15 +94,20 @@ export function NextAction() {
           <input className="input" maxLength={500} value={draft.sufficientFinish ?? value.sufficientFinish ?? ""} onChange={event => change({ sufficientFinish: event.target.value })} />
         </label>
         <p className="faint small">What would be enough for this pass? You choose when to finish. This line is never graded.</p>
+        <label>Bounded portion (optional)
+          <input className="input" maxLength={500} value={draft.portion ?? value.portion ?? ""} onChange={event => change({ portion: event.target.value })} />
+        </label>
+        <p className="faint small">What piece do you want to try? Use the action above if it already says enough. Time ending never marks this piece or its task complete.</p>
       </details>
       <button className="btn small" onClick={close}>Done</button>
       {error && <button className="btn small" disabled={isSaving} onClick={() => { if (saving.current) return; clearTimeout(debounce.current); pending.current = {}; expected.current = intent.get(); setDraft({ ...intent.get() }); setError(""); }}>Use saved action</button>}
-      <p className="faint small">Start whenever you’re ready. These fields are optional. When signed in, the latest saved action, note, cue, reward and sufficient finish replace the whole document on other devices. Breaks are always available.</p>
+      <p className="faint small">Start whenever you’re ready. These fields are optional. When signed in, the latest saved action, note, cue, reward, sufficient finish and portion replace the whole document on other devices. Breaks are always available.</p>
     </> : <>
       <div className="next-action-copy">
       {value.action && <p className="next-action-text">{value.action}</p>}
       {value.why && <p className="small muted">{value.why}</p>}
       {value.sufficientFinish?.trim() && <p className="small muted next-action-finish">Enough for this pass: {value.sufficientFinish}</p>}
+      {value.portion?.trim() && <p className="small muted next-action-portion">Chosen portion: {value.portion}</p>}
       {value.cue && <p className="small muted next-action-cue">{value.cue}</p>}
       </div>
       <div className="next-action-buttons">

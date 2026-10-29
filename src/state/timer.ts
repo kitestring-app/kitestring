@@ -117,7 +117,7 @@ export const totalMs = (s = timer.get()) => (s.frozen ? (s.frozenTotal ?? null) 
 
 function captureContext(previous = timer.get().context): SessionContext {
   const pin = intent.get(), task = currentTask(tasks.get());
-  return { actionId: `intent:${pin.updatedAt}`, actionRevision: pin.rev, action: pin.action, why: pin.why, cue: pin.cue, sufficientFinish: pin.sufficientFinish,
+  return { actionId: `intent:${pin.updatedAt}`, actionRevision: pin.rev, action: pin.action, why: pin.why, cue: pin.cue, sufficientFinish: pin.sufficientFinish, portion: pin.portion,
     taskId: task?.id, taskTitle: task?.title.replace(/[\r\n]+/g, " ").slice(0, 500) ?? "",
     spentMs: previous?.actionId === `intent:${pin.updatedAt}` && previous.actionRevision === pin.rev ? previous.spentMs : 0 };
 }

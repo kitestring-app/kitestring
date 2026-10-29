@@ -257,9 +257,9 @@ async function syncPut(req: Request, env: Env): Promise<Response> {
           FROM (SELECT * FROM merged WHERE source = 1 ORDER BY ord))
         WHEN excluded.key = 'intent'
           AND json_extract(excluded.value, '$.action') = json_extract(kv.value, '$.action')
-          AND json_type(excluded.value, '$.sufficientFinish') IS NULL
-          AND json_type(kv.value, '$.sufficientFinish') = 'text'
-        THEN json_set(excluded.value, '$.sufficientFinish', json_extract(kv.value, '$.sufficientFinish'))
+        THEN json_patch(excluded.value, json_object(
+          'sufficientFinish', coalesce(json_extract(excluded.value, '$.sufficientFinish'), json_extract(kv.value, '$.sufficientFinish')),
+          'portion', coalesce(json_extract(excluded.value, '$.portion'), json_extract(kv.value, '$.portion'))))
         ELSE excluded.value END, updated_at = excluded.updated_at WHERE excluded.updated_at > kv.updated_at`)
       .bind(session.email, e.key, e.value, e.updatedAt, ...args, body.taskAllowanceVersion === 1 ? 1 : 0)),
     env.DB.prepare("UPDATE sessions SET expires_at = ?, last_seen = ? WHERE token_hash = ? AND email = ? AND expires_at > ?").bind(now + SESSION_MS, now, ...args),
