@@ -23,7 +23,7 @@ const banned = [
   "failing this app means failing treatment",
 ];
 const mapping: Record<string, [string, string[]]> = {
-  action: ["moderate", ["S1"]], tiny: ["weak", ["S3"]], cue: ["moderate", ["S5", "S6"]],
+  enough: ["weak", ["S1"]], action: ["moderate", ["S1"]], tiny: ["weak", ["S3"]], cue: ["moderate", ["S5", "S6"]],
   parking: ["moderate", ["S3"]], return: ["weak", ["S11", "S13"]],
   breaks: ["moderate", ["S8", "S9"]], display: ["weak", ["S10"]],
   quiet: ["moderate", ["S14", "S15"]], records: ["moderate", ["S16"]],

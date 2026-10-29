@@ -10,3 +10,7 @@
 
 .next-action-copy { display: grid; gap: 4px; max-height: 70px; overflow: auto; overscroll-behavior: contain; }
 .next-action-copy:empty { display: none; }
+
+.next-action details { text-align: left; }
+.next-action summary { cursor: pointer; }
+.next-action details label { margin-top: 8px; }

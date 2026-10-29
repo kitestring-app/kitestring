@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store";
-import { finishIntent, intent, updateIntent } from "../state/intent";
+import { finishIntent, intent, saveIntent } from "../state/intent";
 import { tasks } from "../state/tasks";
 import "./NextAction.css";
 
@@ -8,41 +8,64 @@ export function NextAction() {
   const value = useStore(intent);
   const all = useStore(tasks);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<Partial<Pick<typeof value, "action" | "why" | "cue" | "reward">>>({});
+  const [draft, setDraft] = useState<Partial<Pick<typeof value, "action" | "why" | "cue" | "reward" | "sufficientFinish">>>({});
   const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const pending = useRef<typeof draft>({});
   const expected = useRef(value);
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const input = useRef<HTMLInputElement>(null);
   const edit = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef(false);
-  const save = () => {
+  const saving = useRef<Promise<boolean> | null>(null);
+  const save = (): Promise<boolean> => {
     clearTimeout(debounce.current);
-    if (!Object.keys(pending.current).length) return true;
-    try {
-      updateIntent(pending.current, expected.current);
-      expected.current = intent.get();
-      pending.current = {};
-      setDraft({ ...intent.get() });
-      setError("");
-      return true;
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not save your next action. Try again.");
-      return false;
-    }
+    if (saving.current) return saving.current.then(ok => ok ? save() : false);
+    if (!Object.keys(pending.current).length) return Promise.resolve(true);
+    const patch = { ...pending.current };
+    setIsSaving(true);
+    const work = (async () => {
+      try {
+        await saveIntent(patch, expected.current);
+        expected.current = intent.get();
+        const remaining = { ...pending.current };
+        for (const key of Object.keys(patch) as (keyof typeof patch)[]) {
+          if (remaining[key] === patch[key]) delete remaining[key];
+        }
+        pending.current = remaining;
+        setDraft({ ...intent.get(), ...remaining });
+        setError("");
+        return true;
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Could not save your next action. Try again.");
+        return false;
+      } finally { saving.current = null; setIsSaving(false); }
+    })();
+    saving.current = work;
+    return work;
+  };
+  const close = async (): Promise<void> => {
+    if (!await save()) return;
+    if (Object.keys(pending.current).length) return close();
+    returnFocus.current = true; setEditing(false);
   };
   const change = (patch: typeof draft) => {
     pending.current = { ...pending.current, ...patch };
     setDraft(previous => ({ ...previous, ...patch }));
     clearTimeout(debounce.current);
-    debounce.current = setTimeout(save, 400);
+    debounce.current = setTimeout(() => void save(), 400);
   };
   useEffect(() => {
     if (editing) input.current?.focus();
     else if (returnFocus.current) { edit.current?.focus(); returnFocus.current = false; }
   }, [editing]);
-  useEffect(() => () => { save(); }, []);
-  return <div className="next-action chrome" role="group" aria-label="Pinned next action">
+  useEffect(() => () => { void save(); }, []);
+  return <div className="next-action chrome" role="group" aria-label="Pinned next action" aria-busy={isSaving} onKeyDown={event => {
+    if (event.nativeEvent.isComposing) return;
+    if (editing && (event.key === "Escape" || event.key === "Enter" && event.target instanceof HTMLInputElement)) {
+      event.preventDefault(); event.stopPropagation(); void close();
+    }
+  }}>
     {editing ? <>
       <label>Next action (optional)
         <input className="input" ref={input} maxLength={500} value={draft.action ?? value.action} placeholder="Choose one small action to start" onChange={e => change({ action: e.target.value })} />
@@ -65,13 +88,21 @@ export function NextAction() {
       <label>Small reward for finishing this action (optional)
         <input className="input" maxLength={500} value={draft.reward ?? value.reward ?? ""} placeholder="Make a cup of tea" onChange={e => change({ reward: e.target.value })} />
       </label>
-      <button className="btn small" onClick={() => { if (save()) { returnFocus.current = true; setEditing(false); } }}>Done</button>
-      {error && <button className="btn small" onClick={() => { clearTimeout(debounce.current); pending.current = {}; expected.current = intent.get(); setDraft({ ...intent.get() }); setError(""); }}>Use saved action</button>}
-      <p className="faint small">Start whenever you’re ready. These fields are optional. When signed in, the latest saved action, note, cue and reward replace the whole document on other devices. Breaks are always available.</p>
+      <details>
+        <summary>Optional details</summary>
+        <label>Sufficient finish (optional)
+          <input className="input" maxLength={500} value={draft.sufficientFinish ?? value.sufficientFinish ?? ""} onChange={event => change({ sufficientFinish: event.target.value })} />
+        </label>
+        <p className="faint small">What would be enough for this pass? You choose when to finish. This line is never graded.</p>
+      </details>
+      <button className="btn small" onClick={close}>Done</button>
+      {error && <button className="btn small" disabled={isSaving} onClick={() => { if (saving.current) return; clearTimeout(debounce.current); pending.current = {}; expected.current = intent.get(); setDraft({ ...intent.get() }); setError(""); }}>Use saved action</button>}
+      <p className="faint small">Start whenever you’re ready. These fields are optional. When signed in, the latest saved action, note, cue, reward and sufficient finish replace the whole document on other devices. Breaks are always available.</p>
     </> : <>
       <div className="next-action-copy">
       {value.action && <p className="next-action-text">{value.action}</p>}
       {value.why && <p className="small muted">{value.why}</p>}
+      {value.sufficientFinish?.trim() && <p className="small muted next-action-finish">Enough for this pass: {value.sufficientFinish}</p>}
       {value.cue && <p className="small muted next-action-cue">{value.cue}</p>}
       </div>
       <div className="next-action-buttons">
