@@ -242,3 +242,18 @@ it("finishes promotion when early native Start continues a saved completion boun
   expect(await result).toEqual({ ok: true });
   expect(m.timer.get().startedAt).not.toBeNull();
 });
+
+it('follower label requests use the owner and survive handoff without adding time', async () => {
+  const o = await import('./stopOutcomes'), stats = (await import('./stats')).stats;
+  await m.acquireTimerOwnership(); m.settingsUpdate('timer', { hardMode: false, startChime: false });
+  m.timerActions.start(); vi.setSystemTime(Date.now() + 5000); const id = m.timer.get().segId; m.timerActions.stop();
+  await m.flushReadyStores(); const original = structuredClone(stats.get());
+  let owns = false; m.registerClockOwner(() => owns);
+  const saving = o.recordStopLabel(id);
+  await vi.waitFor(() => expect(commandChannel().postMessage.mock.calls.some(([x]) => x.type === 'timer-request')).toBe(true));
+  const message = commandChannel().postMessage.mock.calls.filter(([x]) => x.type === 'timer-request').at(-1)![0];
+  expect(message.request).toMatchObject({ kind: 'owned', action: 'stop-label', payload: id }); expect(o.stopOutcomes.get()).toEqual({});
+  owns = true; await m.acquireTimerOwnership(); // promotion replays the same pending request once
+  await saving; expect(Object.keys(o.stopOutcomes.get())).toEqual([id]); expect(stats.get()).toEqual(original);
+  commandChannel().receive(message); await m.flushReadyStores(); expect(Object.keys(o.stopOutcomes.get())).toEqual([id]); expect(stats.get()).toEqual(original);
+});

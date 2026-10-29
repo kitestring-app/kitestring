@@ -21,9 +21,11 @@ import { currentTask, etaOf, focusPick, tasks } from "./tasks";
 import * as E from "./timerEngine";
 import { transitionStore } from "../ui/timer/TransitionStore";
 import { alertTypingGuard } from "../lib/alertTypingGuard";
+import { captureStoppedAttempt, registerStopClock, stopAttempt, stopOutcomes } from './stopOutcomes';
 
 registerPersistenceGroup(["timer", "stats"]);
 registerPersistenceGroup(["timer", "stats", "tinyStarts", "parkingReview", "clockPresence"]);
+registerPersistenceGroup(["timer", "stats", "stopAttempt"]);
 
 interface ClockPresence { segId: string; lastAliveAt: number; departedAt?: number; ownerId: string }
 export const clockPresence = createStore<ClockPresence | null>("clockPresence", null, value => {
@@ -53,6 +55,7 @@ export const timer = createStore<E.TimerState>("timer", { ...E.INITIAL_TIMER, se
   reentry: typeof (stored as E.TimerState)?.reentry === "string" ? (stored as E.TimerState).reentry : undefined,
   tinyStart: (stored as E.TimerState)?.tinyStart === true ? true : undefined,
 }));
+registerStopClock(timer);
 
 const T = () => settings.get().timer;
 export const HARD_MODE_MESSAGE = "Hard mode: this block runs to the end";
@@ -405,7 +408,9 @@ const localTimerActions = {
     logHardEnd(s.segId, s.segment, now, clean, taskId);
     queueParkingReview("session", s.segId);
     recordHardInterruption({ segId: s.segId, taskId, at: now, segment: s.segment }, clean);
-    timer.set(E.advance(s, { ...T(), autoRun: "off" }, now, false, "focus"));
+    const next = E.advance(s, { ...T(), autoRun: "off" }, now, false, "focus");
+    timer.set(next);
+    captureStoppedAttempt(s, next, now);
     void timerActions.stopSound();
     transitionStore.dismiss();
     window.desktop?.release?.();
@@ -431,12 +436,15 @@ const localTimerActions = {
   stop() {
     if (hardModeLocked()) return hardRefusal();
     void timerActions.stopSound();
+    if (stopAttempt.get()?.nextSegId === timer.get().segId) return;
     const now = Date.now();
-    credit(timer.get(), now, false);
+    const before = timer.get();
+    credit(before, now, false);
     purposefulAction();
     queueParkingReview("session", timer.get().boundary?.id ?? timer.get().segId);
     const next = E.advance(timer.get(), { ...T(), autoRun: "off" }, now, false, "focus");
     timer.set(next);
+    captureStoppedAttempt(before, next, now);
     transitionStore.dismiss();
     window.desktop?.release?.();
   },
@@ -671,7 +679,7 @@ function migrateInitialSegment() {
 }
 export const timerHydrationReady = Promise.all([
   timer.ready, settings.ready, tasks.ready, focusPick.ready, storeReady("stats"), intent.ready,
-  returnActivity.ready, tinyStarts.ready, parkingReview.ready, clockPresence.ready, storeReady("parked"), calmFoundationReady,
+  returnActivity.ready, tinyStarts.ready, parkingReview.ready, clockPresence.ready, stopAttempt.ready, stopOutcomes.ready, storeReady("parked"), calmFoundationReady,
 ]).then(() => {
   const saved = timer.get(), p = clockPresence.get();
   if (saved.startedAt !== null && ["disk", "received"].includes(storeSource("timer") ?? "")) {
@@ -945,10 +953,12 @@ export function answerRecovery(expected: RecoveryCommand, action: RecoveryAnswer
     const total = action === "continue" ? continueDuration(override, eta, E.durationMs(T(), "focus")) : E.durationMs(T(), segment);
     purposefulAction();
     if (action === "stop") queueParkingReview("session", s.boundary!.id);
-    timer.set({ ...E.advance(s, { ...T(), autoRun: "off" }, now, false, segment), context,
+    const next = { ...E.advance(s, { ...T(), autoRun: "off" }, now, false, segment), context,
       startedAt: action === "stop" ? null : now, frozen: action !== "stop", frozenTotal: total,
       hardLocked: action !== "stop" && T().hardMode, taskId: context?.taskId,
-      reentry: undefined });
+      reentry: undefined };
+    timer.set(next);
+    if (action === "stop") captureStoppedAttempt(s, next, now);
     void timerActions.stopSound();
     return true;
   }

@@ -56,7 +56,7 @@ export async function applyRemote(key: string, value: unknown): Promise<void> {
 
 const registry = new Map<string, Registered>();
 /** These values form the device clock's accounting and recovery state. */
-export const CLOCK_OWNED_KEYS = ["timer", "stats", "returnActivity", "parkingReview", "tinyStarts", "clockPresence"] as const;
+export const CLOCK_OWNED_KEYS = ["timer", "stats", "returnActivity", "parkingReview", "tinyStarts", "clockPresence", "stopAttempt", "stopOutcomes"] as const;
 const clockOwned = new Set<string>(CLOCK_OWNED_KEYS);
 const defaultClockOwner = typeof window === "undefined" || typeof navigator === "undefined" || !("locks" in navigator);
 let ownsClock = () => defaultClockOwner;

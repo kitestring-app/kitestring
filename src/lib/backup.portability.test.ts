@@ -231,3 +231,21 @@ it('N2: a legacy Focus import preserves a matching leaf allowance; null clears a
   expect(tasks.get()[0].transitionAllowanceMin).toBeNull();
   expect(() => b.parseBackup(file([{ ...task, transitionAllowanceMin: 10 }, { ...task, id: 'child', parentId: 'a' }]))).toThrow(/allowance/);
 });
+
+it.each([1, 2])('round-trips every local stop-label leaf in Focus v%s without syncing internal attempts', async version => {
+  const b = await import('./backup'), o = await import('../state/stopOutcomes'), db = await import('./db');
+  const f = await import('./store'); await (await import('../state/timer')).timerHydrationReady;
+  const label = { id: 'attempt', at: Date.now(), action: 'Keep the opening', taskId: 'task' };
+  o.stopOutcomes.set({ attempt: label });
+  const file = JSON.parse(await b.createBackup({ sections: ['focus'] })); file.version = version;
+  expect(file.data.stopOutcomes).toEqual({ attempt: label }); expect(file.data).not.toHaveProperty('stopAttempt');
+  expect((await import('./sync')).SYNC_KEYS).not.toContain('stopOutcomes'); expect((await import('./sync')).SYNC_KEYS).not.toContain('stopAttempt');
+  o.stopOutcomes.set({}); await b.restoreBackup(b.parseBackup(JSON.stringify(file)), metadata, ['focus']);
+  expect(o.stopOutcomes.get()).toEqual({ attempt: label }); expect(await db.dbGet('stopOutcomes')).toEqual({ attempt: label });
+  await b.restoreBackup(b.parseBackup(JSON.stringify({ format: b.BACKUP_FORMAT, version, ...(version === 2 ? { sections: ['settings'] } : {}), data: { settings: {} } })), metadata);
+  expect(o.stopOutcomes.get()).toEqual({ attempt: label }); // old files omit it, never delete it
+  const before = await db.dbGet('stopOutcomes'); file.data.stopOutcomes.attempt.at = -1;
+  expect(() => b.parseBackup(JSON.stringify(file))).toThrow(); expect(await db.dbGet('stopOutcomes')).toEqual(before);
+  file.data.stopOutcomes = {}; await b.restoreBackup(b.parseBackup(JSON.stringify(file)), metadata, ['focus']);
+  expect(o.stopOutcomes.get()).toEqual({}); await f.flushReadyStores();
+});
