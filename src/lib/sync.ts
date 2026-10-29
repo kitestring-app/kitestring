@@ -117,7 +117,7 @@ async function reconcile(choice?: "keep" | "replace") {
   const keys = [...dirty].filter(key => !warnings[key]);
   if (keys.length) {
     const saved = await Promise.all(keys.map(async key => ({ key, value: storeValue(key) ?? await dbGet(key), updatedAt: meta[key] ?? Date.now() })));
-    await cloudRequest("PUT", "/api/sync", { entries: saved });
+    await cloudRequest("PUT", "/api/sync", { entries: saved, ...(keys.includes("tasks") ? { taskAllowanceVersion: 1 } : {}) });
     for (const entry of saved) if (meta[entry.key] === entry.updatedAt) dirty.delete(entry.key);
   }
   if (current === epoch) set({ state: "ok", email: status.email, at: Date.now(), warnings });

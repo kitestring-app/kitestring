@@ -125,7 +125,7 @@ test('task estimates and old tasks pass unchanged through the native cloud bridg
   const dir = await mkdtemp(path.join(tmpdir(), 'cloud-estimates-test-'));
   const token = randomBytes(32).toString('hex');
   const entries = [{ key: 'tasks', updatedAt: 1, value: [
-    { id: 'new', title: 'Draft', etaMin: 20, done: false, createdAt: 1 },
+    { id: 'new', title: 'Draft', etaMin: 20, transitionAllowanceMin: 10, done: false, createdAt: 1 },
     { id: 'old', title: 'Read', done: false, createdAt: 1 },
   ] }];
   let saved;
@@ -138,7 +138,8 @@ test('task estimates and old tasks pass unchanged through the native cloud bridg
       return Response.json(init.method === 'GET' ? saved : { ok: true });
     } });
     await cloud.signIn('test@example.invalid', randomBytes(20).toString('hex'));
-    assert.equal((await cloud.request('PUT', '/api/sync', { entries })).status, 200);
+    assert.equal((await cloud.request('PUT', '/api/sync', { entries, taskAllowanceVersion: 1 })).status, 200);
+    assert.equal(saved.taskAllowanceVersion, 1);
     assert.deepEqual((await cloud.request('GET', '/api/sync')).data.entries, entries);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

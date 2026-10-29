@@ -374,10 +374,10 @@ it('N2: preserves omitted leaf allowances atomically across old writers, null cl
   const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
   const headers = { Authorization: 'Bearer ' + token }, at = Date.now();
   const task = (id: string, patch = {}) => ({ id, title: id, done: false, createdAt: at, ...patch });
-  const put = (value: unknown, stamp: number) => worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'tasks', value, updatedAt: stamp }] }, headers), env);
+  const put = (value: unknown, stamp: number, upgraded = true) => worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'tasks', value, updatedAt: stamp }], ...(upgraded ? { taskAllowanceVersion: 1 } : {}) }, headers), env);
   const get = () => JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value));
   expect((await put([task('a', { transitionAllowanceMin: 10 }), task('b', { transitionAllowanceMin: 0 })], at)).status).toBe(200);
-  expect((await put([task('a'), task('b')], at + 1)).status).toBe(200);
+  expect((await put([task('a'), task('b')], at + 1, false)).status).toBe(200);
   expect(get().map((t: any) => t.transitionAllowanceMin)).toEqual([10, 0]);
   expect((await put([task('a', { transitionAllowanceMin: 240 })], at + 1)).status).toBe(200);
   expect(get()).toHaveLength(2);
@@ -435,4 +435,40 @@ it('N2 S1: an old client retaining the unknown allowance can promote a task with
   const rows = db.prepare('SELECT key, value FROM kv').all();
   expect(rows).toHaveLength(2);
   expect(JSON.parse(String(rows.find(row => row.key === 'tasks')?.value))[0].transitionAllowanceMin).toBeNull();
+});
+it('N2 security: cap-compliant 40000-task merges retain every value without repeated document searches', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const at = Date.now(), headers = { Authorization: 'Bearer ' + token };
+  const previous = Array.from({ length: 40000 }, (_, i) => ({ id: 't' + i, transitionAllowanceMin: i % 241 }));
+  expect(new TextEncoder().encode(JSON.stringify(previous)).byteLength).toBeLessThan(1_900_000);
+  db.prepare('INSERT INTO kv VALUES (?, ?, ?, ?)').run(email, 'tasks', JSON.stringify(previous), at);
+  const value = previous.map(({ transitionAllowanceMin: _ignored, ...task }) => task);
+  const start = performance.now();
+  expect((await worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'tasks', value, updatedAt: at + 1 }] }, headers), env)).status).toBe(200);
+  expect(performance.now() - start).toBeLessThan(5000);
+  expect(JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value))).toEqual(previous);
+});
+it('N2 S3: incoming repeated ids cannot supply an allowance when no old row matches', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const at = Date.now(), headers = { Authorization: 'Bearer ' + token };
+  db.prepare('INSERT INTO kv VALUES (?, ?, ?, ?)').run(email, 'tasks', '[]', at);
+  const value = [{ id: 'a' }, { id: 'a', transitionAllowanceMin: 240 }];
+  expect((await worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'tasks', value, updatedAt: at + 1 }] }, headers), env)).status).toBe(200);
+  expect(JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value))).toEqual(value);
+});
+it('N2 legacy retained fields stay cleared after promotion/deletion; an upgraded writer can deliberately replace them', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const at = Date.now(), headers = { Authorization: 'Bearer ' + token };
+  const retained = { id: 'a', title: 'Draft', done: false, createdAt: at, transitionAllowanceMin: 10 };
+  const put = (value: unknown, delta: number, upgraded = false) => worker.fetch(req('/api/sync', 'PUT', {
+    entries: [{ key: 'tasks', value, updatedAt: at + delta }], ...(upgraded ? { taskAllowanceVersion: 1 } : {}),
+  }, headers), env);
+  const get = () => JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value));
+  await put([retained], 0, true);
+  await put([retained, { id: 'child', parentId: 'a' }], 1);
+  expect(get()[0].transitionAllowanceMin).toBeNull();
+  await put([{ ...retained, title: 'Renamed without touching allowance' }], 2);
+  expect(get()).toEqual([{ ...retained, title: 'Renamed without touching allowance', transitionAllowanceMin: null }]);
+  await put([{ ...retained, transitionAllowanceMin: 15 }], 3, true);
+  expect(get()[0].transitionAllowanceMin).toBe(15);
 });

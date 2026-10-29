@@ -48,3 +48,7 @@ it('accepts valid carried parent fields only on the legacy sync path, then clear
   expect(preserveTaskAllowances(rows, [])[0].transitionAllowanceMin).toBeNull();
   expect(validTaskAllowances([task('a', { transitionAllowanceMin: -1 }), rows[1]], true)).toBe(false);
 });
+it('skips legacy null rows before merging so the task store can retain valid rows', () => {
+  const a = task('a');
+  expect(preserveTaskAllowances([null as unknown as TaskAllowance, a], [task('a', { transitionAllowanceMin: 10 })])).toEqual([{ ...a, transitionAllowanceMin: 10 }]);
+});

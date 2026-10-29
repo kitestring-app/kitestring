@@ -216,7 +216,7 @@ async function syncPut(req: Request, env: Env): Promise<Response> {
     if (e.key === "intent" && !isIntentDocument(e.value)) return json({ ok: false, error: "Invalid next action." }, 400);
     if (e.key === "tasks" && !validTaskAllowances(e.value, true)) return json({ ok: false, error: "Invalid transition allowance." }, 400);
     // Observing a parent clears its allowance even on a first legacy insert.
-    const value = JSON.stringify(e.key === "tasks" && Array.isArray(e.value) && e.value.every((t: unknown) => t && typeof t === "object")
+    const value = JSON.stringify(e.key === "tasks" && Array.isArray(e.value)
       ? preserveTaskAllowances(e.value, []) : e.value);
     if (new TextEncoder().encode(value).byteLength > MAX_VALUE_BYTES) return json({ ok: false, error: "Entry is too large to sync." }, 413);
     entries.push({ key: e.key, value, updatedAt: e.updatedAt });
@@ -233,28 +233,35 @@ async function syncPut(req: Request, env: Env): Promise<Response> {
     ...entries.map(e => env.DB.prepare(`INSERT INTO kv (email, key, value, updated_at)
       SELECT ?, ?, ?, ? WHERE EXISTS (${live})
       ON CONFLICT(email, key) DO UPDATE SET value = CASE
-        -- Build the map before visiting incoming tasks. Hex ids are safe JSON paths.
+        -- Sort old/new rows once by id. Repeated JSON document lookups are quadratic.
         WHEN excluded.key = 'tasks' AND json_type(excluded.value) = 'array'
           AND NOT EXISTS (SELECT 1 FROM json_each(excluded.value) WHERE type != 'object') THEN (
-          WITH previous AS MATERIALIZED (
-            SELECT json_group_object(hex(json_extract(value, '$.id')), json_extract(value, '$.transitionAllowanceMin')) doc
-            FROM json_each(kv.value) WHERE type = 'object' AND
-              (json_type(value, '$.transitionAllowanceMin') = 'null' OR json_type(value, '$.transitionAllowanceMin') = 'integer'
-                AND json_extract(value, '$.transitionAllowanceMin') BETWEEN 0 AND 240))
+          WITH incoming AS MATERIALIZED (
+            SELECT CAST(key AS INTEGER) ord, value, json_extract(value, '$.id') id, json_extract(value, '$.parentId') parentId,
+              json_type(value, '$.transitionAllowanceMin') kind, json_extract(value, '$.transitionAllowanceMin') allowance FROM json_each(excluded.value)),
+          entries AS (
+            SELECT 0 source, CAST(key AS INTEGER) ord, value, json_extract(value, '$.id') id,
+              json_type(value, '$.transitionAllowanceMin') kind, json_extract(value, '$.transitionAllowanceMin') allowance
+            FROM json_each(CASE WHEN json_type(kv.value) = 'array' THEN kv.value ELSE '[]' END) WHERE type = 'object'
+            UNION ALL SELECT 1, ord, value, id, kind, allowance FROM incoming
+            UNION ALL SELECT 2, ord, NULL, parentId, NULL, NULL FROM incoming WHERE parentId IS NOT NULL),
+          merged AS (
+            SELECT *, first_value(source) OVER task savedSource, first_value(kind) OVER task savedKind,
+              first_value(allowance) OVER task savedAllowance, max(source = 2) OVER (PARTITION BY id) isParent
+            FROM entries WINDOW task AS (PARTITION BY id ORDER BY source, ord DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING))
           SELECT json_group_array(json(CASE
-            WHEN json_type(incoming.value, '$.transitionAllowanceMin') IS NULL AND
-              json_type(previous.doc, '$."' || hex(json_extract(incoming.value, '$.id')) || '"') IS NOT NULL
-            THEN json_set(incoming.value, '$.transitionAllowanceMin',
-              json_extract(previous.doc, '$."' || hex(json_extract(incoming.value, '$.id')) || '"'))
-            ELSE incoming.value END))
-          FROM previous CROSS JOIN json_each(excluded.value) incoming)
+            WHEN isParent THEN json_set(value, '$.transitionAllowanceMin', NULL)
+            WHEN savedSource = 0 AND (kind IS NULL OR ? = 0) AND
+              (savedKind = 'null' OR savedKind = 'integer' AND savedAllowance BETWEEN 0 AND 240)
+            THEN json_set(value, '$.transitionAllowanceMin', savedAllowance) ELSE value END))
+          FROM (SELECT * FROM merged WHERE source = 1 ORDER BY ord))
         WHEN excluded.key = 'intent'
           AND json_extract(excluded.value, '$.action') = json_extract(kv.value, '$.action')
           AND json_type(excluded.value, '$.sufficientFinish') IS NULL
           AND json_type(kv.value, '$.sufficientFinish') = 'text'
         THEN json_set(excluded.value, '$.sufficientFinish', json_extract(kv.value, '$.sufficientFinish'))
         ELSE excluded.value END, updated_at = excluded.updated_at WHERE excluded.updated_at > kv.updated_at`)
-      .bind(session.email, e.key, e.value, e.updatedAt, ...args)),
+      .bind(session.email, e.key, e.value, e.updatedAt, ...args, body.taskAllowanceVersion === 1 ? 1 : 0)),
     env.DB.prepare("UPDATE sessions SET expires_at = ?, last_seen = ? WHERE token_hash = ? AND email = ? AND expires_at > ?").bind(now + SESSION_MS, now, ...args),
   ]);
   if (!result[0].results.length) return json({ ok: false, error: "Sign in to sync." }, 401);
