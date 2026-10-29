@@ -423,3 +423,16 @@ it('N2 S1: first-insert legacy parents carry a clear even when this server has n
   saved = JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value));
   expect(saved).toEqual([{ ...task, transitionAllowanceMin: null }]);
 });
+it('N2 S1: an old client retaining the unknown allowance can promote a task without blocking its sync batch', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const at = Date.now(), headers = { Authorization: 'Bearer ' + token };
+  const parent = { id: 'a', title: 'Draft', done: false, createdAt: at, transitionAllowanceMin: 10 };
+  const reply = await worker.fetch(req('/api/sync', 'PUT', { entries: [
+    { key: 'tasks', value: [parent, { id: 'child', title: 'One paragraph', done: false, createdAt: at, parentId: 'a' }], updatedAt: at },
+    { key: 'notes', value: 'Keep this batch', updatedAt: at },
+  ] }, headers), env);
+  expect(reply.status).toBe(200);
+  const rows = db.prepare('SELECT key, value FROM kv').all();
+  expect(rows).toHaveLength(2);
+  expect(JSON.parse(String(rows.find(row => row.key === 'tasks')?.value))[0].transitionAllowanceMin).toBeNull();
+});

@@ -214,9 +214,9 @@ async function syncPut(req: Request, env: Env): Promise<Response> {
   for (const e of body.entries) {
     if (!SYNC_KEYS.has(e?.key) || !Number.isSafeInteger(e.updatedAt) || e.updatedAt < 0 || e.updatedAt > Date.now() + 60_000 || e.value === undefined) return json({ ok: false, error: "Invalid entry." }, 400);
     if (e.key === "intent" && !isIntentDocument(e.value)) return json({ ok: false, error: "Invalid next action." }, 400);
-    if (e.key === "tasks" && !validTaskAllowances(e.value)) return json({ ok: false, error: "Invalid transition allowance." }, 400);
+    if (e.key === "tasks" && !validTaskAllowances(e.value, true)) return json({ ok: false, error: "Invalid transition allowance." }, 400);
     // Observing a parent clears its allowance even on a first legacy insert.
-    const value = JSON.stringify(e.key === "tasks" && Array.isArray(e.value) && e.value.every(t => t && typeof t === "object")
+    const value = JSON.stringify(e.key === "tasks" && Array.isArray(e.value) && e.value.every((t: unknown) => t && typeof t === "object")
       ? preserveTaskAllowances(e.value, []) : e.value);
     if (new TextEncoder().encode(value).byteLength > MAX_VALUE_BYTES) return json({ ok: false, error: "Entry is too large to sync." }, 413);
     entries.push({ key: e.key, value, updatedAt: e.updatedAt });

@@ -40,3 +40,11 @@ it('S1: even a copy without an allowance records every observed parent as explic
   const leaf = preserveTaskAllowances([task('a')], parent);
   expect(preserveTaskAllowances(leaf, [task('a', { transitionAllowanceMin: 10 })])[0].transitionAllowanceMin).toBeNull();
 });
+
+it('accepts valid carried parent fields only on the legacy sync path, then clears them', () => {
+  const rows = [task('a', { transitionAllowanceMin: 10 }), task('child', { parentId: 'a' })];
+  expect(validTaskAllowances(rows)).toBe(false);
+  expect(validTaskAllowances(rows, true)).toBe(true);
+  expect(preserveTaskAllowances(rows, [])[0].transitionAllowanceMin).toBeNull();
+  expect(validTaskAllowances([task('a', { transitionAllowanceMin: -1 }), rows[1]], true)).toBe(false);
+});
