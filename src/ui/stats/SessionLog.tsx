@@ -8,6 +8,7 @@ import { downloadFile, sessionLogCsv } from "./csv";
 import { Icon } from "../icons";
 import { showDeleteUndo } from "./DeleteUndo";
 import "./SessionLog.css";
+import { StopLabels } from './StopLabels';
 
 // Job 24 may land independently: do not require an export it hasn't added yet.
 const interruptionSource = parking as typeof parking & {
@@ -44,6 +45,7 @@ export function SessionLog() {
     } catch { setMessage("Could not export the CSV. Please try again."); }
   };
   return <div className="session-log">
+    <StopLabels />
     <p className="help">Saved focus and break sessions, newest first. Paused entries are combined. Days use the session's local start date; start and end times are approximate for older entries. Length counts recorded timer time.</p>
     <div className="session-log-filters">
       <label>From<input className="input" type="date" value={from} max={to || undefined} onChange={e => setFrom(e.target.value)} /></label>

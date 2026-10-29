@@ -25,7 +25,8 @@ export function EndSessionHost({ native = false }: { native?: boolean } = {}) {
 
 export function EndSessionControl({ native = false }: { native?: boolean }) {
   const v = useTimerView();
-  if (!v.hardLocked) return null;
+  if (!v.hardLocked) return v.running || v.state.elapsedBefore > 0 ? <button type="button" className="btn small" aria-label="Stop session"
+    onClick={() => native ? window.desktop?.timerControl?.('stop') : runTimerCommand('stop')}>Stop</button> : null;
   if (v.total === null) return <button className="btn small" onClick={() => native ? window.desktop?.timerControl?.("skip") : timerActions.skip()}>Finish session</button>;
   return <>
     <button className="btn small" onClick={requestEndSession}>End session</button>

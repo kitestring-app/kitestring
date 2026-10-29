@@ -124,3 +124,10 @@ it.each([false, true])("offers Finish session for a locked stopwatch (native=%s)
   expect(finish).toBeDefined(); await finish.props.onClick();
   expect(timer.get().startedAt).toBeNull();
 });
+it.each([false, true])('offers ordinary Stop with no label or reason requirement (native=%s)', async native => {
+  settings.set({ ...settings.get(), timer: { ...settings.get().timer, hardMode: false } });
+  timer.set({ ...timer.get(), hardLocked: false, elapsedBefore: 1000 });
+  const tree = elements(EndSessionControl({ native })), stop = tree.find(el => el.props['aria-label'] === 'Stop session');
+  expect(stop).toBeDefined(); await stop!.props.onClick(); expect(timer.get().startedAt).toBeNull();
+  expect(tree.some(el => el.type === 'input' || el.type === 'dialog')).toBe(false);
+});

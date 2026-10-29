@@ -127,6 +127,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
           <Icon.pip />
         </button>
         <button className="iconbtn" onClick={onPark} aria-label="Park a thought · P" title="Park a thought · P"><Icon.note /></button>
+        {!v.hardLocked && <EndSessionControl />}
       </div>
       <FocusCardSlot onChooseTask={onChooseTask} />
       <StartSupport />
