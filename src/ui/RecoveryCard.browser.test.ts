@@ -46,9 +46,12 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     if (!address || typeof address === "string") throw new Error("No test server port");
     origin = `http://127.0.0.1:${address.port}`;
     profile = mkdtempSync(join(tmpdir(), "pomodoro-return-test-"));
-    browser = spawn(chromePath!, chromeArgs(profile), { stdio: "ignore" });
+    browser = spawn(chromePath!, chromeArgs(profile), { stdio: ["ignore", "ignore", "pipe"] });
+    let launchErrors = "";
+    browser.stderr?.on("data", data => { launchErrors = (launchErrors + String(data)).slice(-8192); });
     const portFile = join(profile, "DevToolsActivePort");
     for (let n = 0; n < 150 && !existsSync(portFile); n++) await delay(50);
+    if (!existsSync(portFile)) throw new Error(`Test browser launch failed: exit=${browser.exitCode}, signal=${browser.signalCode}; ${launchErrors}`);
     const port = readFileSync(portFile, "utf8").split("\n")[0];
     debugPort = port;
     const pages = await fetch(`http://127.0.0.1:${port}/json/list`).then(r => r.json()) as { type: string; url: string; webSocketDebuggerUrl: string }[];
