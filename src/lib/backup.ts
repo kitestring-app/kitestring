@@ -14,6 +14,7 @@ import { canWriteClockStore, flushReadyStores, requestClockAction, restoreStoreE
 import { isNotesValue, migrateNotes, notesInterruptionPreference } from "../state/notesModel";
 import { DEFAULT_SETTINGS, sanitizeSettings, settings } from "../state/settings";
 import { captureTimerRestore, hardModeLocked } from "../state/timer";
+import { validStopOutcomes } from '../state/stopOutcomes';
 // Backup format + strict validation. Nothing from a file reaches storage until the whole file passes.
 
 export const BACKUP_FORMAT = "kitestring-backup";
@@ -44,6 +45,8 @@ export const STORE_CLASS = {
   tinyStarts: { class: "internal", section: null },
   parkingReview: { class: "internal", section: null },
   rewardMoment: { class: "internal", section: null },
+  stopAttempt: { class: "internal", section: null },
+  stopOutcomes: { class: "device", section: "focus" },
 } as const satisfies Record<string, StoreClass>;
 type ClassifiedKey = keyof typeof STORE_CLASS;
 export type BackupKey = { [K in ClassifiedKey]: (typeof STORE_CLASS)[K]["section"] extends null | "images" ? never : K }[ClassifiedKey];
@@ -95,6 +98,7 @@ function checkChunk(c: unknown): string | null {
 }
 
 const checks: Record<BackupKey, (v: unknown) => string | null> = {
+  stopOutcomes: v => validStopOutcomes(v) ? null : 'stop labels',
   devicePreferences: value => isObj(value) && Object.values(value).every(v => typeof v === "boolean") ? null : "device preferences",
   floatingGlass: value => isObj(value) && isNum(value.opacity, 0, 1) ? null : "floating timer opacity",
   intent: value => parseIntentDocument(value) ? null : "next action",
