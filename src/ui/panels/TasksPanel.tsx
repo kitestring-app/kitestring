@@ -1,3 +1,4 @@
+import { validAllowance } from "../../lib/taskAllowance";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
 import { createPortal } from "react-dom";
@@ -5,7 +6,7 @@ import { useStore } from "../../lib/store";
 import {
   TASK_COLORS, editTaskOrder, addSubtask, childrenOf, clearDone, currentTask, deleteTask,
   duplicateTask, etaOf, focusPick, insertTaskAfter, remainingMinutes,
-  tasks, toggleTaskGroup, topLevel, updateTask,
+  tasks, toggleTaskGroup, topLevel, updateTask, saveTaskAllowance,
 } from "../../state/tasks";
 import type { Task } from "../../state/tasks";
 import { stats } from "../../state/stats";
@@ -77,7 +78,7 @@ export function estimateTaskFinish(all: Task[], pick: string | null, config: Set
 type Picker = "emoji" | "color" | "eta" | "actions";
 
 function TaskPopover({ anchor, label, onClose, children }: {
-  anchor: RefObject<HTMLButtonElement | null>; label: string; onClose: () => void; children: ReactNode;
+  anchor: RefObject<HTMLButtonElement | null>; label: string; onClose: () => void | false; children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ left: 0, top: 0 });
@@ -99,26 +100,32 @@ function TaskPopover({ anchor, label, onClose, children }: {
     return () => resize.disconnect();
   }, [anchor]);
   useEffect(() => {
+    const opening = { box: anchor.current?.getBoundingClientRect(), width: window.innerWidth, height: window.innerHeight };
+    const closeIfMoved = () => {
+      const box = anchor.current?.getBoundingClientRect();
+      if (!box || !opening.box || window.innerWidth !== opening.width || window.innerHeight !== opening.height ||
+        (["left", "top", "right", "bottom"] as const).some(key => box[key] !== opening.box![key])) onClose();
+    };
     const outside = (event: PointerEvent) => {
       if (event.target instanceof Node && !ref.current?.contains(event.target) && !anchor.current?.contains(event.target)) onClose();
     };
     const escape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault(); event.stopPropagation(); onClose(); anchor.current?.focus();
+      if (event.key === "Escape" && !event.isComposing) {
+        event.preventDefault(); event.stopPropagation(); if (onClose() !== false) anchor.current?.focus();
       }
     };
     const closeOnScroll = (event: Event) => {
       if (event.target instanceof Node && ref.current?.contains(event.target)) return;
-      onClose();
+      closeIfMoved();
     };
     document.addEventListener("pointerdown", outside);
     document.addEventListener("keydown", escape, true);
-    window.addEventListener("resize", onClose);
+    window.addEventListener("resize", closeIfMoved);
     document.addEventListener("scroll", closeOnScroll, true);
     return () => {
       document.removeEventListener("pointerdown", outside);
       document.removeEventListener("keydown", escape, true);
-      window.removeEventListener("resize", onClose);
+      window.removeEventListener("resize", closeIfMoved);
       document.removeEventListener("scroll", closeOnScroll, true);
     };
   }, [anchor, onClose]);
@@ -127,7 +134,7 @@ function TaskPopover({ anchor, label, onClose, children }: {
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === "Tab") {
-          const controls = [...e.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled), input, summary")];
+          const controls = [...e.currentTarget.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled), summary")].filter(el => (!el.closest("details:not([open])") || el.matches("details:not([open]) > summary")) && el.getClientRects().length);
           const edge = e.shiftKey ? controls[0] : controls.at(-1);
           if (!controls.length || document.activeElement === edge) {
             e.preventDefault();
@@ -140,11 +147,15 @@ function TaskPopover({ anchor, label, onClose, children }: {
   );
 }
 
-function EtaPicker({ task, all, onClose }: { task: Task; all: Task[]; onClose: () => void }) {
+function EtaPicker({ task, all, onClose, busy }: { task: Task; all: Task[]; onClose: () => void; busy: RefObject<boolean> }) {
   const [custom, setCustom] = useState(String(task.etaMin ?? 25));
+  const [allowance, setAllowance] = useState(String(task.transitionAllowanceMin ?? ""));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const expected = useRef(task), allowanceInput = useRef<HTMLInputElement>(null);
   const choose = (minutes: number | undefined) => { updateTask(task.id, { etaMin: minutes }); onClose(); };
   return <>
-    <span className="tasks-popover-label">Optional guess in minutes</span>
+    <span className="tasks-popover-label">Work guess in minutes (optional)</span>
     <div className="tasks-estimates">
       {ESTIMATES.map((minutes) => <button key={minutes} aria-pressed={task.etaMin === minutes} onClick={() => choose(minutes)}>{minutes}</button>)}
     </div>
@@ -158,6 +169,23 @@ function EtaPicker({ task, all, onClose }: { task: Task; all: Task[]; onClose: (
     </form>
     <button className="tasks-menu-item" onClick={() => choose(undefined)}>Remove estimate</button>
     <EstimateHistory task={task} all={all} />
+    <details className="tasks-allowance">
+      <summary>Transition allowance (optional)</summary>
+      <p className="faint small">Time you choose for changing activities, separate from work. It does not run another timer or add recorded focus.</p>
+      <form noValidate aria-busy={saving} onSubmit={async event => {
+        event.preventDefault(); if (busy.current) return;
+        const value = allowance.trim() === "" ? null : Number(allowance);
+        if (!validAllowance(value) || allowanceInput.current?.validity.badInput) { setError("Use a whole number from 0 to 240, or leave it blank."); return; }
+        busy.current = true; setSaving(true);
+        try { await saveTaskAllowance(task.id, value, expected.current); busy.current = false; onClose(); }
+        catch (cause) { setError(cause instanceof Error ? cause.message : "Could not save. Your draft is kept. Try again."); }
+        finally { busy.current = false; setSaving(false); }
+      }}>
+        <label>Transition allowance in minutes<input ref={allowanceInput} className="input" type="number" min="0" max="240" step="1" disabled={saving} value={allowance} onChange={e => setAllowance(e.target.value)} /></label>
+        <div className="row"><button className="btn small" type="submit" disabled={saving}>{saving ? "Saving…" : "Set allowance"}</button><button className="btn small" type="button" disabled={saving} onClick={onClose}>Cancel</button></div>
+        {error && <p className="small" role="alert">{error}</p>}
+      </form>
+    </details>
   </>;
 }
 
@@ -185,6 +213,8 @@ function TaskRow({ task, all, isCurrent, collapsed, onCollapse, onCreate, onTogg
   onDrag: (event: ReactPointerEvent<HTMLButtonElement>, id: string) => void; dragTarget: boolean;
 }) {
   const [picker, setPicker] = useState<Picker | null>(null);
+  const allowanceBusy = useRef(false);
+  const openPicker = (choice: Picker) => { if (!allowanceBusy.current) setPicker(picker === choice ? null : choice); };
   const emojiRef = useRef<HTMLButtonElement>(null), colorRef = useRef<HTMLButtonElement>(null);
   const etaRef = useRef<HTMLButtonElement>(null), actionsRef = useRef<HTMLButtonElement>(null);
   const kids = childrenOf(all, task.id);
@@ -198,7 +228,7 @@ function TaskRow({ task, all, isCurrent, collapsed, onCollapse, onCreate, onTogg
     if (other) editTaskOrder((rows) => reorderTask(rows, task.id, other.id, direction === 1));
   };
   const title = task.title || "Untitled task";
-  const close = () => setPicker(null);
+  const close = () => { if (allowanceBusy.current) return false; setPicker(null); };
   const act = (action: () => void) => { close(); actionsRef.current?.focus(); action(); };
   const keyDown = (e: KeyboardEvent<HTMLLIElement>) => {
     if (e.nativeEvent.isComposing) return;
@@ -215,14 +245,15 @@ function TaskRow({ task, all, isCurrent, collapsed, onCollapse, onCreate, onTogg
     <div className="task-main">
       <button className="task-drag" aria-label={`Drag to reorder ${title}`} onPointerDown={(e) => onDrag(e, task.id)}>⠿</button>
       <input className="task-check" type="checkbox" checked={task.done} onChange={() => onToggle(task.id)} aria-label={title} />
-      <button ref={emojiRef} className="task-emoji" aria-label={`Choose icon for ${title}`} aria-expanded={picker === "emoji"} aria-haspopup="dialog" onClick={() => setPicker(picker === "emoji" ? null : "emoji")}>{glyphFor(task.emoji) ? <Glyph name={glyphFor(task.emoji)!} size={18} /> : <Glyph name="circle" size={18} className="faint" />}</button>
+      <button ref={emojiRef} className="task-emoji" aria-label={`Choose icon for ${title}`} aria-expanded={picker === "emoji"} aria-haspopup="dialog" onClick={() => openPicker("emoji")}>{glyphFor(task.emoji) ? <Glyph name={glyphFor(task.emoji)!} size={18} /> : <Glyph name="circle" size={18} className="faint" />}</button>
       <input className="task-title" data-task-title={task.id} type="text" aria-label={`Task title: ${title}`} placeholder="Type your priority" value={task.title} onChange={(e) => updateTask(task.id, { title: e.target.value })} />
       <button className={isCurrent ? "task-now" : "task-focus"} disabled={task.done} aria-pressed={isCurrent} aria-label={`Focus on ${title}`} onClick={pick}>{isCurrent ? "Now" : "◎"}</button>
-      <button ref={colorRef} className="task-color" aria-label={`Choose colour for ${title}`} aria-expanded={picker === "color"} aria-haspopup="dialog" onClick={() => setPicker(picker === "color" ? null : "color")}><span style={{ background: safeTaskColor(task.color) }} /></button>
+      <button ref={colorRef} className="task-color" aria-label={`Choose colour for ${title}`} aria-expanded={picker === "color"} aria-haspopup="dialog" onClick={() => openPicker("color")}><span style={{ background: safeTaskColor(task.color) }} /></button>
       {kids.length ? <span className="task-eta" aria-label={`${etaOf(all, task)} minutes remaining across subtasks`}>{etaOf(all, task)}m</span> :
-        <button ref={etaRef} className="task-eta" aria-label={`Estimate for ${title}`} aria-expanded={picker === "eta"} aria-haspopup="dialog" onClick={() => setPicker(picker === "eta" ? null : "eta")}>{task.etaMin ? `${task.etaMin}m` : "+ ETA"}</button>}
-      <button ref={actionsRef} className="task-more" aria-label={`Actions for ${title}`} aria-expanded={picker === "actions"} aria-haspopup="dialog" onClick={() => setPicker(picker === "actions" ? null : "actions")}><Icon.more /></button>
+        <button ref={etaRef} className="task-eta" aria-label={`Estimate for ${title}`} aria-expanded={picker === "eta"} aria-haspopup="dialog" onClick={() => openPicker("eta")}>{task.etaMin ? `${task.etaMin}m` : "+ ETA"}</button>}
+      <button ref={actionsRef} className="task-more" aria-label={`Actions for ${title}`} aria-expanded={picker === "actions"} aria-haspopup="dialog" onClick={() => openPicker("actions")}><Icon.more /></button>
     </div>
+    {!kids.length && typeof task.transitionAllowanceMin === "number" && <p className="task-transition">{task.etaMin === undefined ? "Work guess not set" : `Work guess ${task.etaMin} min`}; transition allowance {task.transitionAllowanceMin} min</p>}
     {task.done && <EstimateHistory task={task} all={all} completed />}
     {kids.length > 0 && <button className="task-collapse" aria-expanded={!collapsed} aria-controls={`task-children-${task.id}`} onClick={onCollapse}>
       <span aria-hidden="true">{collapsed ? "▸" : "▾"}</span> {kids.filter((t) => t.done).length}/{kids.length} subtasks
@@ -230,7 +261,7 @@ function TaskRow({ task, all, isCurrent, collapsed, onCollapse, onCreate, onTogg
     {picker && <TaskPopover anchor={{ emoji: emojiRef, color: colorRef, eta: etaRef, actions: actionsRef }[picker]} label={`${picker === "actions" ? "Task actions" : `Choose ${picker}`} for ${title}`} onClose={close}>
       {picker === "emoji" && <><div className="tasks-emojis">{TASK_ICONS.map((icon) => <button key={icon} aria-label={`Use ${icon.replace(/-/g, " ")} icon`} aria-pressed={glyphFor(task.emoji) === icon} onClick={() => { updateTask(task.id, { emoji: icon }); close(); emojiRef.current?.focus(); }}><Glyph name={icon} size={18} /></button>)}</div><button className="tasks-menu-item" onClick={() => { updateTask(task.id, { emoji: undefined }); close(); emojiRef.current?.focus(); }}>Remove icon</button></>}
       {picker === "color" && <><span className="tasks-popover-label">Colour tag</span><div className="tasks-colors">{TASK_COLORS.map((color, i) => <button key={color} style={{ background: color }} aria-label={`Use ${COLOR_NAMES[i]} colour tag`} aria-pressed={task.color === color} onClick={() => { updateTask(task.id, { color }); close(); colorRef.current?.focus(); }}>{task.color === color && <Icon.check />}</button>)}</div><button className="tasks-menu-item" onClick={() => { updateTask(task.id, { color: undefined }); close(); colorRef.current?.focus(); }}>Remove colour</button></>}
-      {picker === "eta" && <EtaPicker task={task} all={all} onClose={() => { close(); etaRef.current?.focus(); }} />}
+      {picker === "eta" && <EtaPicker task={task} all={all} busy={allowanceBusy} onClose={() => { close(); etaRef.current?.focus(); }} />}
       {picker === "actions" && <div className="tasks-actions">
         <button className="tasks-menu-item" disabled={task.done} onClick={() => act(pick)}>{picked ? "Clear focus selection" : "Focus on this"}</button>
         <button className="tasks-menu-item" onClick={() => act(() => onCreate(addSubtask(task.id)))}><Icon.plus />Add subtask</button>

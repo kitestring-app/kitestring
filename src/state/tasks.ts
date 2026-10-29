@@ -1,6 +1,7 @@
+import { storageMode } from "../lib/db";
 import { validAllowance } from "../lib/taskAllowance";
 import { purposefulAction } from "./returnActivity";
-import { createStore, uid } from "../lib/store";
+import { commitStoreEntries, createStore, storeReadFailed, uid } from "../lib/store";
 import { logTaskDone, unlogTaskDone } from "./stats";
 
 export const TASK_COLORS = ["#C3B8F5", "#F5B5D2", "#A8E5C0", "#A5D8F0", "#F2DCA8", "#F0938A", "#A8E0DC"] as const;
@@ -75,6 +76,21 @@ export function addTask(patch: Partial<Task> = {}): string {
 export function updateTask(id: string, patch: Partial<Task>) {
   purposefulAction();
   tasks.set((all) => all.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+}
+
+/** The estimate editor closes only after a guarded durable field write. */
+export async function saveTaskAllowance(id: string, value: number | null, expected: Task): Promise<void> {
+  await tasks.ready;
+  if (value === undefined || !validAllowance(value)) throw new Error("Use a whole number from 0 to 240, or leave it blank.");
+  if (storageMode() !== "indexeddb" || storeReadFailed("tasks")) throw new Error("Storage is unavailable. Your draft is kept. Reload to retry.");
+  const saved = await commitStoreEntries(() => {
+    const all = tasks.get(), current = all.find(t => t.id === id);
+    if (!current || current !== expected) throw new Error("This task changed elsewhere. Your draft is kept. Close and reopen the editor to use the saved task.");
+    if (childrenOf(all, id).length) throw new Error("Only a leaf task can have a transition allowance.");
+    return [["tasks", all.map(t => t.id === id ? { ...t, transitionAllowanceMin: value } : t)]];
+  });
+  if (!saved) throw new Error("The task changed while saving. Your draft is kept. Close and reopen the editor to retry.");
+  purposefulAction();
 }
 
 export function toggleTask(id: string) {
