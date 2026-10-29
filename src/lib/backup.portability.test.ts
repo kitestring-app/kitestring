@@ -204,7 +204,7 @@ it.each([1, 2])("preserves every away chunk field in v%s backups, including mult
 it("N1: every intent leaf round-trips in Focus backups; legacy omission preserves the same action only", async () => {
   const b = await import("./backup"); const { intent } = await import("../state/intent");
   const { dbGet } = await import("./db"); await intent.ready;
-  const value = { action: "Draft", why: "Share", cue: "After tea", reward: "Walk", sufficientFinish: "Three paragraphs", rev: 4, updatedAt: 100 };
+  const value = { action: "Draft", why: "Share", cue: "After tea", reward: "Walk", sufficientFinish: "Three paragraphs", portion: "Introduction", rev: 4, updatedAt: 100 };
   intent.set(value);
   const parsed = b.parseBackup(await b.createBackup({ sections: ["focus"] }));
   expect(parsed.data.intent).toEqual(value);
@@ -215,6 +215,7 @@ it("N1: every intent leaf round-trips in Focus backups; legacy omission preserve
     const old = { ...parsed, data: { intent: { action, why: "Old edit", rev: 5, updatedAt: 101 } } };
     await b.restoreBackup(old, metadata, ["focus"]);
     expect(intent.get().sufficientFinish).toBe(finish);
+    expect(intent.get().portion).toBe(action === "Draft" ? "Introduction" : undefined);
     expect((await dbGet<typeof value>("intent"))?.sufficientFinish).toBe(finish);
   }
 });

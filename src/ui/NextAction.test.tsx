@@ -130,3 +130,11 @@ it("N1b review: a pending retry disables discard and ignores a stale discard cal
   expect(intent.get().sufficientFinish).toBe("Three paragraphs");
   expect(await db.dbGet("intent")).toEqual(intent.get());
 });
+
+it("N4: optional portion saves with the action without completing tasks", async () => {
+  tasks.set([{ id: "book", title: "Read chapter", done: false, createdAt: 1 }]);
+  await click("Pin a next action"); type(0, "Read chapter"); type(5, "One page"); await click("Done");
+  expect(intent.get().portion).toBe("One page");
+  expect(renderToStaticMarkup(render())).toContain("Chosen portion: One page");
+  await click("Finish action"); expect(tasks.get()[0].done).toBe(false);
+});

@@ -77,7 +77,7 @@ test('upload limits match the web app and the Worker (regression: 7-entry cap br
 
 test('C2: cue and reward round-trip unchanged through the native cloud transport', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'cloud-intent-test-'));
-  const value = { action: 'Open the draft', why: 'Share the outline', cue: 'After lunch, open the draft', reward: 'Tea outside', sufficientFinish: 'Three paragraphs', rev: 3, updatedAt: Date.now() };
+  const value = { action: 'Open the draft', why: 'Share the outline', cue: 'After lunch, open the draft', reward: 'Tea outside', sufficientFinish: 'Three paragraphs', portion: 'Opening paragraph', rev: 3, updatedAt: Date.now() };
   const token = randomBytes(32).toString('hex');
   let saved;
   const send = async (url, init) => {

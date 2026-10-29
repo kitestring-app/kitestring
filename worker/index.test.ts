@@ -472,3 +472,20 @@ it('N2 legacy retained fields stay cleared after promotion/deletion; an upgraded
   await put([{ ...retained, transitionAllowanceMin: 15 }], 3, true);
   expect(get()[0].transitionAllowanceMin).toBe(15);
 });
+
+it('N4: Worker preserves both optional boundaries independently on legacy writes and keeps equal timestamps', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const headers = { Authorization: 'Bearer ' + token }, at = Date.now();
+  const base = { action: 'Read', why: '', rev: 1, updatedAt: at };
+  const put = (value: object, stamp: number) => worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'intent', value, updatedAt: stamp }] }, headers), env);
+  const get = () => JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'intent'").get()?.value));
+  await put({ ...base, portion: 'One page', sufficientFinish: 'A rough explanation' }, at);
+  await put({ ...base, sufficientFinish: '' }, at + 1);
+  expect(get()).toMatchObject({ portion: 'One page', sufficientFinish: '' });
+  await put({ ...base, portion: 'Changed' }, at + 1);
+  expect(get().portion).toBe('One page');
+  await put({ ...base, portion: '' }, at + 2);
+  expect(get()).toMatchObject({ portion: '', sufficientFinish: '' });
+  await put({ ...base, action: 'Write' }, at + 3);
+  expect(get()).not.toHaveProperty('portion');
+});

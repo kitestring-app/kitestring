@@ -63,3 +63,26 @@ it.each(["QuotaExceededError", "AbortError", "UnknownError"])("N1b: %s keeps int
   expect(state.intent.get().sufficientFinish).toBe("Three paragraphs");
   expect(await db.dbGet("intent")).toEqual(state.intent.get());
 });
+
+it("N4: portion is bounded, durable, revision-guarded and cleared only by replacement or finish", async () => {
+  const s = await import("./intent"); const db = await import("../lib/db"); await s.intent.ready;
+  await s.saveIntent({ action: "Read chapter", portion: "One page" }, s.intent.get());
+  expect(s.intent.get().portion).toBe("One page"); expect((await db.dbGet<any>("intent")).portion).toBe("One page");
+  const saved = s.intent.get();
+  for (const portion of ["x".repeat(501), "two\nlines"]) await expect(s.saveIntent({ portion }, saved)).rejects.toThrow();
+  await expect(s.saveIntent({ portion: "Old" }, { rev: 0, updatedAt: 0 })).rejects.toThrow();
+  expect(s.intent.get()).toEqual(saved);
+  s.updateIntent({ why: "Understand" }); expect(s.intent.get().portion).toBe("One page");
+  s.updateIntent({ action: "Write" }); expect(s.intent.get().portion).toBe("");
+  s.updateIntent({ portion: "One line" }); s.finishIntent(s.intent.get()); expect(s.intent.get().portion).toBe("");
+});
+
+it("N4: legacy omission preserves a same-action portion independently of enough; explicit empty clears", async () => {
+  const { parseIntentDocument, preserveIntentFinish } = await import("../lib/intent");
+  const base = { action: "Read", why: "", rev: 1, updatedAt: 100 };
+  const previous = { ...base, portion: "One page", sufficientFinish: "A rough explanation" };
+  expect(parseIntentDocument(previous)).toEqual(previous);
+  expect(preserveIntentFinish({ ...base, sufficientFinish: "" }, previous)).toEqual({ ...base, sufficientFinish: "", portion: "One page" });
+  expect(preserveIntentFinish({ ...base, portion: "" }, previous)).toEqual({ ...base, sufficientFinish: "A rough explanation", portion: "" });
+  expect(preserveIntentFinish({ ...base, action: "Write" }, previous)).toEqual({ ...base, action: "Write" });
+});

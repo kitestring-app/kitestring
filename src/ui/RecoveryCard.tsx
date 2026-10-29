@@ -83,12 +83,12 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
       undo && <button className="btn primary" onClick={() => {
         const current = intent.get();
         if (current.rev === undo.revision && current.updatedAt === undo.at) {
-          updateIntent({ action: undo.previous.action, why: undo.previous.why, cue: undo.previous.cue, reward: undo.previous.reward, sufficientFinish: undo.previous.sufficientFinish }); setMessage(""); setUndo(null);
+          updateIntent({ action: undo.previous.action, why: undo.previous.why, cue: undo.previous.cue, reward: undo.previous.reward, sufficientFinish: undo.previous.sufficientFinish, portion: undo.previous.portion }); setMessage(""); setUndo(null);
         } else setMessage("Your next action has changed. The newer action is kept.");
       }}>Undo</button>}
   </div>;
   // The pinned action, why and cue already sit just above the controls; the card only names what is not on screen.
-  const showContext = !!context?.action && (context.action !== pin.action || context.sufficientFinish !== pin.sufficientFinish);
+  const showContext = !!context?.action && (context.action !== pin.action || context.sufficientFinish !== pin.sufficientFinish || context.portion !== pin.portion);
   const record = offer !== "gap-return" ? recoveryRecordText(s.recoveryRecord?.focusMs ?? spent, s.recoveryRecord?.awayMs, view.hiddenTime) : "";
   const showSpent = !!record;
   const body = offer === "gap-return" || (offer && (showContext || showSpent)) || message ? <>
@@ -98,6 +98,7 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
       <p className="recovery-action">{context?.action}</p>
       {context?.why && <p className="muted small">{context.why}</p>}
       {context?.sufficientFinish?.trim() && <p className="muted small">Enough for this pass: {context.sufficientFinish}</p>}
+      {context?.portion?.trim() && <p className="muted small">Chosen portion: {context.portion}</p>}
       {context?.cue && <p className="muted small recovery-cue">{context.cue}</p>}
     </>}
     {showSpent && <p className="faint small">{record}</p>}
