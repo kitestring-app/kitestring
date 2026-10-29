@@ -266,3 +266,19 @@ it('away chunks and future fields survive upload and remote application while pr
   await store.applySyncedValue('stats', remote); expect(stats.get()).toEqual(remote);
   expect(await (await import('./db')).dbGet('stats')).toEqual(remote); await sync.signOut();
 });
+
+it("N1: sync preserves enough from legacy same-action pulls and accepts explicit clear", async () => {
+  const { sync, fetch, store } = await setup();
+  const { intent, updateIntent } = await import("../state/intent"); await intent.ready;
+  updateIntent({ action: "Draft", sufficientFinish: "Three paragraphs" }); await store.flushAll();
+  let value: { action: string; why: string; rev: number; updatedAt: number; sufficientFinish?: string } = { action: "Draft", why: "Old client", rev: 2, updatedAt: 100 };
+  let stamp = Date.now() + 1000;
+  fetch.mockImplementation(async (url, init) => Response.json(url === '/api/sync' && init.method === 'GET'
+    ? { entries: [{ key: 'intent', value, updatedAt: stamp++ }] } : { ok: true }));
+  await sync.chooseInitialData("replace");
+  expect(intent.get().sufficientFinish).toBe("Three paragraphs");
+  expect((await (await import("./db")).dbGet<any>("intent")).sufficientFinish).toBe("Three paragraphs");
+  value = { ...value, sufficientFinish: "" } as typeof value;
+  await sync.syncNow(); expect(intent.get().sufficientFinish).toBe("");
+  await sync.signOut();
+});

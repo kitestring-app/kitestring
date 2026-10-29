@@ -326,7 +326,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     await evaluate(`Promise.all([import('/src/state/settings.ts'),import('/src/state/timer.ts'),import('/src/state/intent.ts'),import('/src/state/parked.ts'),import('/src/state/parkingReview.ts'),import('/src/state/returnActivity.ts')]).then(([s,t,i,p,r,a])=>{
       t.timerActions.stop(); s.settingsUpdate('dash','focus'); s.settingsUpdate('timer',{interruptionPrompt:false});
-      i.updateIntent({action:'Undo this action',why:'Its reason',cue:'After lunch',reward:'Tea'});
+      i.updateIntent({action:'Undo this action',why:'Its reason',cue:'After lunch',reward:'Tea',sufficientFinish:'One paragraph'});
       p.parked.set([]); p.parkThought('Waiting review',{segment:'focus'}); r.openParkingReview();
       a.returnActivity.set({...a.returnActivity.get(),pendingGap:'gap:undo'});
     })`);
@@ -339,7 +339,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
       await delay(60);
     }
     await click("Undo");
-    expect(await evaluate("import('/src/state/intent.ts').then(i=>i.intent.get())")).toMatchObject({action:'Undo this action',why:'Its reason',cue:'After lunch',reward:'Tea'});
+    expect(await evaluate("import('/src/state/intent.ts').then(i=>i.intent.get())")).toMatchObject({action:'Undo this action',why:'Its reason',cue:'After lunch',reward:'Tea',sufficientFinish:'One paragraph'});
     await waitFor("document.querySelector('[aria-label=\"Review parked thoughts\"]')");
     // The snapshot has a deadline even while the Focus tree is absent.
     await evaluate("import('/src/state/returnActivity.ts').then(a=>a.returnActivity.set({...a.returnActivity.get(),pendingGap:'gap:expire'}))");

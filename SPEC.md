@@ -87,3 +87,7 @@ Minimal runtime deps (react, react-dom). Persistence: IndexedDB via a ~60-line w
 - Task ETA is an optional whole-task guess, entered through preset minutes or a custom number. Completed tasks show the guess beside saved active focus time, including partial blocks and subtask work. Pauses, breaks and gaps are excluded. Missing guesses and missing recorded work are labelled plainly.
 - The estimate picker and completed rows offer up to three similar completed tasks, matched locally by title, with their guesses and recorded active time. There is no score or judgement. These records use the existing task ETA and raw history, so old data, v1/v2 backups and mixed-version sync retain them without new keys.
 - Hidden display removes the task summary's live remaining-time and finish-time projection. Completed records remain readable. Shared controls serve web and Mac across all five looks.
+
+## Sufficient-finish compatibility (N1a)
+- Intent and its immutable session context accept one optional single-line `sufficientFinish` (500 characters). No visible control is enabled in this contract change.
+- Whole-document LWW stays unchanged. A legacy upload/import omitting the field preserves it only for the identical action; a replacement action drops it. Upgraded clients clear with an explicit empty string. Equal sync timestamps keep the server document. Focus backups retain every intent leaf; absent intent preserves the current pin.

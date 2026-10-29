@@ -83,7 +83,7 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
       undo && <button className="btn primary" onClick={() => {
         const current = intent.get();
         if (current.rev === undo.revision && current.updatedAt === undo.at) {
-          updateIntent({ action: undo.previous.action, why: undo.previous.why, cue: undo.previous.cue, reward: undo.previous.reward }); setMessage(""); setUndo(null);
+          updateIntent({ action: undo.previous.action, why: undo.previous.why, cue: undo.previous.cue, reward: undo.previous.reward, sufficientFinish: undo.previous.sufficientFinish }); setMessage(""); setUndo(null);
         } else setMessage("Your next action has changed. The newer action is kept.");
       }}>Undo</button>}
   </div>;

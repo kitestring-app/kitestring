@@ -39,3 +39,15 @@ it("cue and reward are single-line bounded text and revisions advance within the
   updateIntent({ cue: "After lunch" }); const first = intent.get().updatedAt;
   updateIntent({ reward: "Tea" }); expect(intent.get().updatedAt).toBeGreaterThan(first);
 });
+
+it("N1: finish is bounded, stale edits keep it, and replacements and explicit finish clear it", async () => {
+  const { intent, updateIntent, finishIntent } = await import("./intent"); await intent.ready;
+  updateIntent({ action: "Draft", sufficientFinish: "Three paragraphs" }); const saved = intent.get();
+  for (const sufficientFinish of ["x".repeat(501), "two\nlines"]) expect(() => updateIntent({ sufficientFinish })).toThrow();
+  expect(() => updateIntent({ sufficientFinish: "Old" }, { rev: 0, updatedAt: 0 })).toThrow();
+  expect(intent.get()).toEqual(saved);
+  updateIntent({ why: "Share" }); expect(intent.get().sufficientFinish).toBe("Three paragraphs");
+  updateIntent({ action: "Read" }); expect(intent.get().sufficientFinish).toBe("");
+  updateIntent({ sufficientFinish: "One page" }); expect(finishIntent(intent.get())).toBe(true);
+  expect(intent.get().sufficientFinish).toBe("");
+});

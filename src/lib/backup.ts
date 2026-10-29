@@ -1,7 +1,7 @@
 import { isRecoveryBoundary, isSessionContext } from "../state/recoveryPolicy";
 import { withSyncPaused } from "./sync";
-import { parseIntentDocument } from "./intent";
-import "../state/intent";
+import { parseIntentDocument, preserveIntentFinish } from "./intent";
+import { intent } from "../state/intent";
 import { isParkedItem, PARKED_LIMIT } from "./parked";
 import { RADIO_STATIONS } from "../data/radio";
 import { backgroundDimensions, BACKGROUND_LIMITS, customBgs, prepareBackground } from "../data/themes";
@@ -165,7 +165,7 @@ export async function restoreBackup(
     const stamp = await metadata(Object.keys(data));
     return restoreStoreEntries(() => {
       const liveImageEntries = imageEntries(customBgs.get());
-      const { entries, keptTimer } = prepare(Object.entries(data));
+      const { entries, keptTimer } = prepare(Object.entries(data).map(([key, value]) => [key, key === "intent" ? preserveIntentFinish(parseIntentDocument(value)!, intent.get()) : value]));
       // Restoring tasks can bank the running block. Apply stats first so that credit survives.
       entries.sort(([a], [b]) => Number(b === "stats") - Number(a === "stats"));
       return { entries: [...entries, ...liveImageEntries, stamp], keptTimer };
