@@ -352,3 +352,20 @@ it('round-trips away stats and unknown chunk fields without accepting a synced p
   expect(data.entries[0].value).toEqual(value);
   expect((await worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'clockPresence', value: {}, updatedAt: Date.now() }] }, headers), env)).status).toBe(400);
 });
+
+it('N1: legacy intent writes preserve enough only for the same action, while explicit clear and replacement remove it', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const headers = { Authorization: 'Bearer ' + token }; const at = Date.now();
+  const original = { action: 'Draft', why: '', sufficientFinish: 'Three rough paragraphs', rev: 1, updatedAt: at };
+  const put = (value: object, stamp: number) => worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'intent', value, updatedAt: stamp }] }, headers), env);
+  const get = async () => JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'intent'").get()?.value));
+  expect((await put(original, at)).status).toBe(200);
+  const legacy = { action: 'Draft', why: 'Share', rev: 2, updatedAt: at + 1 };
+  expect((await put(legacy, at + 1)).status).toBe(200);
+  expect(await get()).toEqual({ ...legacy, sufficientFinish: original.sufficientFinish });
+  expect((await put({ ...legacy, sufficientFinish: '', rev: 3 }, at + 2)).status).toBe(200);
+  expect((await get()).sufficientFinish).toBe('');
+  await put(original, at + 3);
+  await put({ ...legacy, action: 'Read' }, at + 4);
+  expect(await get()).not.toHaveProperty('sufficientFinish');
+});

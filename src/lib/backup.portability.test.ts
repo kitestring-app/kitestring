@@ -200,3 +200,21 @@ it.each([1, 2])("preserves every away chunk field in v%s backups, including mult
   expect(b.STORE_CLASS).toHaveProperty("clockPresence", { class: "internal", section: null });
   expect(JSON.parse(await b.createBackup({ sections: ["focus", "device"] })).data).not.toHaveProperty("clockPresence");
 });
+
+it("N1: every intent leaf round-trips in Focus backups; legacy omission preserves the same action only", async () => {
+  const b = await import("./backup"); const { intent } = await import("../state/intent");
+  const { dbGet } = await import("./db"); await intent.ready;
+  const value = { action: "Draft", why: "Share", cue: "After tea", reward: "Walk", sufficientFinish: "Three paragraphs", rev: 4, updatedAt: 100 };
+  intent.set(value);
+  const parsed = b.parseBackup(await b.createBackup({ sections: ["focus"] }));
+  expect(parsed.data.intent).toEqual(value);
+  intent.set({ action: "", why: "", rev: 0, updatedAt: 0 });
+  await b.restoreBackup(parsed, metadata, ["focus"]);
+  expect(intent.get()).toEqual(value); expect(await dbGet("intent")).toEqual(value);
+  for (const [action, finish] of [["Draft", "Three paragraphs"], ["Read", undefined]] as const) {
+    const old = { ...parsed, data: { intent: { action, why: "Old edit", rev: 5, updatedAt: 101 } } };
+    await b.restoreBackup(old, metadata, ["focus"]);
+    expect(intent.get().sufficientFinish).toBe(finish);
+    expect((await dbGet<typeof value>("intent"))?.sufficientFinish).toBe(finish);
+  }
+});

@@ -228,7 +228,13 @@ async function syncPut(req: Request, env: Env): Promise<Response> {
     env.DB.prepare("SELECT email FROM sessions WHERE token_hash = ? AND email = ? AND expires_at > ?").bind(...args),
     ...entries.map(e => env.DB.prepare(`INSERT INTO kv (email, key, value, updated_at)
       SELECT ?, ?, ?, ? WHERE EXISTS (${live})
-      ON CONFLICT(email, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at WHERE excluded.updated_at > kv.updated_at`)
+      ON CONFLICT(email, key) DO UPDATE SET value = CASE
+        WHEN excluded.key = 'intent'
+          AND json_extract(excluded.value, '$.action') = json_extract(kv.value, '$.action')
+          AND json_type(excluded.value, '$.sufficientFinish') IS NULL
+          AND json_type(kv.value, '$.sufficientFinish') = 'text'
+        THEN json_set(excluded.value, '$.sufficientFinish', json_extract(kv.value, '$.sufficientFinish'))
+        ELSE excluded.value END, updated_at = excluded.updated_at WHERE excluded.updated_at > kv.updated_at`)
       .bind(session.email, e.key, e.value, e.updatedAt, ...args)),
     env.DB.prepare("UPDATE sessions SET expires_at = ?, last_seen = ? WHERE token_hash = ? AND email = ? AND expires_at > ?").bind(now + SESSION_MS, now, ...args),
   ]);

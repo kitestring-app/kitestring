@@ -1,6 +1,6 @@
 // Cookie transport on the hosted site; credentials stay in Electron's main process.
-import { parseIntentDocument } from "./intent";
-import "../state/intent";
+import { parseIntentDocument, preserveIntentFinish } from "./intent";
+import { intent } from "../state/intent";
 import { calmFoundationReady, presetState } from "../state/settings";
 import { dbGet, dbSet } from "./db";
 import { applySyncedValue, defaultStoreValue, flushAll, onPersisted, storeReady, storeValue } from "./store";
@@ -94,7 +94,7 @@ async function reconcile(choice?: "keep" | "replace") {
     if (d === "pull") {
       if (r || choice === "replace") {
         const before = meta[key];
-        await applySyncedValue(key, r ? (key === "intent" ? incomingIntent : r.value) : defaultStoreValue(key));
+        await applySyncedValue(key, r ? (key === "intent" ? preserveIntentFinish(incomingIntent!, intent.get()) : r.value) : defaultStoreValue(key));
         if (meta[key] === before) {
           if (r) meta[key] = r.updatedAt;
           else delete meta[key];
