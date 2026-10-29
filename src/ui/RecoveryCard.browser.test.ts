@@ -286,6 +286,8 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
       })`);
       await waitFor("document.querySelector('[aria-label=\"Review parked thoughts\"]')"); await delay(100);
       await click("Make a task");
+      await waitFor("document.querySelector('.stopped-card')");
+      await evaluate("document.querySelector('.stopped-card [aria-label=Close]').click()");
       await waitFor("!document.querySelector('.recovery-card')");
       socket = ownerSocket;
       expect(await evaluate("import('/src/state/tasks.ts').then(t=>t.tasks.get().filter(x=>x.title==='Follower thought').length)")).toBe(1);

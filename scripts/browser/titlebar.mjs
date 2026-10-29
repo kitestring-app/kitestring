@@ -171,6 +171,8 @@ try {
             const recovery=await ev(`(() => {const center=document.querySelector('.center'),cr=center.getBoundingClientRect(),bad=[];for(const b of center.querySelectorAll('button')){if(!b.getBoundingClientRect().height)continue;b.scrollIntoView({block:'nearest',behavior:'instant'});const r=b.getBoundingClientRect();if(r.top<cr.top-.5||r.bottom>cr.bottom+.5)bad.push(b.textContent);}center.scrollTop=0;return bad;})()`);
             assert.deepEqual(recovery,[],`${look}/${width} recovery controls`);
             await ev(`import('/src/state/timer.ts').then(t=>t.timerActions.stop())`);
+            await c.waitFor("document.querySelector('.stopped-card')");
+            await ev("document.querySelector('.stopped-card [aria-label=Close]').click()");
             await c.waitFor("!document.querySelector('.recovery-card')");
             await click('[aria-label="Floating timer"]'); assert.equal(await ev('window.__floatRequested'),true);
             await click('.topbar .seg button:first-child'); await c.waitFor("document.querySelector('[aria-label=Clock]')");
