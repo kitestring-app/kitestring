@@ -93,4 +93,23 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('task estimates and recorded 
     chrome.assertHealthy();
   }, 30000);
 
+  it('ignores queued unchanged scroll and resize events, but closes when geometry changes', async () => {
+    await chrome.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape' });
+    await chrome.waitFor("!document.querySelector('.tasks-popover')");
+    await chrome.evaluate("document.querySelector('[data-task-id=target] .task-eta').click()");
+    await chrome.waitFor("document.querySelector('.tasks-popover')");
+    await chrome.evaluate("document.querySelector('.tasks-body').dispatchEvent(new Event('scroll'))");
+    await chrome.evaluate("new Promise(r=>requestAnimationFrame(r))");
+    expect(await chrome.evaluate("!!document.querySelector('.tasks-popover')")).toBe(true);
+    await chrome.evaluate("window.dispatchEvent(new Event('resize'))");
+    await chrome.evaluate("new Promise(r=>requestAnimationFrame(r))");
+    expect(await chrome.evaluate("!!document.querySelector('.tasks-popover')")).toBe(true);
+    expect(await chrome.evaluate("(()=>{const e=document.querySelector('.tasks-body'),before=e.scrollTop;e.scrollTop=before>0?before-1:before+1;return e.scrollTop!==before})()")).toBe(true);
+    await chrome.waitFor("!document.querySelector('.tasks-popover')");
+    await chrome.evaluate("document.querySelector('[data-task-id=target] .task-eta').click()");
+    await chrome.waitFor("document.querySelector('.tasks-popover')");
+    await chrome.send('Emulation.setDeviceMetricsOverride', { width: 321, height: 820, deviceScaleFactor: 1, mobile: true });
+    await chrome.waitFor("!document.querySelector('.tasks-popover')");
+  });
+
 });
