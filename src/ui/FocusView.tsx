@@ -48,7 +48,7 @@ function tallyGlyph(id: TallyId, i: number): GlyphName | null {
   return seq[i % seq.length];
 }
 
-export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = () => {}, onRecall }: { onRecall?: () => void; onChooseTask?: () => void; captureOpen: boolean; onPark: () => void; onCaptureClose: () => void }) {
+export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = () => {}, onRecall, closeOutVisible = true }: { closeOutVisible?: boolean; onRecall?: () => void; onChooseTask?: () => void; captureOpen: boolean; onPark: () => void; onCaptureClose: () => void }) {
   const fit = useDashboardFit();
   const reminder = useSyncExternalStore(reminderStatus.subscribe, reminderStatus.get);
   const count = useStore(parked, all => all.filter(item => item.status === "open").length);
@@ -111,7 +111,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
           <i style={{ width: `${v.progress * 100}%` }} />
         </div>
       )}
-      <NextAction />
+      <NextAction closeOutVisible={closeOutVisible} />
       {reminder && <p className="muted small" role="status">{reminder}</p>}
       <div className="controls chrome">
         <button className="iconbtn primary" disabled={v.hardLocked && v.running} title={v.hardLocked && v.running ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.toggle()} aria-label={v.running ? "Pause · Space" : "Start · Space"}>

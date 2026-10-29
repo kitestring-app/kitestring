@@ -14,3 +14,15 @@
 .next-action details { text-align: left; }
 .next-action summary { cursor: pointer; }
 .next-action details label { margin-top: 8px; }
+
+/* The compact desktop entry leaves the established pin row in place. */
+.next-action-buttons-closeout { position: relative; }
+:root .next-action .next-action-buttons-closeout > .next-action-leave {
+  position: absolute; right: 0; top: 50%; translate: 0 -50%;
+  padding: 6px; font-size: 11px; border-radius: var(--r-pill);
+}
+@media (max-width: 700px) {
+  :root .next-action .next-action-buttons-closeout > .next-action-leave {
+    position: static; translate: none; padding: 6px 10px; font-size: 13px;
+  }
+}
