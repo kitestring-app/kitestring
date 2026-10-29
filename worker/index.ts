@@ -1,3 +1,4 @@
+import { preserveTaskAllowances, validTaskAllowances } from "../src/lib/taskAllowance";
 import { isIntentDocument } from "../src/lib/intent";
 // Local-first dashboard assets and account-scoped D1 sync.
 import { resetHTML } from "./reset-page";
@@ -213,7 +214,10 @@ async function syncPut(req: Request, env: Env): Promise<Response> {
   for (const e of body.entries) {
     if (!SYNC_KEYS.has(e?.key) || !Number.isSafeInteger(e.updatedAt) || e.updatedAt < 0 || e.updatedAt > Date.now() + 60_000 || e.value === undefined) return json({ ok: false, error: "Invalid entry." }, 400);
     if (e.key === "intent" && !isIntentDocument(e.value)) return json({ ok: false, error: "Invalid next action." }, 400);
-    const value = JSON.stringify(e.value);
+    if (e.key === "tasks" && !validTaskAllowances(e.value)) return json({ ok: false, error: "Invalid transition allowance." }, 400);
+    // Observing a parent clears its allowance even on a first legacy insert.
+    const value = JSON.stringify(e.key === "tasks" && Array.isArray(e.value) && e.value.every(t => t && typeof t === "object")
+      ? preserveTaskAllowances(e.value, []) : e.value);
     if (new TextEncoder().encode(value).byteLength > MAX_VALUE_BYTES) return json({ ok: false, error: "Entry is too large to sync." }, 413);
     entries.push({ key: e.key, value, updatedAt: e.updatedAt });
   }
@@ -229,6 +233,21 @@ async function syncPut(req: Request, env: Env): Promise<Response> {
     ...entries.map(e => env.DB.prepare(`INSERT INTO kv (email, key, value, updated_at)
       SELECT ?, ?, ?, ? WHERE EXISTS (${live})
       ON CONFLICT(email, key) DO UPDATE SET value = CASE
+        -- Build the map before visiting incoming tasks. Hex ids are safe JSON paths.
+        WHEN excluded.key = 'tasks' AND json_type(excluded.value) = 'array'
+          AND NOT EXISTS (SELECT 1 FROM json_each(excluded.value) WHERE type != 'object') THEN (
+          WITH previous AS MATERIALIZED (
+            SELECT json_group_object(hex(json_extract(value, '$.id')), json_extract(value, '$.transitionAllowanceMin')) doc
+            FROM json_each(kv.value) WHERE type = 'object' AND
+              (json_type(value, '$.transitionAllowanceMin') = 'null' OR json_type(value, '$.transitionAllowanceMin') = 'integer'
+                AND json_extract(value, '$.transitionAllowanceMin') BETWEEN 0 AND 240))
+          SELECT json_group_array(json(CASE
+            WHEN json_type(incoming.value, '$.transitionAllowanceMin') IS NULL AND
+              json_type(previous.doc, '$."' || hex(json_extract(incoming.value, '$.id')) || '"') IS NOT NULL
+            THEN json_set(incoming.value, '$.transitionAllowanceMin',
+              json_extract(previous.doc, '$."' || hex(json_extract(incoming.value, '$.id')) || '"'))
+            ELSE incoming.value END))
+          FROM previous CROSS JOIN json_each(excluded.value) incoming)
         WHEN excluded.key = 'intent'
           AND json_extract(excluded.value, '$.action') = json_extract(kv.value, '$.action')
           AND json_type(excluded.value, '$.sufficientFinish') IS NULL

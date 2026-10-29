@@ -369,3 +369,57 @@ it('N1: legacy intent writes preserve enough only for the same action, while exp
   await put({ ...legacy, action: 'Read' }, at + 4);
   expect(await get()).not.toHaveProperty('sufficientFinish');
 });
+
+it('N2: preserves omitted leaf allowances atomically across old writers, null clears, equal stamps and new parents', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const headers = { Authorization: 'Bearer ' + token }, at = Date.now();
+  const task = (id: string, patch = {}) => ({ id, title: id, done: false, createdAt: at, ...patch });
+  const put = (value: unknown, stamp: number) => worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'tasks', value, updatedAt: stamp }] }, headers), env);
+  const get = () => JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value));
+  expect((await put([task('a', { transitionAllowanceMin: 10 }), task('b', { transitionAllowanceMin: 0 })], at)).status).toBe(200);
+  expect((await put([task('a'), task('b')], at + 1)).status).toBe(200);
+  expect(get().map((t: any) => t.transitionAllowanceMin)).toEqual([10, 0]);
+  expect((await put([task('a', { transitionAllowanceMin: 240 })], at + 1)).status).toBe(200);
+  expect(get()).toHaveLength(2);
+  expect((await put([task('a', { transitionAllowanceMin: null })], at + 2)).status).toBe(200);
+  expect(get()).toEqual([task('a', { transitionAllowanceMin: null })]);
+  expect((await put([task('a', { transitionAllowanceMin: 10 })], at + 3)).status).toBe(200);
+  expect((await put([task('a'), task('child', { parentId: 'a' })], at + 4)).status).toBe(200);
+  expect(get()).toEqual([task('a', { transitionAllowanceMin: null }), task('child', { parentId: 'a' })]);
+  for (const value of [-1, 241, 1.5, '10']) expect((await put([task('a', { transitionAllowanceMin: value })], at + 5)).status).toBe(400);
+});
+
+it('N2 S1: parent promotion keeps a clear tombstone after its last child is deleted', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const at = Date.now(), headers = { Authorization: 'Bearer ' + token };
+  const task = { id: 'a', title: 'Draft', done: false, createdAt: at };
+  const put = (value: unknown, delta: number) => worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'tasks', value, updatedAt: at + delta }] }, headers), env);
+  await put([{ ...task, transitionAllowanceMin: 10 }], 0);
+  await put([task, { ...task, id: 'child', parentId: 'a' }], 1);
+  await put([task], 2);
+  const saved = JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value));
+  expect(saved).toEqual([{ ...task, transitionAllowanceMin: null }]);
+});
+it('N2 S2: a supported large sync list retains every allowance within a bounded query', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const at = Date.now(), headers = { Authorization: 'Bearer ' + token };
+  const previous = Array.from({ length: 10000 }, (_, i) => ({ id: String(i), title: 'Draft', transitionAllowanceMin: i % 241 }));
+  db.prepare('INSERT INTO kv VALUES (?, ?, ?, ?)').run(email, 'tasks', JSON.stringify(previous), at);
+  const value = previous.map(({ transitionAllowanceMin: _ignored, ...task }) => task);
+  const start = performance.now();
+  expect((await worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'tasks', value, updatedAt: at + 1 }] }, headers), env)).status).toBe(200);
+  expect(performance.now() - start).toBeLessThan(5000);
+  expect(JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value))).toEqual(previous);
+});
+it('N2 S1: first-insert legacy parents carry a clear even when this server has no prior allowance', async () => {
+  const { token } = await (await login({ 'X-Client': 'desktop' })).json() as { token: string };
+  const at = Date.now(), headers = { Authorization: 'Bearer ' + token };
+  const task = { id: 'a', title: 'Draft', done: false, createdAt: at };
+  const put = (value: unknown, delta: number) => worker.fetch(req('/api/sync', 'PUT', { entries: [{ key: 'tasks', value, updatedAt: at + delta }] }, headers), env);
+  await put([task, { ...task, id: 'child', parentId: 'a' }], 0);
+  let saved = JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value));
+  expect(saved[0].transitionAllowanceMin).toBeNull();
+  await put([task], 1);
+  saved = JSON.parse(String(db.prepare("SELECT value FROM kv WHERE key = 'tasks'").get()?.value));
+  expect(saved).toEqual([{ ...task, transitionAllowanceMin: null }]);
+});

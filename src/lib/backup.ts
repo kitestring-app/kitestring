@@ -1,3 +1,6 @@
+import { preserveTaskAllowances, validTaskAllowances } from "./taskAllowance";
+import { tasks } from "../state/tasks";
+import type { Task } from "../state/tasks";
 import { isRecoveryBoundary, isSessionContext } from "../state/recoveryPolicy";
 import { withSyncPaused } from "./sync";
 import { parseIntentDocument, preserveIntentFinish } from "./intent";
@@ -99,6 +102,7 @@ const checks: Record<BackupKey, (v: unknown) => string | null> = {
   timer: (v) => (isObj(v) && ["focus", "short", "long"].includes(v.segment as string) && isNum(v.elapsedBefore, 0, DAY) && isNum(v.round, 0, 1000) &&
     optional(v.context, isSessionContext) && optional(v.boundary, isRecoveryBoundary) && optional(v.reentry, x => isStr(x, 64)) ? null : "timer"),
   tasks: (v) => {
+    if (!validTaskAllowances(v)) return "transition allowance";
     if (!Array.isArray(v) || v.length > 5000) return "tasks list";
     for (const t of v) {
       const e = checkTask(t);
@@ -165,7 +169,7 @@ export async function restoreBackup(
     const stamp = await metadata(Object.keys(data));
     return restoreStoreEntries(() => {
       const liveImageEntries = imageEntries(customBgs.get());
-      const { entries, keptTimer } = prepare(Object.entries(data).map(([key, value]) => [key, key === "intent" ? preserveIntentFinish(parseIntentDocument(value)!, intent.get()) : value]));
+      const { entries, keptTimer } = prepare(Object.entries(data).map(([key, value]) => [key, key === "intent" ? preserveIntentFinish(parseIntentDocument(value)!, intent.get()) : key === "tasks" ? preserveTaskAllowances(value as Task[], tasks.get()) : value]));
       // Restoring tasks can bank the running block. Apply stats first so that credit survives.
       entries.sort(([a], [b]) => Number(b === "stats") - Number(a === "stats"));
       return { entries: [...entries, ...liveImageEntries, stamp], keptTimer };

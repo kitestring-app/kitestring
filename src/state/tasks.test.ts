@@ -118,3 +118,11 @@ describe("reordering and existing list actions", () => {
     expect(tasks.get()).toEqual([]);
   });
 });
+
+it('N2: a new subtask clears a parent allowance without adding any work estimate', () => {
+  tasks.set([task('a', { etaMin: 20, transitionAllowanceMin: 10 })]);
+  const child = addSubtask('a')!;
+  expect(tasks.get()[0].transitionAllowanceMin).toBeNull();
+  expect(remainingMinutes(tasks.get())).toBe(0);
+  expect(tasks.get().find(t => t.id === child)?.etaMin).toBeUndefined();
+});
