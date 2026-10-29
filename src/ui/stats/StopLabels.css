@@ -1,0 +1,7 @@
+.stop-labels { margin-bottom: 16px; overflow-wrap: anywhere; }
+.stop-labels h2 { margin: 0; font-size: 16px; }
+.stop-labels ul { list-style: none; margin: 0; padding: 0; }
+.stop-labels li { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-block: 10px; border-bottom: 1px solid var(--line); }
+.stop-labels li > div { flex: 1 1 150px; min-width: 0; }
+.stop-labels li p { margin: 4px 0 0; }
+.stop-labels time { color: var(--fg-dim); font-size: 12px; }

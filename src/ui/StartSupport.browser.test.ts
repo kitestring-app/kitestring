@@ -153,6 +153,7 @@ describe.skipIf(!chromePath || process.env.START_CUES_BROWSER !== "1")("Start cu
     await evaluate("import('/src/state/timer.ts').then(t => t.timerActions.stop())");
     await evaluate(`Promise.all([import('/src/state/parkingReview.ts'), import('/src/state/parked.ts'), import('/src/state/timer.ts')]).then(([r,p,t]) => {
       r.chooseReviewBoundary('session'); p.parkThought('Check the meeting notes', {segment:'focus'}); p.parkThought('Send the outline', {segment:'focus'});
+      t.timer.set({...t.timer.get(),elapsedBefore:1000});
       t.timerActions.start(); t.timerActions.stop();
     })`);
     await waitFor("document.querySelector('[aria-label=\"Review parked thoughts\"]')");
@@ -174,6 +175,8 @@ describe.skipIf(!chromePath || process.env.START_CUES_BROWSER !== "1")("Start cu
     expect(await evaluate("document.querySelector('.recovery-action').textContent")).toBe("Send the outline");
     await click("Make a task");
     expect(await evaluate("import('/src/state/tasks.ts').then(t => t.tasks.get().filter(t => t.title === 'Send the outline').length)")).toBe(1);
+    await waitFor("document.querySelector('.stopped-card')");
+    await evaluate("document.querySelector('.stopped-card [aria-label=Close]').click()");
     await waitFor("!document.querySelector('.recovery-card')"); await click("Finish action");
     await waitFor("document.querySelector('.reward-moment')");
     for (const [width, height] of [[1000, 800], [1280, 720]]) {

@@ -75,3 +75,21 @@ registerClockAction('remove-stop-label', async expected => {
 export const recordStopLabel = (id: string) => requestClockAction('stop-label', id);
 /** Undo and later deletion remove only the annotation, never its raw time. */
 export const removeStopLabel = (label: StopLabel) => requestClockAction('remove-stop-label', label);
+
+registerClockAction('dismiss-stop-offer', async expected => {
+  if (!validLabel(expected) || !validId((expected as StopAttempt).nextSegId)) return { ok: false };
+  await readyToSave();
+  const matches = () => {
+    const p = stopAttempt.get();
+    return p?.id === expected.id && p.at === expected.at && p.nextSegId === (expected as StopAttempt).nextSegId && !!eligible(p.id);
+  };
+  if (!stopAttempt.get()) return { ok: true };
+  if (!matches()) return { ok: false };
+  return { ok: await commitStoreEntries(() => {
+    if (!stopAttempt.get()) return [];
+    if (!matches()) throw new Error('This stop has changed.');
+    return [['stopAttempt', null]];
+  }) };
+});
+/** Closing the optional offer persists across recovery, navigation and reload. */
+export const dismissStopOffer = (attempt: StopAttempt) => requestClockAction('dismiss-stop-offer', attempt);

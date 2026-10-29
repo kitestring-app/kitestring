@@ -24,6 +24,6 @@ export function AmbientTimer() {
     <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.skip()} aria-label={mode === "stopwatch" ? "Finish ambient session" : "Skip ambient segment"}>
       {mode === "stopwatch" ? <Icon.stop /> : <Icon.skip />}
     </button>
-    {v.hardLocked && <><HardModeBadge pendingOff={v.hardModePendingOff} /><EndSessionControl /></>}
+    {v.hardLocked && <HardModeBadge pendingOff={v.hardModePendingOff} />}<EndSessionControl />
   </div>;
 }
