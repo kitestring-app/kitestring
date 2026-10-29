@@ -127,3 +127,5 @@ Job 34 verification: automated source/unit/transport checks cover both shared UI
 | Optional deliberately-stopped label (N3b) | Stop needs no label; optional durable label/Undo/Close, separate paginated Log list, Hide stats and Hidden respected | Same shared UI and existing native Stop owner path; no new native power | `DeliberateStop.browser.test.ts` (five looks, 320/390/1280px, web/inert native, reload/rejected-write/keyboard), `EndSession.test.tsx`, `stopOutcomes.test.ts`, `timerOwnership.test.ts`, `backup.portability.test.ts`; installed smoke in job report |
 
 | Optional bounded portion (N4) | Shared pin editor, Hidden static display and preserved interrupted context | Same shared controls, no native limitation | intent.test.ts, backup.portability.test.ts, sync.transport.test.ts, worker/index.test.ts, desktop/test/cloud.cjs, SufficientFinish.browser.test.ts |
+
+| Voluntary explain from memory (N5) | Notes entry and non-running boundary link; guarded append, error draft, accessible return; existing Notes sync/Focus export | Same shared controls and storage, no native power needed | notes.test.ts, backup.portability.test.ts, notepad/Recall.browser.test.ts |

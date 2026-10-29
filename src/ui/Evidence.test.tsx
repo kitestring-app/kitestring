@@ -23,7 +23,7 @@ const banned = [
   "failing this app means failing treatment",
 ];
 const mapping: Record<string, [string, string[]]> = {
-  portion: ["weak", ["S3"]], stopped: ["weak", ["S16"]], allowance: ["weak", ["S1"]], enough: ["weak", ["S1"]], action: ["moderate", ["S1"]], tiny: ["weak", ["S3"]], cue: ["moderate", ["S5", "S6"]],
+  recall: ["weak", ["S30", "S31"]], portion: ["weak", ["S3"]], stopped: ["weak", ["S16"]], allowance: ["weak", ["S1"]], enough: ["weak", ["S1"]], action: ["moderate", ["S1"]], tiny: ["weak", ["S3"]], cue: ["moderate", ["S5", "S6"]],
   parking: ["moderate", ["S3"]], return: ["weak", ["S11", "S13"]],
   breaks: ["moderate", ["S8", "S9"]], display: ["weak", ["S10"]],
   quiet: ["moderate", ["S14", "S15"]], records: ["moderate", ["S16"]],
@@ -32,6 +32,8 @@ const mapping: Record<string, [string, string[]]> = {
 };
 
 it("bundles a static explanation with a conservative rating and sources for every feature", () => {
+  const ids = [...html.matchAll(/\bid="([^"\s]+)"/g)].map(match => match[1]);
+  expect(new Set(ids).size).toBe(ids.length);
   expect(html).toContain("<h1>Why it works this way</h1>");
   const rows = [...html.matchAll(/<article data-feature="([^"]+)"[\s\S]*?<\/article>/g)];
   expect(rows.map(row => row[1]).sort()).toEqual(Object.keys(mapping).sort());

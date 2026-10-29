@@ -48,7 +48,7 @@ function tallyGlyph(id: TallyId, i: number): GlyphName | null {
   return seq[i % seq.length];
 }
 
-export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = () => {} }: { onChooseTask?: () => void; captureOpen: boolean; onPark: () => void; onCaptureClose: () => void }) {
+export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = () => {}, onRecall }: { onRecall?: () => void; onChooseTask?: () => void; captureOpen: boolean; onPark: () => void; onCaptureClose: () => void }) {
   const fit = useDashboardFit();
   const reminder = useSyncExternalStore(reminderStatus.subscribe, reminderStatus.get);
   const count = useStore(parked, all => all.filter(item => item.status === "open").length);
@@ -129,7 +129,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
         <button className="iconbtn" onClick={onPark} aria-label="Park a thought · P" title="Park a thought · P"><Icon.note /></button>
         {!v.hardLocked && <EndSessionControl />}
       </div>
-      <FocusCardSlot onChooseTask={onChooseTask} />
+      <FocusCardSlot onChooseTask={onChooseTask} onRecall={onRecall} />
       <StartSupport />
       {v.hardLocked && <><HardModeBadge pendingOff={v.hardModePendingOff} /><EndSessionControl /></>}
       <ParkCapture open={captureOpen} onClose={onCaptureClose} />
