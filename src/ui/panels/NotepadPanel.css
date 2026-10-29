@@ -13,3 +13,7 @@
 .note-link label { flex: 1; min-width: 140px; }
 .note-link input { width: 100%; }
 .note-preference { display: flex; gap: 8px; align-items: baseline; margin-top: 16px; }
+
+.note-recall { margin-bottom: 16px; }
+.note-recall label { display: grid; gap: 6px; }
+.note-recall .row { flex-wrap: wrap; }

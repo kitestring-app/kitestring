@@ -250,3 +250,16 @@ it.each([1, 2])('round-trips every local stop-label leaf in Focus v%s without sy
   file.data.stopOutcomes = {}; await b.restoreBackup(b.parseBackup(JSON.stringify(file)), metadata, ['focus']);
   expect(o.stopOutcomes.get()).toEqual({}); await f.flushReadyStores();
 });
+
+it.each([1, 2])("N5: plain recall notes round-trip in Focus v%s with existing classification", async version => {
+  const b = await import("./backup"); const { notes } = await import("../state/notes"); const { dbGet } = await import("./db");
+  await notes.ready; const text = "Existing notes\n\n## Explain from memory\nMy explanation";
+  notes.set(text);
+  expect(b.STORE_CLASS.notes).toEqual({ class: "content", section: "focus" });
+  const exported = JSON.parse(await b.createBackup({ sections: ["focus"] }));
+  exported.version = version;
+  const parsed = b.parseBackup(JSON.stringify(exported)); notes.set("Changed");
+  await b.restoreBackup(parsed, metadata, ["focus"]);
+  expect(notes.get()).toBe(text); expect(await dbGet("notes")).toBe(text);
+  expect(JSON.parse(await b.createBackup({ sections: [] })).data).not.toHaveProperty("notes");
+});

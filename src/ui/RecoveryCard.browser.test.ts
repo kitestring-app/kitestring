@@ -1,3 +1,4 @@
+import { reloadReady } from "../../scripts/browser/reload";
 import { chromeArgs } from "../../scripts/browser/chrome-args.ts";
 import { assertFocusFit } from "./focusLayout.browser";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -36,6 +37,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     }
     throw new Error(`Dashboard did not reach: ${expression}; ${JSON.stringify(errors)}; ${await evaluate("(location.href + document.body.innerText.slice(0, 2000))")}`);
   };
+  const reload = () => reloadReady(send, evaluate, waitFor);
   const waitForOwner = () => waitFor("import('/src/state/timer.ts').then(async t => { await t.timerHydrationReady; return (await import('/src/lib/store.ts')).canWriteClockStore('timer'); })");
   beforeAll(async () => {
     server = await createServer({ configLoader: "runner", cacheDir: join(tmpdir(), "pomodoro-return-vite-cache"), server: { host: "127.0.0.1", port: 0, hmr: false, watch: null }, clearScreen: false });
@@ -44,9 +46,12 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     if (!address || typeof address === "string") throw new Error("No test server port");
     origin = `http://127.0.0.1:${address.port}`;
     profile = mkdtempSync(join(tmpdir(), "pomodoro-return-test-"));
-    browser = spawn(chromePath!, chromeArgs(profile), { stdio: "ignore" });
+    browser = spawn(chromePath!, chromeArgs(profile), { stdio: ["ignore", "ignore", "pipe"] });
+    let launchErrors = "";
+    browser.stderr?.on("data", data => { launchErrors = (launchErrors + String(data)).slice(-8192); });
     const portFile = join(profile, "DevToolsActivePort");
     for (let n = 0; n < 150 && !existsSync(portFile); n++) await delay(50);
+    if (!existsSync(portFile)) throw new Error(`Test browser launch failed: exit=${browser.exitCode}, signal=${browser.signalCode}; ${launchErrors}`);
     const port = readFileSync(portFile, "utf8").split("\n")[0];
     debugPort = port;
     const pages = await fetch(`http://127.0.0.1:${port}/json/list`).then(r => r.json()) as { type: string; url: string; webSocketDebuggerUrl: string }[];
@@ -134,7 +139,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().startedAt !== null)")).toBe(true);
     // Reloading an active session stops at departure and waits for explicit Resume.
     await evaluate("import('/src/lib/store.ts').then(s => s.flushReadyStores())");
-    await send("Page.reload"); await waitForOwner();
+    await reload(); await waitForOwner();
     await waitFor("document.querySelector('[aria-label=\"Session context\"]')");
     expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().startedAt !== null)")).toBe(false);
     await click("Resume");
@@ -146,7 +151,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
       const db = await import('/src/lib/db.ts');
       await db.dbSet('timer', {...t.timer.get(), segId:'closed-run', startedAt:Date.now()-120000, elapsedBefore:0, creditedUpTo:0, frozen:true, frozenTotal:60000});
     })`);
-    await send("Page.reload"); await waitForOwner();
+    await reload(); await waitForOwner();
     await waitFor("document.querySelector('[aria-label=\"Finished block\"]')");
     expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().startedAt)")).toBeNull();
     expect(await evaluate("import('/src/state/stats.ts').then(s => s.stats.get().chunks.filter(c => c.segId === 'closed-run' && c.completed).length)")).toBe(0);
@@ -186,7 +191,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     expect(await evaluate("import('/src/state/intent.ts').then(i => i.intent.get().action)")).toBe("Write the opening paragraph");
     expect(await evaluate("import('/src/state/intent.ts').then(i => i.intent.get().cue)")).toBe("After tea");
     await evaluate("import('/src/lib/store.ts').then(s => s.flushReadyStores())");
-    await send("Page.reload"); await waitForOwner();
+    await reload(); await waitForOwner();
     await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     expect(await evaluate("!!document.querySelector('[aria-label=\"Return to your next action\"]')")).toBe(false);
     await evaluate(`import('/src/state/returnActivity.ts').then(a => a.returnActivity.set({version:1,lastPurposefulAt:Date.now()-3*86400000,pendingGap:'gap:'+(Date.now()-3*86400000),acknowledgedGap:null,uncertain:false}))`);
@@ -199,7 +204,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     expect(errors).toEqual([]);
   }, 60000);
   it.each([false, true])("PR2 round 2: Reset removes recovery, restores tiny start and starts the selected break (native bridge=%s)", async native => {
-    await send("Page.reload"); await waitForOwner();
+    await reload(); await waitForOwner();
     await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     await evaluate(`Promise.all([import('/src/state/settings.ts'),import('/src/state/timer.ts')]).then(async ([s,t])=>{
       window.desktop = ${native ? "{armAlarm:async()=>true,disarmAlarm(){},release(){},cancelSpeech(){}}" : "undefined"};
@@ -225,7 +230,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
   }, 20000);
 
   it("review2 P2: foreground follower forwards recovery, tiny starts and parking with stale guards", async () => {
-    await send("Page.reload"); await waitForOwner();
+    await reload(); await waitForOwner();
     await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     await evaluate(`Promise.all([import('/src/state/timer.ts'), import('/src/state/intent.ts'), import('/src/lib/store.ts')]).then(async ([t,i,p]) => {
       t.timerActions.stop(); i.updateIntent({action:'Follower action',cue:'After tea'});
@@ -323,7 +328,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
   }, 30000);
 
   it("round4 gap Drop Undo wins over queued review and survives dashboard changes", async () => {
-    await send("Page.reload"); await waitForOwner(); await waitFor("document.querySelector('[data-tip]')");
+    await reload(); await waitForOwner(); await waitFor("document.querySelector('[data-tip]')");
     await evaluate("import('/src/state/settings.ts').then(async s=>{await s.settings.ready;s.settingsUpdate('dash','focus')})");
     await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     await evaluate(`Promise.all([import('/src/state/settings.ts'),import('/src/state/timer.ts'),import('/src/state/intent.ts'),import('/src/state/parked.ts'),import('/src/state/parkingReview.ts'),import('/src/state/returnActivity.ts')]).then(([s,t,i,p,r,a])=>{
@@ -362,7 +367,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
   }, 20000);
 
   it("round5 stale follower review controls cannot rewind or replace the leader review", async () => {
-    await send("Page.reload"); await waitForOwner(); await waitFor("document.querySelector('[data-tip]')");
+    await reload(); await waitForOwner(); await waitFor("document.querySelector('[data-tip]')");
     await evaluate("import('/src/state/settings.ts').then(async s=>{await s.settings.ready;s.settingsUpdate('dash','focus')})");
     await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     const ownerSocket = socket;
@@ -442,7 +447,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
   }, 30000);
 
   it.each([false, true])("round3 live takeover stays reachable in Focus, Home and Ambient without a competing card (native bridge=%s)", async native => {
-    await send("Page.reload"); await waitForOwner(); await waitFor("document.querySelector('.next-action')"); await waitForOwner();
+    await reload(); await waitForOwner(); await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     for (const dash of ["focus", "home", "ambient"]) for (const autoRun of ["off", "always"]) {
       await evaluate(`Promise.all([import('/src/state/settings.ts'),import('/src/state/timer.ts'),import('/src/state/parkingReview.ts'),import('/src/state/returnActivity.ts')]).then(([s,t,r,a])=>{
         window.desktop = ${native ? "{armAlarm:async()=>true,disarmAlarm(){},release(){},cancelSpeech(){}}" : "undefined"};
@@ -482,7 +487,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
   }, 20000);
 
   it.each([false, true])("round5 parking review cannot postpone a live takeover (native bridge=%s)", async native => {
-    await send("Page.reload"); await waitForOwner(); await waitFor("document.querySelector('.next-action')"); await waitForOwner();
+    await reload(); await waitForOwner(); await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     for (const autoRun of ['off', 'always']) {
       await evaluate(`Promise.all([import('/src/state/settings.ts'),import('/src/state/timer.ts'),import('/src/state/parked.ts'),import('/src/state/parkingReview.ts'),import('/src/state/returnActivity.ts')]).then(([s,t,p,r,a])=>{
         window.desktop=${native ? "{armAlarm:async()=>true,disarmAlarm(){},release(){},cancelSpeech(){}}" : "undefined"};
@@ -504,7 +509,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
   }, 20000);
 
   it("round5 review errors clear after success and after another tab changes the item", async () => {
-    await send('Page.reload'); await waitFor("document.querySelector('.next-action')"); await waitForOwner();
+    await reload(); await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     await evaluate(`Promise.all([import('/src/state/timer.ts'),import('/src/state/parked.ts'),import('/src/state/parkingReview.ts'),import('/src/state/returnActivity.ts')]).then(([t,p,r,a])=>{
       t.timerActions.stop(); a.returnActivity.set({...a.returnActivity.get(),pendingGap:null});
       p.parked.set(['one','two','three'].map(id=>({id,text:id,status:'open',at:Date.now(),segment:'focus'})));
@@ -526,7 +531,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
   }, 20000);
 
   it("long action, why and cue stay inside scrollable focus areas in both sizes and every look", async () => {
-    await send("Page.reload"); await waitForOwner(); await waitFor("document.querySelector('.next-action')"); await waitForOwner();
+    await reload(); await waitForOwner(); await waitFor("document.querySelector('.next-action')"); await waitForOwner();
     await evaluate(`Promise.all([import('/src/state/settings.ts'),import('/src/state/intent.ts'),import('/src/state/timer.ts')]).then(([s,i,t])=>{
       t.timerActions.stop(); s.settingsUpdate('dash','focus');
       i.updateIntent({action:'Long action '.repeat(41),why:'A reason '.repeat(55),cue:'After tea '.repeat(49)});

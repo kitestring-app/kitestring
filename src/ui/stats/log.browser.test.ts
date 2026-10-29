@@ -70,10 +70,13 @@ describe.each(["Chrome", "Electron"])("session log and backups in isolated %s", 
         });`);
       browser = spawn(electronPath, [main, "--mute-audio", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--disable-background-networking"], { stdio: "ignore", env: { ...process.env, ELECTRON_RUN_AS_NODE: "" } });
     } else {
-      browser = spawn(chromePath!, chromeArgs(profile), { stdio: "ignore" });
+      browser = spawn(chromePath!, chromeArgs(profile), { stdio: ["ignore", "ignore", "pipe"] });
     }
+    let launchErrors = "";
+    browser.stderr?.on("data", data => { launchErrors = (launchErrors + String(data)).slice(-8192); });
     const portFile = join(profile, "DevToolsActivePort");
     for (let n = 0; n < 150 && !existsSync(portFile); n++) await delay(50);
+    if (!existsSync(portFile)) throw new Error(`Test browser launch failed: exit=${browser.exitCode}, signal=${browser.signalCode}; ${launchErrors}`);
     const port = readFileSync(portFile, "utf8").split("\n")[0];
     const pages = await fetch(`http://127.0.0.1:${port}/json/list`).then(r => r.json()) as { type: string; url: string; webSocketDebuggerUrl: string }[];
     socket = new WebSocket(pages.find(page => page.type === "page" && page.url === "about:blank")!.webSocketDebuggerUrl);

@@ -42,6 +42,12 @@ export default function App() {
   };
   const closeParking = () => { setParking(false); parkingFocus.current?.focus(); };
   const [panel, setPanel] = useState<PanelId>(null);
+  const [recallRequested, setRecallRequested] = useState(0);
+  const notesReturn = useRef<HTMLElement | null>(null);
+  const openRecall = () => {
+    notesReturn.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setRecallRequested(value => value + 1); setPanel("notes");
+  };
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [openSync, setOpenSync] = useState(false);
   const [menuSettingsTab, setMenuSettingsTab] = useState<SettingsTab>();
@@ -54,7 +60,10 @@ export default function App() {
   const lastPanel = useRef<PanelId>(null);
   // closing a panel puts focus back on the dock button that opened it
   useEffect(() => {
-    if (!parking && panel === null && lastPanel.current) dockRef.current?.querySelector<HTMLElement>(`[data-panel="${lastPanel.current}"]`)?.focus();
+    if (!parking && panel === null && lastPanel.current) {
+      const target = notesReturn.current?.isConnected ? notesReturn.current : dockRef.current?.querySelector<HTMLElement>(`[data-panel="${lastPanel.current}"]`);
+      target?.focus(); notesReturn.current = null; setRecallRequested(0);
+    }
     lastPanel.current = panel;
   }, [panel, parking]);
 
@@ -148,7 +157,7 @@ export default function App() {
           </div>
         </header>
 
-        {dash === "focus" ? <FocusView captureOpen={parking} onPark={openParking} onCaptureClose={closeParking} onChooseTask={() => setPanel("tasks")} /> : <ClockView ambient={dash === "ambient"} />}
+        {dash === "focus" ? <FocusView onRecall={openRecall} captureOpen={parking} onPark={openParking} onCaptureClose={closeParking} onChooseTask={() => setPanel("tasks")} /> : <ClockView ambient={dash === "ambient"} />}
 
         <DashboardStreak />
         <footer className="bottombar chrome">
@@ -174,7 +183,7 @@ export default function App() {
       {panel === "tasks" && <TasksPanel onClose={() => setPanel(null)} />}
       {/* Sounds stay mounted so audio keeps playing when the panel is closed */}
       <SoundsPanel open={panel === "sounds"} onClose={() => setPanel(null)} />
-      {panel === "notes" && <NotepadPanel onClose={() => setPanel(null)} />}
+      {panel === "notes" && <NotepadPanel recallRequested={recallRequested} onClose={() => setPanel(null)} />}
       {settingsOpen && <SettingsDrawer key={settingsRequest} initialTab={openSync ? "data" : menuSettingsTab} onClose={() => { setSettingsOpen(false); setOpenSync(false); setMenuSettingsTab(undefined); }} />}
       <AlarmToast />
       {!interruption && <TransitionScreen />}
