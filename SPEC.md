@@ -91,3 +91,8 @@ Minimal runtime deps (react, react-dom). Persistence: IndexedDB via a ~60-line w
 ## Sufficient-finish compatibility (N1a)
 - Intent and its immutable session context accept one optional single-line `sufficientFinish` (500 characters). No visible control is enabled in this contract change.
 - Whole-document LWW stays unchanged. A legacy upload/import omitting the field preserves it only for the identical action; a replacement action drops it. Upgraded clients clear with an explicit empty string. Equal sync timestamps keep the server document. Focus backups retain every intent leaf; absent intent preserves the current pin.
+
+## Sufficient finish (N1b)
+- Optional details in the pin editor offers one sufficient-finish line. Blank adds no work-view content. Start, Finish action and task completion remain independent; there is no grade or proof step.
+- Enter on an input and Escape save and return focus to Edit. A rejected or conflicting transaction retains the draft and editor, with retry or Use saved action. Only a committed, revision-guarded IndexedDB write closes the editor; unavailable storage keeps the draft.
+- The saved line appears as plain text beside the action and in the interrupted context. All five looks, Hidden time, phone widths and web/Mac share these controls. The bundled evidence page labels the adaptation weak and untested. Practical benefit and pressure remain unvalidated without voluntary observation.

@@ -88,7 +88,7 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
       }}>Undo</button>}
   </div>;
   // The pinned action, why and cue already sit just above the controls; the card only names what is not on screen.
-  const showContext = !!context?.action && context.action !== pin.action;
+  const showContext = !!context?.action && (context.action !== pin.action || context.sufficientFinish !== pin.sufficientFinish);
   const record = offer !== "gap-return" ? recoveryRecordText(s.recoveryRecord?.focusMs ?? spent, s.recoveryRecord?.awayMs, view.hiddenTime) : "";
   const showSpent = !!record;
   const body = offer === "gap-return" || (offer && (showContext || showSpent)) || message ? <>
@@ -97,6 +97,7 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
       {context?.taskTitle && <p className="muted small">Task: {context.taskTitle}</p>}
       <p className="recovery-action">{context?.action}</p>
       {context?.why && <p className="muted small">{context.why}</p>}
+      {context?.sufficientFinish?.trim() && <p className="muted small">Enough for this pass: {context.sufficientFinish}</p>}
       {context?.cue && <p className="muted small recovery-cue">{context.cue}</p>}
     </>}
     {showSpent && <p className="faint small">{record}</p>}

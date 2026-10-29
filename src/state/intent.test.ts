@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 beforeEach(async () => { vi.resetModules(); vi.stubGlobal("BroadcastChannel", undefined);
   const db = await import("../lib/db"); await db.dbSetMany([], await db.dbKeys()); });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 it("the action and why reload together and preserve reserved fields across edits and remote receives", async () => {
   let state = await import("./intent"); const store = await import("../lib/store"); await state.intent.ready;
   await store.applyRemote("intent", { action: "Open the file", why: "Send a draft", cue: "", reward: "", rev: 8, updatedAt: 100 });
@@ -50,4 +50,16 @@ it("N1: finish is bounded, stale edits keep it, and replacements and explicit fi
   updateIntent({ action: "Read" }); expect(intent.get().sufficientFinish).toBe("");
   updateIntent({ sufficientFinish: "One page" }); expect(finishIntent(intent.get())).toBe(true);
   expect(intent.get().sufficientFinish).toBe("");
+});
+
+it.each(["QuotaExceededError", "AbortError", "UnknownError"])("N1b: %s keeps intent and disk unchanged and permits an explicit retry", async name => {
+  const state = await import("./intent"); const store = await import("../lib/store"); const db = await import("../lib/db");
+  await state.intent.ready; state.updateIntent({ action: "Draft", sufficientFinish: "One paragraph" });
+  await store.flushReadyStores(); const saved = state.intent.get(); const disk = await db.dbGet("intent");
+  const fail = vi.spyOn(db, "dbSetMany").mockRejectedValueOnce(new DOMException("Could not save", name));
+  await expect(state.saveIntent({ sufficientFinish: "Three paragraphs" }, saved)).rejects.toThrow();
+  expect(state.intent.get()).toEqual(saved); expect(await db.dbGet("intent")).toEqual(disk);
+  fail.mockRestore(); await state.saveIntent({ sufficientFinish: "Three paragraphs" }, saved);
+  expect(state.intent.get().sufficientFinish).toBe("Three paragraphs");
+  expect(await db.dbGet("intent")).toEqual(state.intent.get());
 });
