@@ -168,7 +168,7 @@ it('round-trips every task leaf and its recorded work with Focus data, including
   await Promise.all([tasks.ready, stats.ready]);
   await (await import('../state/timer')).timerHydrationReady;
   const at = Date.now();
-  const value = [{ id: 'estimated', title: 'Write project outline', emoji: 'pen-line', color: '#abcdef', etaMin: 20,
+  const value = [{ id: 'estimated', title: 'Write project outline', emoji: 'pen-line', color: '#abcdef', etaMin: 20, transitionAllowanceMin: 10,
     done: true, parentId: 'parent', createdAt: at }];
   const recorded = { chunks: [{ id: 'work', taskId: 'estimated', kind: 'focus' as const, segment: 'focus' as const,
     start: at, ms: 900000, completed: false }], tasksDone: [{ taskId: 'estimated', at }] };
@@ -217,4 +217,17 @@ it("N1: every intent leaf round-trips in Focus backups; legacy omission preserve
     expect(intent.get().sufficientFinish).toBe(finish);
     expect((await dbGet<typeof value>("intent"))?.sufficientFinish).toBe(finish);
   }
+});
+
+it('N2: a legacy Focus import preserves a matching leaf allowance; null clears and parents reject it', async () => {
+  const b = await import('./backup'); const { tasks } = await import('../state/tasks');
+  await (await import('../state/timer')).timerHydrationReady;
+  const task = { id: 'a', title: 'Draft', done: false, createdAt: Date.now() };
+  tasks.set([{ ...task, transitionAllowanceMin: 10 }]);
+  const file = (rows: unknown[]) => JSON.stringify({ format: b.BACKUP_FORMAT, version: 1, data: { tasks: rows } });
+  await b.restoreBackup(b.parseBackup(file([task])), metadata);
+  expect(tasks.get()[0].transitionAllowanceMin).toBe(10);
+  await b.restoreBackup(b.parseBackup(file([{ ...task, transitionAllowanceMin: null }])), metadata);
+  expect(tasks.get()[0].transitionAllowanceMin).toBeNull();
+  expect(() => b.parseBackup(file([{ ...task, transitionAllowanceMin: 10 }, { ...task, id: 'child', parentId: 'a' }]))).toThrow(/allowance/);
 });

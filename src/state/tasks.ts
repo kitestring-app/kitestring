@@ -1,3 +1,4 @@
+import { validAllowance } from "../lib/taskAllowance";
 import { purposefulAction } from "./returnActivity";
 import { createStore, uid } from "../lib/store";
 import { logTaskDone, unlogTaskDone } from "./stats";
@@ -10,14 +11,25 @@ export interface Task {
   emoji?: string;
   color?: string;
   etaMin?: number;
+  transitionAllowanceMin?: number | null;
   done: boolean;
   parentId?: string;
   createdAt: number;
 }
 
+/** A task that gains children stops carrying its own allowance. */
+export function leafAllowances(all: Task[]): Task[] {
+  const parents = new Set(all.map(t => t.parentId).filter(Boolean));
+  return all.map(t => {
+    if (parents.has(t.id)) return t.transitionAllowanceMin === null ? t : { ...t, transitionAllowanceMin: null };
+    if (validAllowance(t.transitionAllowanceMin) && (!parents.has(t.id) || t.transitionAllowanceMin == null)) return t;
+    const { transitionAllowanceMin: _ignored, ...rest } = t;
+    return rest;
+  });
+}
 export const tasks = createStore<Task[]>("tasks", [], (stored) =>
   Array.isArray(stored)
-    ? (stored as Task[]).filter((t) => t && typeof t.id === "string" && typeof t.title === "string").map((t) => (t.color && !/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(t.color) ? { ...t, color: undefined } : t))
+    ? leafAllowances((stored as Task[]).filter((t) => t && typeof t.id === "string" && typeof t.title === "string").map((t) => (t.color && !/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(t.color) ? { ...t, color: undefined } : t)))
     : [],
 );
 
@@ -55,7 +67,7 @@ export function addTask(patch: Partial<Task> = {}): string {
     if (!t.parentId) return [...all, t];
     // insert after the parent's last child
     const idx = all.reduce((last, x, i) => (x.id === t.parentId || x.parentId === t.parentId ? i : last), all.length - 1);
-    return [...all.slice(0, idx + 1), t, ...all.slice(idx + 1)];
+    return leafAllowances([...all.slice(0, idx + 1), t, ...all.slice(idx + 1)]);
   });
   return id;
 }

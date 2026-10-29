@@ -1,3 +1,5 @@
+import { preserveTaskAllowances, validTaskAllowances } from "./taskAllowance";
+import type { Task } from "../state/tasks";
 // Cookie transport on the hosted site; credentials stay in Electron's main process.
 import { parseIntentDocument, preserveIntentFinish } from "./intent";
 import { intent } from "../state/intent";
@@ -84,6 +86,10 @@ async function reconcile(choice?: "keep" | "replace") {
       warnings.intent = "The synced next action is invalid. Your local next action is kept.";
       continue;
     }
+    if (key === "tasks" && r && !validTaskAllowances(r.value)) {
+      warnings.tasks = "The synced transition allowance is invalid. Your local tasks are kept.";
+      continue;
+    }
     const provisionalSettings = key === "settings" && presetState.get().provisional;
     if (provisionalSettings) {
       delete meta.settings;
@@ -94,7 +100,7 @@ async function reconcile(choice?: "keep" | "replace") {
     if (d === "pull") {
       if (r || choice === "replace") {
         const before = meta[key];
-        await applySyncedValue(key, r ? (key === "intent" ? preserveIntentFinish(incomingIntent!, intent.get()) : r.value) : defaultStoreValue(key));
+        await applySyncedValue(key, r ? (key === "intent" ? preserveIntentFinish(incomingIntent!, intent.get()) : key === "tasks" && Array.isArray(r.value) ? preserveTaskAllowances(r.value as Task[], (storeValue("tasks") as Task[] | undefined) ?? []) : r.value) : defaultStoreValue(key));
         if (meta[key] === before) {
           if (r) meta[key] = r.updatedAt;
           else delete meta[key];
@@ -111,7 +117,7 @@ async function reconcile(choice?: "keep" | "replace") {
   const keys = [...dirty].filter(key => !warnings[key]);
   if (keys.length) {
     const saved = await Promise.all(keys.map(async key => ({ key, value: storeValue(key) ?? await dbGet(key), updatedAt: meta[key] ?? Date.now() })));
-    await cloudRequest("PUT", "/api/sync", { entries: saved });
+    await cloudRequest("PUT", "/api/sync", { entries: saved, ...(keys.includes("tasks") ? { taskAllowanceVersion: 1 } : {}) });
     for (const entry of saved) if (meta[entry.key] === entry.updatedAt) dirty.delete(entry.key);
   }
   if (current === epoch) set({ state: "ok", email: status.email, at: Date.now(), warnings });

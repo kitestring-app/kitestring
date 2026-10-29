@@ -282,3 +282,36 @@ it("N1: sync preserves enough from legacy same-action pulls and accepts explicit
   await sync.syncNow(); expect(intent.get().sufficientFinish).toBe("");
   await sync.signOut();
 });
+
+it('N2: a legacy task pull preserves the allowance, explicit null clears and invalid values keep local data', async () => {
+  const { sync, store, tasks, fetch, db } = await setup();
+  const task = { id: 'a', title: 'Draft', etaMin: 20, done: false, createdAt: Date.now() };
+  tasks.set([{ ...task, transitionAllowanceMin: 10 }]); await store.flushAll();
+  let rows: unknown[] = [task], stamp = Date.now() + 1000;
+  fetch.mockImplementation(async (url, init) => Response.json(url === '/api/sync' && init.method === 'GET'
+    ? { entries: [{ key: 'tasks', value: rows, updatedAt: stamp++ }] } : { ok: true }));
+  await sync.chooseInitialData('replace');
+  expect(tasks.get()).toEqual([{ ...task, transitionAllowanceMin: 10 }]);
+  expect(await db.dbGet('tasks')).toEqual(tasks.get());
+  rows = [{ ...task, transitionAllowanceMin: null }]; await sync.syncNow();
+  expect(tasks.get()).toEqual(rows);
+  rows = [{ ...task, transitionAllowanceMin: -1 }]; await sync.syncNow();
+  expect(sync.syncStatus.get().warnings?.tasks).toMatch(/invalid/);
+  expect(tasks.get()).toEqual([{ ...task, transitionAllowanceMin: null }]);
+  await sync.signOut();
+});
+it('N2: upgraded task uploads identify their writer and null remote rows do not abort later keys', async () => {
+  const { sync, store, fetch, notes, puts } = await setup();
+  const { tasks } = await import('../state/tasks'); await tasks.ready;
+  const task = { id: 'a', title: 'Draft', done: false, createdAt: Date.now() };
+  tasks.set([{ ...task, transitionAllowanceMin: 10 }]); await store.flushAll();
+  await sync.chooseInitialData('keep');
+  expect(puts).toMatchObject([{ taskAllowanceVersion: 1 }]);
+  let stamp = Date.now() + 1000;
+  fetch.mockImplementation(async (url, init) => Response.json(url === '/api/sync' && init.method === 'GET'
+    ? { entries: [{ key: 'tasks', value: [null, task], updatedAt: stamp++ }, { key: 'notes', value: 'Later key retained', updatedAt: stamp++ }] } : { ok: true }));
+  await sync.syncNow();
+  expect(tasks.get()).toEqual([{ ...task, transitionAllowanceMin: 10 }]);
+  expect(notes.get()).toBe('Later key retained');
+  expect(sync.syncStatus.get().state).toBe('ok'); await sync.signOut();
+});
