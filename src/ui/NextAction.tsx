@@ -10,6 +10,7 @@ export function NextAction() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Partial<Pick<typeof value, "action" | "why" | "cue" | "reward" | "sufficientFinish">>>({});
   const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const pending = useRef<typeof draft>({});
   const expected = useRef(value);
   const debounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -22,6 +23,7 @@ export function NextAction() {
     if (saving.current) return saving.current.then(ok => ok ? save() : false);
     if (!Object.keys(pending.current).length) return Promise.resolve(true);
     const patch = { ...pending.current };
+    setIsSaving(true);
     const work = (async () => {
       try {
         await saveIntent(patch, expected.current);
@@ -37,7 +39,7 @@ export function NextAction() {
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : "Could not save your next action. Try again.");
         return false;
-      } finally { saving.current = null; }
+      } finally { saving.current = null; setIsSaving(false); }
     })();
     saving.current = work;
     return work;
@@ -58,7 +60,8 @@ export function NextAction() {
     else if (returnFocus.current) { edit.current?.focus(); returnFocus.current = false; }
   }, [editing]);
   useEffect(() => () => { void save(); }, []);
-  return <div className="next-action chrome" role="group" aria-label="Pinned next action" onKeyDown={event => {
+  return <div className="next-action chrome" role="group" aria-label="Pinned next action" aria-busy={isSaving} onKeyDown={event => {
+    if (event.nativeEvent.isComposing) return;
     if (editing && (event.key === "Escape" || event.key === "Enter" && event.target instanceof HTMLInputElement)) {
       event.preventDefault(); event.stopPropagation(); void close();
     }
@@ -93,7 +96,7 @@ export function NextAction() {
         <p className="faint small">What would be enough for this pass? You choose when to finish. This line is never graded.</p>
       </details>
       <button className="btn small" onClick={close}>Done</button>
-      {error && <button className="btn small" onClick={() => { clearTimeout(debounce.current); pending.current = {}; expected.current = intent.get(); setDraft({ ...intent.get() }); setError(""); }}>Use saved action</button>}
+      {error && <button className="btn small" disabled={isSaving} onClick={() => { if (saving.current) return; clearTimeout(debounce.current); pending.current = {}; expected.current = intent.get(); setDraft({ ...intent.get() }); setError(""); }}>Use saved action</button>}
       <p className="faint small">Start whenever you’re ready. These fields are optional. When signed in, the latest saved action, note, cue, reward and sufficient finish replace the whole document on other devices. Breaks are always available.</p>
     </> : <>
       <div className="next-action-copy">

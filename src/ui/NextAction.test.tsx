@@ -22,7 +22,7 @@ beforeEach(async () => {
   hooks.state = []; hooks.refs = []; hooks.effects = []; vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
 });
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
-type Props = { children?: ReactNode; onChange?: (event: { target: { value: string } }) => void; onClick?: () => unknown; ref?: { current: unknown } };
+type Props = { disabled?: boolean; value?: string; children?: ReactNode; onChange?: (event: { target: { value: string } }) => void; onClick?: () => unknown; ref?: { current: unknown } };
 const elements = (node: ReactNode): ReactElement<Props>[] => Children.toArray(node).flatMap(child => isValidElement<Props>(child) ? [child, ...elements(child.props.children)] : []);
 async function advance(ms: number) { await vi.advanceTimersByTimeAsync(ms); await (await import("../lib/store")).flushReadyStores(); }
 function render() { hooks.stateIndex = hooks.refIndex = 0; hooks.effects = []; return NextAction(); }
@@ -109,4 +109,24 @@ it("N1b: enough is a collapsed optional detail and Finish needs no proof", async
   updateIntent({ action: "Draft", sufficientFinish: "Three rough paragraphs" });
   await click("Done"); expect(renderToStaticMarkup(render())).toContain("Enough for this pass: Three rough paragraphs");
   await click("Finish action"); expect(intent.get().action).toBe("");
+});
+
+it("N1b review: a pending retry disables discard and ignores a stale discard callback", async () => {
+  const db = await import("../lib/db"); const original = db.dbSetMany;
+  updateIntent({ action: "Draft", sufficientFinish: "One paragraph" }); await (await import("../lib/store")).flushReadyStores();
+  await click("Edit next action"); type(4, "Three paragraphs");
+  const spy = vi.spyOn(db, "dbSetMany").mockRejectedValueOnce(new DOMException("Storage full", "QuotaExceededError"));
+  await click("Done"); expect(renderToStaticMarkup(render())).toContain('role="alert"');
+  let release!: () => void; let started!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; }); const entered = new Promise<void>(resolve => { started = resolve; });
+  spy.mockImplementationOnce(async entries => { started(); await gate; await original(entries); });
+  const retry = click("Done"); await entered;
+  try {
+    const discard = elements(render()).find(el => el.type === "button" && el.props.children === "Use saved action")!;
+    expect(discard.props.disabled).toBe(true);
+    discard.props.onClick!();
+    expect(elements(render()).filter(el => el.type === "input")[4].props.value).toBe("Three paragraphs");
+  } finally { release(); await retry; spy.mockRestore(); }
+  expect(intent.get().sufficientFinish).toBe("Three paragraphs");
+  expect(await db.dbGet("intent")).toEqual(intent.get());
 });

@@ -37,7 +37,8 @@ describe.skipIf(process.env.EVIDENCE_BROWSER !== "1")("bundled evidence page", (
       for (const width of [1280, 390, 320]) {
         await chrome.send("Emulation.setDeviceMetricsOverride", { width, height: 820, deviceScaleFactor: 1, mobile: false });
         await chrome.send("Page.navigate", { url: pathToFileURL(resolve("dist/research.html")).href });
-        await chrome.waitFor("document.querySelectorAll('article[data-feature]').length === 13 && document.readyState === 'complete'");
+        await chrome.waitFor("document.querySelectorAll('article[data-feature]').length === 14 && document.readyState === 'complete'");
+        expect(await chrome.evaluate("document.querySelector('article[data-feature=enough] h3').textContent")).toBe("A sufficient finish you choose");
         expect(await chrome.evaluate("document.documentElement.scrollWidth <= innerWidth")).toBe(true);
         expect(await chrome.evaluate("getComputedStyle(document.documentElement).colorScheme")).toBe(scheme);
         expect(await chrome.evaluate("performance.getEntriesByType('resource').length")).toBe(0);
@@ -76,7 +77,8 @@ describe.skipIf(process.env.EVIDENCE_BROWSER !== "1")("bundled evidence page", (
     await chrome.send("Page.navigate", { url: chrome.origin });
     await chrome.waitFor("document.querySelector('.credits a[href=\"./research.html\"]')");
     await chrome.evaluate("document.querySelector('.credits a[href=\"./research.html\"]').click()");
-    await chrome.waitFor("document.querySelector('.evidence-reader iframe')?.contentDocument?.querySelectorAll('article').length === 13");
+    await chrome.waitFor("document.querySelector('.evidence-reader iframe')?.contentDocument?.querySelectorAll('article').length === 14");
+    expect(await chrome.evaluate("document.querySelector('.evidence-reader iframe').contentDocument.querySelector('article[data-feature=enough] .strength').textContent")).toContain("untested");
     await chrome.evaluate("void (window.evidenceDocument = document.querySelector('.evidence-reader iframe').contentDocument)");
     for (const id of ["moderate", "S1"]) {
       await chrome.evaluate(`window.evidenceDocument.querySelector('a[href$="#${id}"]').click()`);
@@ -107,7 +109,7 @@ describe.skipIf(process.env.EVIDENCE_BROWSER !== "1")("bundled evidence page", (
     await chrome.evaluate("[...document.querySelectorAll('.drawer nav button')].find(b=>b.textContent.trim()==='About').click()");
     await chrome.waitFor("document.querySelector('.drawer a[href=\"./research.html\"]')");
     await chrome.evaluate("document.querySelector('.drawer a[href=\"./research.html\"]').focus(); document.querySelector('.drawer a[href=\"./research.html\"]').click()");
-    await chrome.waitFor("document.querySelector('.evidence-reader iframe')?.contentDocument?.querySelectorAll('article').length === 13");
+    await chrome.waitFor("document.querySelector('.evidence-reader iframe')?.contentDocument?.querySelectorAll('article').length === 14");
     await chrome.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
     await chrome.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
     expect(await chrome.evaluate("document.querySelector('.evidence-reader iframe').contentDocument.activeElement.tagName")).toBe("A");

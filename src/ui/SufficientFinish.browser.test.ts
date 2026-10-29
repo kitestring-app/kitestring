@@ -83,6 +83,17 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('optional sufficient finish',
     expect(await page("return (await import('/src/state/tasks.ts')).tasks.get().filter(t=>t.done).length;")).toBe(0);
     await chrome.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: script.identifier }); chrome.assertHealthy();
   }, 30000);
+  it.each(["Enter", "Escape"])("%s used for composition leaves the editor open", async key => {
+    await chrome.send('Page.navigate', { url: chrome.origin }); await owner();
+    await page("await s.calmFoundationReady;s.settingsUpdate('dash','focus');i.updateIntent({action:'Draft'});");
+    await chrome.waitFor("document.querySelector('.next-action')"); await click('Edit next action');
+    expect(await chrome.evaluate(`document.querySelector('.next-action input').dispatchEvent(new KeyboardEvent('keydown',
+      {key:${JSON.stringify(key)},bubbles:true,cancelable:true,isComposing:true}))`)).toBe(true);
+    await chrome.evaluate('new Promise(resolve=>requestAnimationFrame(resolve))');
+    expect(await chrome.evaluate("!!document.querySelector('.next-action input')")).toBe(true);
+    await chrome.evaluate("document.querySelector('.next-action button').click()");
+    await chrome.waitFor("!document.querySelector('.next-action input')");
+  });
   it.each(["Three paragraphs", ""])("keeps the original criterion in Hidden recovery after editing it to %j", async sufficientFinish => {
     await chrome.send('Page.navigate', { url: chrome.origin }); await owner();
     await page(`await s.calmFoundationReady;s.settingsUpdate('dash','focus');s.settingsUpdate('timer',{...s.CALM_PATCH,display:'hidden'});
