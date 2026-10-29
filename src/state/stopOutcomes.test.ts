@@ -92,3 +92,16 @@ it('overlapping removal retries both succeed without changing raw credit', async
 it('rejects timestamps outside the JavaScript date range before a record can reach a renderer', () => {
   expect(m.validStopOutcomes({ later: { id: 'later', action: '', at: Number.MAX_SAFE_INTEGER } })).toBe(false);
 });
+it('durable dismissal survives reload, preserves labels/time, and refuses a replaced attempt', async () => {
+  const id = stop(); await m.recordStopLabel(id); const old = m.stopAttempt.get()!, raw = m.stats.get(), labels = m.stopOutcomes.get();
+  expect(await m.dismissStopOffer(old)).toEqual({ ok: true }); expect(await m.dismissStopOffer(old)).toEqual({ ok: true });
+  expect(m.stopAttempt.get()).toBeNull(); expect(m.stats.get()).toBe(raw); expect(m.stopOutcomes.get()).toBe(labels);
+  vi.resetModules(); m = await setup(); expect(m.stopAttempt.get()).toBeNull();
+  stop(); const next = m.stopAttempt.get(); expect(await m.dismissStopOffer(old)).toEqual({ ok: false }); expect(m.stopAttempt.get()).toEqual(next);
+});
+it('a rejected dismissal leaves the offer available for retry', async () => {
+  stop(); await m.flushReadyStores(); const pending = m.stopAttempt.get()!, db = await import('../lib/db');
+  vi.spyOn(db, 'dbSetMany').mockRejectedValueOnce(new DOMException('Rejected', 'AbortError'));
+  await expect(m.dismissStopOffer(pending)).rejects.toThrow(); expect(m.stopAttempt.get()).toEqual(pending);
+  expect(await m.dismissStopOffer(pending)).toEqual({ ok: true }); expect(m.stopAttempt.get()).toBeNull();
+});

@@ -72,6 +72,8 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('optional deliberate stop', (
   it('ordinary Stop needs no label and Hard mode still refuses it', async () => {
     await seed(); await start(); await stop(); expect(await page('return Object.keys(o.stopOutcomes.get()).length;')).toBe(0);
     await chrome.evaluate("document.querySelector('.stopped-card [aria-label=Close]').click()"); await chrome.waitFor("!document.querySelector('.stopped-card')");
+    await page('await b.flushReadyStores();'); await chrome.reload("document.querySelector('.next-action')"); await owner();
+    expect(await chrome.evaluate("!!document.querySelector('.stopped-card')")).toBe(false);
     await start(); expect(await page('return o.stopAttempt.get();')).toBeNull();
     await page("s.settingsUpdate('timer',{hardMode:true});"); await chrome.waitFor("!document.querySelector('[aria-label=\"Stop session\"]')");
     expect(await page("return t.runTimerCommand('stop');")).toMatchObject({ ok: false, reason: 'hard-mode' });
