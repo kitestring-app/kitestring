@@ -19,7 +19,7 @@
 .next-action-buttons-closeout { position: relative; }
 :root .next-action .next-action-buttons-closeout > .next-action-leave {
   position: absolute; right: 0; top: 50%; translate: 0 -50%;
-  padding: 6px; font-size: 11px; border-radius: var(--r-pill);
+  padding: 6px; width: 32px; height: 32px; border-radius: var(--r-pill);
 }
 @media (max-width: 700px) {
   :root .next-action .next-action-buttons-closeout > .next-action-leave {
@@ -27,10 +27,9 @@
   }
 }
 
-.next-action-leave svg { display: none; }
+.next-action-leave svg { display: block; }
+.next-action-leave span { display: none; }
 @media (max-width: 700px) {
-  .next-action-leave svg { display: block; }
-  .next-action-leave span { display: none; }
   .next-action-buttons-closeout { flex-wrap: nowrap; gap: 4px; }
   .next-action-buttons-closeout > .btn:not(.next-action-leave) { padding-inline: 6px; }
 }

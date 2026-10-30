@@ -113,4 +113,16 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('voluntary leave a next step'
   await chrome.send('Page.removeScriptToEvaluateOnNewDocument',{identifier:script.identifier});
  },30000);
 
+ it('keeps the entry separate from pin actions with wider system font metrics',async()=>{
+  await chrome.send('Page.navigate',{url:chrome.origin});
+  await chrome.waitFor("document.querySelector('.next-action') && import('/src/state/timer.ts').then(async t=>{await t.timerHydrationReady;return (await import('/src/lib/store.ts')).canWriteClockStore('timer')})");
+  await chrome.send('Emulation.setDeviceMetricsOverride',{width:1280,height:820,deviceScaleFactor:1,mobile:false});
+  await page("s.settingsUpdate('dash','focus');i.updateIntent({action:'Read chapter'});");
+  await chrome.evaluate("document.documentElement.style.setProperty('--ui','monospace')");
+  try{for(const look of ['classic','glass','sketch','companion','sunrise']){
+   await page(`s.settingsUpdate('appearance',{look:'${look}'});`);await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);
+   expect(await chrome.evaluate("(()=>{const entry=document.querySelector('.next-action-leave').getBoundingClientRect();return [...document.querySelectorAll('.next-action-buttons-closeout button:not(.next-action-leave)')].every(b=>{const r=b.getBoundingClientRect();return !(entry.left<r.right&&entry.right>r.left&&entry.top<r.bottom&&entry.bottom>r.top)})})()")).toBe(true);
+  }}finally{await chrome.evaluate("document.documentElement.style.removeProperty('--ui')")}
+ });
+
 });
