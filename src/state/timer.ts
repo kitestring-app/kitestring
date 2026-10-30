@@ -38,6 +38,37 @@ let witnessedOwner: { segId: string; ownerId: string } | null = null;
 let departing = false;
 let settlingSnapshot = false;
 
+// Only a cutoff and running-span identity live here. History and its credit cursor
+// still come from the same IndexedDB transaction, so replay cannot duplicate credit.
+const WEB_DEPARTURE_KEY = "custom-pomodoro:web-departure";
+function webDeparture(s: E.TimerState, p: ClockPresence | null) {
+  if (typeof window === "undefined" || window.desktop || s.startedAt === null) return null;
+  try {
+    const raw = localStorage.getItem(WEB_DEPARTURE_KEY);
+    if (!raw || raw.length > 512) return null;
+    const value = JSON.parse(raw);
+    if (value?.segId !== s.segId || value.startedAt !== s.startedAt || value.elapsedBefore !== s.elapsedBefore ||
+        !Number.isFinite(value.at) || value.at < s.startedAt || value.at > Date.now() ||
+        (p?.segId === s.segId && value.at < p.lastAliveAt)) return null;
+    return { raw, at: value.at as number };
+  } catch { return null; }
+}
+function clearWebDeparture(raw: string) {
+  try { if (localStorage.getItem(WEB_DEPARTURE_KEY) === raw) localStorage.removeItem(WEB_DEPARTURE_KEY); } catch { /* Storage may be disabled. */ }
+}
+function webPageHide() {
+  // This call banks synchronously before its first await; sleep recovery wins first.
+  const departure = prepareTimerDeparture();
+  const s = timer.get(), p = clockPresence.get();
+  let raw: string | undefined;
+  if (!window.desktop && canWriteClockStore("timer") && s.startedAt !== null && p?.segId === s.segId && p.departedAt !== undefined) {
+    raw = JSON.stringify({ segId: s.segId, startedAt: s.startedAt, elapsedBefore: s.elapsedBefore, at: p.departedAt });
+    try { localStorage.setItem(WEB_DEPARTURE_KEY, raw); } catch { raw = undefined; }
+  }
+  void departure.then(() => { if (raw) clearWebDeparture(raw); }).catch(reportRequestError);
+}
+
+
 let reminderMessage = "";
 const reminderListeners = new Set<() => void>();
 export const reminderStatus = {
@@ -697,21 +728,24 @@ export const timerHydrationReady = Promise.all([
 function settleOwnedSnapshot() {
   if (!canWriteClockStore("timer") || !recoveryHydrated) return;
   const before = timer.get(), presence = clockPresence.get();
-  const saved = ["disk", "received"].includes(storeSource("timer") ?? "") || savedCutoff?.segId === before.segId;
-  const cutoff = presence?.segId === before.segId ? presence.departedAt ?? presence.lastAliveAt :
+  const departure = webDeparture(before, presence);
+  const saved = !!departure || ["disk", "received"].includes(storeSource("timer") ?? "") || savedCutoff?.segId === before.segId;
+  const durableCutoff = presence?.segId === before.segId ? presence.departedAt ?? presence.lastAliveAt :
     savedCutoff?.segId === before.segId ? savedCutoff.at : (before.startedAt ?? Date.now()) + Math.max(0, before.creditedUpTo - before.elapsedBefore);
+  const cutoff = Math.max(durableCutoff, departure?.at ?? durableCutoff);
   // Renaming a legacy ID must not publish it as a new live run before recovery.
   settlingSnapshot = true;
   try { migrateInitialSegment(); } finally { settlingSnapshot = false; }
   const s = timer.get(), total = totalMs(s), p = clockPresence.get();
   if (s.startedAt !== null) {
     const liveHandoff = p?.segId === s.segId && witnessedOwner?.segId === s.segId && witnessedOwner.ownerId === p.ownerId;
-    if (liveHandoff && (total === null || E.elapsed(s, Date.now()) < total)) {
+    if (!departure && liveHandoff && (total === null || E.elapsed(s, Date.now()) < total)) {
       departing = false; savedCutoff = undefined;
       timer.set({ ...s, reentry: undefined }); noteAlive();
     } else if (saved || p?.departedAt !== undefined) {
       savedCutoff = undefined;
       settleAway(cutoff);
+      if (departure) void flushReadyStores().then(() => clearWebDeparture(departure.raw)).catch(reportRequestError);
     } else if (total !== null && E.elapsed(s, Date.now()) >= total) timerActions.complete(s.segId, true);
   } else if (storeSource("timer") === "disk" && s.elapsedBefore > 0 && !s.boundary && !s.reentry) {
     timer.set({ ...s, context: s.context ?? captureContext(), reentry: E.newSegId() });
@@ -821,7 +855,7 @@ export function startTicker({ follower = false }: { follower?: boolean } = {}) {
   });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkRecoveryLifecycle(); });
 
-  window.addEventListener("pagehide", () => { void prepareTimerDeparture().catch(reportRequestError); });
+  window.addEventListener("pagehide", webPageHide);
   commands?.postMessage({ type: "clock-hello" });
 
   // after a reload while running: finish if time ran out, otherwise re-arm
@@ -917,7 +951,7 @@ export async function answerNativeAttention(command: DesktopAttentionCommand): P
 
 export function recoveryOffer() {
   // Do not flash a lower-priority offer while another saved value is still loading.
-  if (["timer", "stats", "settings", "tasks", "intent", "returnActivity", "parkingReview", "parked"].some(key => storeSource(key) === "loading")) return null;
+  if (["timer", "stats", "settings", "tasks", "intent", "returnActivity", "parkingReview", "parked", "clockPresence"].some(key => storeSource(key) === "loading")) return null;
   const s = timer.get(), total = totalMs(s);
   if (!s.boundary && s.startedAt !== null && total !== null && E.elapsed(s, Date.now()) >= total) return null;
   return selectRecovery({ boundary: !!s.boundary, reentry: !!s.reentry, gap: !!returnActivity.get().pendingGap,
