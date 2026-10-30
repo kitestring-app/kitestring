@@ -739,9 +739,10 @@ function settleOwnedSnapshot() {
   const s = timer.get(), total = totalMs(s), p = clockPresence.get();
   if (s.startedAt !== null) {
     const liveHandoff = p?.segId === s.segId && witnessedOwner?.segId === s.segId && witnessedOwner.ownerId === p.ownerId;
-    if (!departure && liveHandoff && (total === null || E.elapsed(s, Date.now()) < total)) {
+    if (liveHandoff && (total === null || E.elapsed(s, Date.now()) < total)) {
       departing = false; savedCutoff = undefined;
       timer.set({ ...s, reentry: undefined }); noteAlive();
+      if (departure) void flushReadyStores().then(() => clearWebDeparture(departure.raw)).catch(reportRequestError);
     } else if (saved || p?.departedAt !== undefined) {
       savedCutoff = undefined;
       settleAway(cutoff);
