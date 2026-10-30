@@ -67,7 +67,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
   const filled = v.state.segment === "focus" ? v.state.round : v.state.segment === "long" ? n : v.state.round;
 
   return (
-    <section ref={fit} className={`center focus-center size-${size}`} aria-label="Focus timer">
+    <NextAction closeOutVisible={closeOutVisible}>{(pin, closeOut) => <section ref={fit} className={`center focus-center size-${size}`} aria-label="Focus timer">
       <h1 className={`headline ${task?.title ? "task" : ""}`}>
         {task?.title ? (
           <>
@@ -111,7 +111,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
           <i style={{ width: `${v.progress * 100}%` }} />
         </div>
       )}
-      <NextAction closeOutVisible={closeOutVisible} />
+      {pin}
       {reminder && <p className="muted small" role="status">{reminder}</p>}
       <div className="controls chrome">
         <button className="iconbtn primary" disabled={v.hardLocked && v.running} title={v.hardLocked && v.running ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.toggle()} aria-label={v.running ? "Pause · Space" : "Start · Space"}>
@@ -129,7 +129,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
         <button className="iconbtn" onClick={onPark} aria-label="Park a thought · P" title="Park a thought · P"><Icon.note /></button>
         {!v.hardLocked && <EndSessionControl />}
       </div>
-      <FocusCardSlot onChooseTask={onChooseTask} onRecall={onRecall} />
+      <FocusCardSlot override={closeOut} onChooseTask={onChooseTask} onRecall={onRecall} />
       <StartSupport />
       {v.hardLocked && <><HardModeBadge pendingOff={v.hardModePendingOff} /><EndSessionControl /></>}
       <ParkCapture open={captureOpen} onClose={onCaptureClose} />
@@ -137,6 +137,6 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
         <button className="btn small park-chip" onClick={openParkingReview}>{count} parked</button>)}
       {pipMsg && <p className="muted small" role="status" style={{ marginTop: 10 }}>{pipMsg}</p>}
       {showQuote && <QuoteLine />}
-    </section>
+    </section>}</NextAction>
   );
 }

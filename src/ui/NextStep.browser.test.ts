@@ -79,4 +79,38 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('voluntary leave a next step'
   await chrome.waitFor("document.querySelector('.next-action [role=alert]')");expect(await chrome.evaluate("document.querySelector('.next-action input').value")).toBe('Draft to keep');expect(await page('return i.intent.get().action;')).toBe('Remote replacement');
   await click('Keep current action');expect(await page('return i.intent.get().action;')).toBe('Remote replacement');chrome.assertHealthy();
  });
+
+ it('keeps timer controls reachable and scrolls only the close-out at short sizes',async()=>{
+  const script=await chrome.send('Page.addScriptToEvaluateOnNewDocument',{source:'window.desktop=undefined;'});
+  await chrome.send('Page.navigate',{url:chrome.origin});
+  await chrome.waitFor("document.querySelector('.next-action') && import('/src/state/timer.ts').then(async t=>{await t.timerHydrationReady;return true})");
+  await page("s.settingsUpdate('dash','focus');s.settingsUpdate('timer',{...s.CALM_PATCH,display:'remaining'});s.settingsUpdate('quotes',{inFocus:true});");
+  for(const [width,height] of [[375,500],[320,568],[720,540]])for(const look of ['classic','glass','sketch','companion','sunrise']){
+   await chrome.send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<500});
+   await chrome.send('Emulation.setTouchEmulationEnabled',{enabled:width<500});
+   await page(`s.settingsUpdate('appearance',{look:'${look}'});i.updateIntent({action:'Read chapter',why:'Understand'});`);
+   await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);
+   await click('Leave a next step');
+   for(const replace of [false,true]){
+    if(replace){await click('Replace for next time');await type('A long next action '.repeat(25));}
+    await chrome.waitFor("document.querySelector('.focus-card-slot .next-action')&&[...document.querySelectorAll('.recovery-card')].filter(c=>!c.closest('[hidden]')).length===1");
+    await new Promise(resolve=>setTimeout(resolve,150));
+    const geometry=await chrome.evaluate(`(()=>{
+     const controls=[...document.querySelectorAll('.controls button')].filter(b=>getComputedStyle(b).display!=='none');
+     const reachable=controls.every(b=>{const r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit===b||b.contains(hit)});
+     const center=document.querySelector('.focus-center'),card=document.querySelector('.next-step-slot'),r=card.getBoundingClientRect(),c=center.getBoundingClientRect();
+     return {reachable,oneCard:document.querySelectorAll('.focus-card-slot').length===1,inside:r.top>=c.top&&r.bottom<=c.bottom+.5,page:document.documentElement.scrollTop,center: center.scrollTop,overflow:document.documentElement.scrollWidth>innerWidth,quote:[...document.querySelectorAll('.quote')].some(q=>getComputedStyle(q).display!=='none')};
+    })()`);
+    if(process.env.SHOTS_DIR){await mkdir(process.env.SHOTS_DIR,{recursive:true});await writeFile(join(process.env.SHOTS_DIR,`${width}x${height}-${look}-${replace?'replace':'keep'}.png`),await chrome.png());}
+    expect(geometry,`${width}x${height} ${look} replace=${replace}`).toEqual({reachable:true,oneCard:true,inside:true,page:0,center:0,overflow:false,quote:false});
+    for(const text of replace?['Save next step','Keep current action']:['Keep current action','Replace for next time']){
+     expect(await chrome.evaluate(`(()=>{const b=[...document.querySelectorAll('.next-action button')].find(b=>b.textContent===${JSON.stringify(text)});b.scrollIntoView({block:'nearest'});const r=b.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit===b||b.contains(hit)})()`)).toBe(true);
+    }
+    expect(await chrome.evaluate("document.querySelector('.focus-center').scrollTop")).toBe(0);
+   }
+   await click('Keep current action');
+  }
+  await chrome.send('Page.removeScriptToEvaluateOnNewDocument',{identifier:script.identifier});
+ },30000);
+
 });

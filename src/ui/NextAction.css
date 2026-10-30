@@ -23,6 +23,22 @@
 }
 @media (max-width: 700px) {
   :root .next-action .next-action-buttons-closeout > .next-action-leave {
-    position: static; translate: none; padding: 6px 10px; font-size: 13px;
+    position: static; translate: none; padding: 6px; width: 44px; height: 44px; flex: none;
   }
 }
+
+.next-action-leave svg { display: none; }
+@media (max-width: 700px) {
+  .next-action-leave svg { display: block; }
+  .next-action-leave span { display: none; }
+  .next-action-buttons-closeout { flex-wrap: nowrap; gap: 4px; }
+  .next-action-buttons-closeout > .btn:not(.next-action-leave) { padding-inline: 6px; }
+}
+/* Close-out occupies the existing slot. Only its content scrolls. */
+.focus-center .next-step-slot { flex: 0 1 auto; max-height: 40%; }
+.focus-center:has(.next-step-slot) { overflow: hidden; }
+.focus-center .next-step-slot .next-action { width: 100%; margin: 0; min-height: 0; max-height: none; overflow: visible; }
+
+.focus-card-default { display: contents; }
+.focus-card-default[hidden] { display: none; }
+.focus-card-slot:has(> .focus-card-default:empty):not(:has(> .recovery-card)) { display: none; }
