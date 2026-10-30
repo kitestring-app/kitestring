@@ -19,6 +19,7 @@ function harness({ saved = null, supported = true } = {}) {
   const savedAtEffects = [];
   let stopped = 0;
   let shown = 0;
+  let reads = 0;
   class Notification extends EventEmitter {
     static isSupported() { return supported; }
     constructor(options) {
@@ -58,7 +59,7 @@ function harness({ saved = null, supported = true } = {}) {
     now: () => time,
     setTimer(callback, delay) { const id = ++nextTimer; timers.set(id, { callback, delay }); return id; },
     clearTimer: (id) => timers.delete(id),
-    readJSON(file) { assert.equal(file, '/test-data/alarm.json'); return structuredClone(stored); },
+    readJSON(file) { reads++; assert.equal(file, '/test-data/alarm.json'); return structuredClone(stored); },
     writeJSON(file, value) {
       assert.equal(file, '/test-data/alarm.json');
       stored = structuredClone(value);
@@ -66,7 +67,7 @@ function harness({ saved = null, supported = true } = {}) {
     },
   });
   return {
-    services, timers, writes, processes, notifications, attention, power, powerStarts, powerStops, savedAtEffects,
+    services, timers, writes, processes, notifications, attention, power, powerStarts, powerStops, savedAtEffects, reads: () => reads,
     now: () => time,
     setTime: (next) => { time = next; },
     saved: () => structuredClone(stored),
@@ -307,6 +308,7 @@ test('restore drops saved alarms, including valid future alarms, until explicit 
   const h = harness({ saved });
   h.services.restore();
   h.services.restore();
+  assert.equal(h.reads(), 0, "restore discards alarms without reading the discarded snapshot");
   assert.equal(h.services.snapshot().pending, null);
   assert.equal(h.timers.size, 0);
   h.setTime(saved.at);

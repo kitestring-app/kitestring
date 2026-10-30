@@ -46,6 +46,7 @@ function attachFullscreen(window) {
   });
   window.once('closed', () => { clearTimeout(repair); clearTimeout(safety); transitioning = false; });
   return {
+    isTransitioning: () => transitioning,
     toggle() {
       if (transitioning) return window.isFullScreen();
       const next = !window.isFullScreen();

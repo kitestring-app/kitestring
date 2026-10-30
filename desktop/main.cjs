@@ -98,7 +98,7 @@ function changeAttention(type, kind) {
   attention = next;
   attentionSegment = null;
   attentionKind = attention.releaseAt !== null ? kind : null;
-  clearTimeout(workspaceReset);
+  clearTimeout(workspaceReset); workspaceReset = null;
   banners?.stop();
   clearTimeout(releaseTimer);
   if (bounceId !== null) { app.dock?.cancelBounce(bounceId); bounceId = null; }
@@ -136,8 +136,9 @@ function scheduleRelease(now) {
 function showWindow() {
   if (!window || window.isDestroyed()) return;
   const shown = window;
-  clearTimeout(workspaceReset);
-  if (!shown.isFullScreen()) {
+  clearTimeout(workspaceReset); workspaceReset = null;
+  const joinedWorkspaces = !shown.isFullScreen();
+  if (joinedWorkspaces) {
     shown.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
   }
   if (window.isMinimized()) window.restore();
@@ -146,11 +147,22 @@ function showWindow() {
   window.focus();
   // This is an explicit user request. Automatic attention never activates the app.
   app.focus({ steal: true });
-  workspaceReset = setTimeout(() => {
-    if (shown.isDestroyed() || attention.releaseAt !== null) return;
-    shown.setVisibleOnAllWorkspaces(false, { skipTransformProcessType: true });
-  }, 250);
-  workspaceReset.unref?.();
+  if (joinedWorkspaces) {
+    let request;
+    const reset = () => {
+      if (workspaceReset !== request || shown.isDestroyed() || attention.releaseAt !== null) return;
+      if (shown.isFullScreen()) { shown.once('leave-full-screen', reset); return; }
+      if (fullscreen.isTransitioning()) {
+        workspaceReset = request = setTimeout(reset, 60);
+        workspaceReset.unref?.();
+        return;
+      }
+      shown.setVisibleOnAllWorkspaces(false, { skipTransformProcessType: true });
+      workspaceReset = null;
+    };
+    workspaceReset = request = setTimeout(reset, 250);
+    workspaceReset.unref?.();
+  }
 }
 function createWindow() {
   if (quitting || (window && !window.isDestroyed())) return;
