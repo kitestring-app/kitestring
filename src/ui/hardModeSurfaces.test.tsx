@@ -1,4 +1,4 @@
-import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
+import { Children, isValidElement, type ComponentProps, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const hooks = vi.hoisted(() => ({ effects: [] as (() => unknown)[] }));
@@ -15,6 +15,7 @@ vi.mock("./useExtras", () => ({ useExtras: () => false }));
 import App from "../App";
 import { MiniTimer } from "./MiniTimer";
 import { FocusView } from "./FocusView";
+import { NextAction } from "./NextAction";
 import { AmbientTimer } from "./AmbientTimer";
 import { AlarmToast } from "./AlarmToast";
 import { TransitionScreen } from "./timer/TransitionScreen";
@@ -28,7 +29,14 @@ import { parked } from "../state/parked";
 import { boundaryAlert } from "../audio/boundaryAlert";
 import { transitionStore } from "./timer/TransitionStore";
 type Props = { children?: ReactNode; [key: string]: any };
-function elements(node: ReactNode): ReactElement<Props>[] { return Children.toArray(node).flatMap(child => isValidElement<Props>(child) ? [child, ...elements(child.props.children)] : []); }
+function elements(node: ReactNode): ReactElement<Props>[] {
+  return Children.toArray(node).flatMap(child => {
+    if (!isValidElement<Props>(child)) return [];
+    // Exercise the actual render callback so FocusView's controls remain covered.
+    const content = child.type === NextAction ? NextAction((child as ReactElement<ComponentProps<typeof NextAction>>).props) : child.props.children;
+    return [child, ...elements(content)];
+  });
+}
 function openReminder() {
   const prompt = TransitionScreen()!;
   const tree = elements((prompt.type as (props: unknown) => ReactNode)(prompt.props));

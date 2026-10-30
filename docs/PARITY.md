@@ -129,3 +129,5 @@ Job 34 verification: automated source/unit/transport checks cover both shared UI
 | Optional bounded portion (N4) | Shared pin editor, Hidden static display and preserved interrupted context | Same shared controls, no native limitation | intent.test.ts, backup.portability.test.ts, sync.transport.test.ts, worker/index.test.ts, desktop/test/cloud.cjs, SufficientFinish.browser.test.ts |
 
 | Voluntary explain from memory (N5) | Notes entry and non-running boundary link; guarded append, error draft, accessible return; existing Notes sync/Focus export | Same shared controls and storage, no native power needed | notes.test.ts, backup.portability.test.ts, notepad/Recall.browser.test.ts |
+
+| Optional next step at close-out (N6) | Shared card slot with Close, Keep or guarded replacement; other cards, breathing portals and quote hidden; short-screen controls reachable; interrupted context preserved | Same shared controls; no native limitation or timer/window command | NextAction.test.tsx, NextStep.browser.test.ts; existing intent/backup every-leaf and store-classification gates |

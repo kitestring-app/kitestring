@@ -14,3 +14,30 @@
 .next-action details { text-align: left; }
 .next-action summary { cursor: pointer; }
 .next-action details label { margin-top: 8px; }
+
+/* The compact desktop entry leaves the established pin row in place. */
+.next-action-buttons-closeout { position: relative; }
+:root .next-action .next-action-buttons-closeout > .next-action-leave {
+  position: absolute; right: 0; top: 50%; translate: 0 -50%;
+  padding: 6px; width: 32px; height: 32px; border-radius: var(--r-pill);
+}
+@media (max-width: 700px) {
+  :root .next-action .next-action-buttons-closeout > .next-action-leave {
+    position: static; translate: none; padding: 6px; width: 44px; height: 44px; flex: none;
+  }
+}
+
+.next-action-leave svg { display: block; }
+.next-action-leave span { display: none; }
+@media (max-width: 700px) {
+  .next-action-buttons-closeout { flex-wrap: nowrap; gap: 4px; }
+  .next-action-buttons-closeout > .btn:not(.next-action-leave) { padding-inline: 6px; }
+}
+/* Close-out occupies the existing slot. Only its content scrolls. */
+.focus-center .next-step-slot { flex: 0 1 auto; max-height: 40%; }
+.focus-center:has(.next-step-slot) { overflow: hidden; }
+.focus-center .next-step-slot .next-action { width: 100%; margin: 0; min-height: 0; max-height: none; overflow: visible; }
+
+.focus-card-default { display: contents; }
+.focus-card-default[hidden] { display: none; }
+.focus-card-slot:has(> .focus-card-default:empty):not(:has(> .recovery-card)) { display: none; }

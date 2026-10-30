@@ -22,11 +22,11 @@ beforeEach(async () => {
   hooks.state = []; hooks.refs = []; hooks.effects = []; vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
 });
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
-type Props = { disabled?: boolean; value?: string; children?: ReactNode; onChange?: (event: { target: { value: string } }) => void; onClick?: () => unknown; ref?: { current: unknown } };
+type Props = { disabled?: boolean; value?: string; children?: ReactNode; onChange?: (event: { target: { value: string } }) => void; onClick?: () => unknown; "aria-label"?: string; ref?: { current: unknown } };
 const elements = (node: ReactNode): ReactElement<Props>[] => Children.toArray(node).flatMap(child => isValidElement<Props>(child) ? [child, ...elements(child.props.children)] : []);
 async function advance(ms: number) { await vi.advanceTimersByTimeAsync(ms); await (await import("../lib/store")).flushReadyStores(); }
 function render() { hooks.stateIndex = hooks.refIndex = 0; hooks.effects = []; return NextAction(); }
-async function click(text: string) { return elements(render()).find(el => el.type === "button" && el.props.children === text)!.props.onClick!(); }
+async function click(text: string) { return elements(render()).find(el => el.type === "button" && (el.props.children === text || el.props["aria-label"] === text))!.props.onClick!(); }
 function type(index: number, value: string) { elements(render()).filter(el => el.type === "input")[index].props.onChange!({ target: { value } }); }
 it("picks a subtask as saved text, keeps the optional why and survives deleting the source", async () => {
   tasks.set([{ id: "parent", title: "Draft", done: false, createdAt: 1 }, { id: "child", parentId: "parent", title: "Open the document", done: false, createdAt: 1 }]);
@@ -137,4 +137,57 @@ it("N4: optional portion saves with the action without completing tasks", async 
   expect(intent.get().portion).toBe("One page");
   expect(renderToStaticMarkup(render())).toContain("Chosen portion: One page");
   await click("Finish action"); expect(tasks.get()[0].done).toBe(false);
+});
+
+it("N6: Keep leaves the whole current pin and revision unchanged", async () => {
+  updateIntent({ action: "Draft", why: "Share", portion: "Opening" }); const before = intent.get();
+  await click("Leave a next step");
+  expect(renderToStaticMarkup(render())).toContain("Current next action: Draft");
+  await click("Keep current action");
+  expect(intent.get()).toEqual(before); expect(renderToStaticMarkup(render())).not.toContain("Replace for next time");
+});
+it("N6: replacement waits for explicit durable save and does not complete tasks", async () => {
+  updateIntent({ action: "Draft", why: "Share", portion: "Opening" }); const before = intent.get();
+  tasks.set([{ id: "task", title: "Draft", done: false, createdAt: 1 }]);
+  await click("Leave a next step"); await click("Replace for next time"); type(0, "Read the next page");
+  await advance(1000); expect(intent.get()).toEqual(before);
+  await click("Save next step");
+  expect(intent.get()).toMatchObject({ action: "Read the next page", why: "Share", portion: "" });
+  expect(await (await import("../lib/db")).dbGet("intent")).toEqual(intent.get()); expect(tasks.get()[0].done).toBe(false);
+});
+it("N6: Keep discards only the replacement draft; unmount never saves it", async () => {
+  updateIntent({ action: "Keep me" }); const before = intent.get();
+  await click("Leave a next step"); await click("Replace for next time"); type(0, "Unsaved replacement");
+  const cleanup = hooks.effects[1]() as () => void; cleanup(); await advance(1000);
+  expect(intent.get()).toEqual(before);
+  await click("Keep current action"); expect(intent.get()).toEqual(before);
+});
+it("N6: a changed pin rejects replacement and keeps its draft for explicit recovery", async () => {
+  updateIntent({ action: "Original" });
+  await click("Leave a next step"); await click("Replace for next time"); type(0, "My next step");
+  updateIntent({ action: "Remote action" }); await click("Save next step");
+  expect(intent.get().action).toBe("Remote action"); expect(renderToStaticMarkup(render())).toContain("My next step");
+  expect(renderToStaticMarkup(render())).toContain('role="alert"');
+  await click("Use saved action"); type(0, "Explicit replacement"); await click("Save next step");
+  expect(intent.get().action).toBe("Explicit replacement");
+});
+it("N6: keeping a pin leaves normal editor autosave available without a focus effect", async () => {
+  updateIntent({ action: "Original" });
+  await click("Leave a next step"); await click("Keep current action");
+  await click("Edit next action"); type(0, "Ordinary edit"); await advance(400);
+  expect(intent.get().action).toBe("Ordinary edit");
+});
+
+it("N6 layout: close-out uses the shared card anatomy instead of expanding the pin", async () => {
+  await click("Leave a next step");
+  const html = renderToStaticMarkup(render());
+  expect(html).toContain('class="recovery-card');
+  expect(html).toContain('aria-label="Close"');
+  expect(html).toContain('class="focus-card-body"');
+});
+
+it("does not position the pin buttons when the close-out entry is hidden behind a panel", () => {
+  const html = renderToStaticMarkup(NextAction({ closeOutVisible: false }));
+  expect(html).not.toContain('next-action-buttons-closeout');
+  expect(html).not.toContain('Leave a next step');
 });
