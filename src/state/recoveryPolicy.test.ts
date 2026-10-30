@@ -58,3 +58,9 @@ it('recovery text names past focus and away, hides zero values and keeps hidden 
   expect(recoveryRecordText(600_000, 3_840_000, true)).toBe('Away 1 h 4 min.');
   expect(recoveryRecordText(0, 0)).toBe('');
 });
+
+it('omits zero minute units from exact-hour recovery records', async () => {
+  const { recoveryRecordText } = await import('./recoveryPolicy');
+  expect(recoveryRecordText(3_600_000, 7_200_000)).toBe('You focused 1 h. Away 2 h.');
+  expect(recoveryRecordText(0, 3_600_000, true)).toBe('Away 1 h.');
+});

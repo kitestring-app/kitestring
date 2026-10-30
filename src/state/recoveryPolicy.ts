@@ -72,7 +72,7 @@ export function isRecoveryBoundary(value: unknown): value is RecoveryBoundary {
 export function recoveryRecordText(focusMs: number, awayMs = 0, hidden = false): string {
   const duration = (ms: number) => {
     const min = Math.floor(ms / 60_000);
-    return min >= 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : min > 0 ? `${min} min` : `${Math.floor(ms / 1000)} s`;
+    return min >= 60 ? `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ""}` : min > 0 ? `${min} min` : `${Math.floor(ms / 1000)} s`;
   };
   return [!hidden && focusMs >= 1000 ? `You focused ${duration(focusMs)}.` : "", awayMs >= 1000 ? `Away ${duration(awayMs)}.` : ""].filter(Boolean).join(" ");
 }

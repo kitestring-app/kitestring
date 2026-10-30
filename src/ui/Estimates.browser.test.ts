@@ -112,4 +112,21 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('task estimates and recorded 
     await chrome.waitFor("!document.querySelector('.tasks-popover')");
   });
 
+  it.each(['null guess','empty history'])('handles %s without misleading text or empty spacing', async scenario => {
+    await page("k.tasks.set([{id:'missing',title:'Unmatched topic',done:true,etaMin:null,createdAt:1},{id:'open',title:'Different activity',done:false,createdAt:2}]);");
+    await chrome.waitFor("document.querySelector('[data-task-id=missing] .task-comparison')");
+    if(scenario==='null guess'){
+      await page("await (await import('/src/lib/store.ts')).flushReadyStores();");
+      await chrome.reload("document.querySelector('.next-action')");
+      await chrome.evaluate("document.querySelector('[data-panel=tasks]').click()");
+      await chrome.waitFor("document.querySelector('[data-task-id=missing] .task-comparison')");
+      expect(await chrome.evaluate("document.querySelector('[data-task-id=missing] .task-comparison').textContent")).toContain('No guess');
+    }else{
+      await chrome.evaluate("document.querySelector('[data-task-id=open] .task-eta').click()");
+      await chrome.waitFor("document.querySelector('.tasks-popover')");
+      expect(await chrome.evaluate("!!document.querySelector('.tasks-popover .task-comparison')")).toBe(false);
+      await chrome.send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});
+    }
+  });
+
 });
