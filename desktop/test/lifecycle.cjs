@@ -418,6 +418,19 @@ test('Show also defers its reset while native full-screen entry has not settled'
   } finally { window.setFullScreen = setFullScreen; window.fullscreen = false; window.emit('leave-full-screen'); await new Promise(resolve => setTimeout(resolve, 70)); advance(1000); }
 });
 
+test('repeated Show in full screen preserves the earlier workspace cleanup', async () => {
+  await new Promise(resolve => setTimeout(resolve, 70));
+  window.fullscreen = false; window.workspaceCalls = [];
+  try {
+    tray.menu.find(item => item.label === 'Show Kitestring').click();
+    advance(100); window.fullscreen = true; window.emit('enter-full-screen'); advance(150);
+    tray.menu.find(item => item.label === 'Show Kitestring').click();
+    window.fullscreen = false; window.emit('leave-full-screen');
+    await new Promise(resolve => setTimeout(resolve, 70)); advance(120);
+    assert.deepEqual(window.workspaceCalls.at(-1), [false, { skipTransformProcessType: true }]);
+  } finally { window.fullscreen = false; window.emit('leave-full-screen'); await new Promise(resolve => setTimeout(resolve, 70)); advance(1000); }
+});
+
 test('attention restores and floats only for trusted main-frame requests without stealing keyboard focus, then releases', () => {
   window.hide();
   window.minimized = true;
