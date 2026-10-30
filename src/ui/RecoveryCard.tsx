@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { alertTypingGuard } from "../lib/alertTypingGuard";
-import { useStore } from "../lib/store";
+import { storeSource, useStore } from "../lib/store";
 import { intent, updateIntent } from "../state/intent";
 import { settings } from "../state/settings";
 import { recoveryRecordText } from "../state/recoveryPolicy";
@@ -10,7 +10,7 @@ import { returnActivity } from "../state/returnActivity";
 import { parkingReview } from "../state/parkingReview";
 import { interruptionPrompt, parked } from "../state/parked";
 import { ParkingReviewCard } from "./ParkingReviewCard";
-import { requestRecovery, recoveryCommand, recoveryOffer, timer, useTimerView } from "../state/timer";
+import { requestRecovery, recoveryCommand, recoveryOffer, timer, clockPresence, useTimerView } from "../state/timer";
 import type { RecoveryAnswer } from "../state/timer";
 import { transitionStore } from "./timer/TransitionStore";
 import { FocusCard } from "./FocusCard";
@@ -34,6 +34,8 @@ export function useRecoveryOffer() {
   useStore(timer); useStore(intent); useStore(returnActivity);
   useStore(stats); useStore(settings); useStore(tasks);
   useStore(parkingReview); useStore(parked);
+  // Hydration can finish with the same null value; observe its source as well.
+  useStore(clockPresence, () => storeSource("clockPresence"));
   return recoveryOffer();
 }
 export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => void; fallback?: ReactNode }) {
