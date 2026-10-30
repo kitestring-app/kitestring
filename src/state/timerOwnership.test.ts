@@ -178,13 +178,19 @@ it("away presence is clock-owned and a follower cannot declare departure", async
   await clock.prepareTimerDeparture();
   expect(clock.clockPresence.get()).toEqual(presence);
 });
-it("an already open follower continues the live run when its owner closes", async () => {
+it.each(["native", "web", "web departure"])("an already open follower continues the live run when its owner closes (%s)", async platform => {
+  const storage = new Map<string, string>();
+  vi.stubGlobal("localStorage", { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) });
+  if (platform !== "native") window.desktop = undefined;
   const at = Date.now();
+  if (platform === "web departure") localStorage.setItem("custom-pomodoro:web-departure", JSON.stringify({ segId: "handoff", startedAt: at - 10_000, elapsedBefore: 0, at }));
   await (await import("../lib/db")).dbSetMany([["timer", { ...m.INITIAL_TIMER, segId: "handoff", startedAt: at - 10_000, frozen: true, frozenTotal: 60_000 }], ["clockPresence", { segId: "handoff", lastAliveAt: at, departedAt: at, ownerId: "old-owner" }]]);
   commandChannel().receive({ type: "clock-alive", segId: "handoff", ownerId: "old-owner" });
   await m.acquireTimerOwnership();
   expect(m.timer.get().startedAt).toBe(at - 10_000); expect(m.timer.get().reentry).toBeUndefined();
   expect((await import("./stats")).stats.get().chunks).toEqual([]);
+  await m.flushReadyStores();
+  expect(localStorage.getItem("custom-pomodoro:web-departure")).toBeNull();
 });
 
 it('promotion of a running legacy initial segment retains its cutoff before migration subscribers run', async () => {
