@@ -125,4 +125,25 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('voluntary leave a next step'
   }}finally{await chrome.evaluate("document.documentElement.style.removeProperty('--ui')")}
  });
 
+ it.each(['short','long'])('suppresses breathing portals during close-out and preserves the %s guide',async segment=>{
+  await chrome.send('Emulation.setDeviceMetricsOverride',{width:1280,height:820,deviceScaleFactor:1,mobile:false});
+  await chrome.send('Page.navigate',{url:chrome.origin});
+  await chrome.waitFor("document.querySelector('.next-action') && import('/src/state/timer.ts').then(async t=>{await t.timerHydrationReady;return (await import('/src/lib/store.ts')).canWriteClockStore('timer')})");
+  await page(`s.settingsUpdate('dash','focus');s.settingsUpdate('timer',s.CALM_PATCH);t.timerActions.reset();t.timerActions.goTo('${segment}');`);
+  await chrome.waitFor("document.querySelector('.breathing-entry')");
+  await click('Leave a next step');
+  expect(await chrome.evaluate("!!document.querySelector('.breathing-entry')")).toBe(false);
+  expect(await chrome.evaluate("!!document.querySelector('.breathing-live')")).toBe(false);
+  await click('Keep current action');await chrome.waitFor("document.querySelector('.breathing-entry')");
+  await chrome.evaluate("document.querySelector('.breathing-entry').click()");
+  await chrome.waitFor("document.querySelector('.breathing-card')");
+  await chrome.evaluate("[...document.querySelectorAll('.breathing-card button')].find(b=>b.textContent==='Cyclic sigh').click()");
+  await click('Leave a next step');
+  expect(await chrome.evaluate("!!document.querySelector('.breathing-live')")).toBe(false);
+  await click('Keep current action');
+  expect(await chrome.evaluate("[...document.querySelectorAll('.breathing-card button')].find(b=>b.textContent==='Cyclic sigh').getAttribute('aria-pressed')")).toBe('true');
+  await chrome.evaluate("document.querySelector('.breathing-card [aria-label=Close]').click()");
+  await page("t.timerActions.goTo('focus');");chrome.assertHealthy();
+ });
+
 });

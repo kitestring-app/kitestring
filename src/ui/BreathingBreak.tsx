@@ -6,7 +6,7 @@ import type { BreathingPace, BreathingPattern } from "../state/breathing";
 import { FocusCard } from "./FocusCard";
 import "./BreathingBreak.css";
 
-export function BreathingBreak({ hiddenTime, children }: { hiddenTime: boolean; children: (guide: ReactNode) => ReactNode }) {
+export function BreathingBreak({ hiddenTime, children, suppressed = false }: { hiddenTime: boolean; suppressed?: boolean; children: (guide: ReactNode) => ReactNode }) {
   const [entryHost, setEntryHost] = useState<Element | null>(null);
   useEffect(() => { setEntryHost(document.querySelector(".focus-center > .tallies")); }, []);
   const [open, setOpen] = useState(false);
@@ -33,8 +33,8 @@ export function BreathingBreak({ hiddenTime, children }: { hiddenTime: boolean; 
   }, [open, run]);
   const close = () => { restoreFocus.current = true; setOpen(false); setEnded(!!run); setRun(null); setElapsed(0); };
   const announcement = run ? frame.done ? "Breathing ended." : "Breathing started." : ended ? "Breathing ended." : "";
-  const live = entryHost && createPortal(<span className="sr-only breathing-live" role="status">{announcement}</span>, entryHost, "breathing-status");
-  if (!open) return children(<>{entryHost && createPortal(<button className="btn small breathing-entry" ref={entry} onClick={() => setOpen(true)}>Breathe</button>, entryHost, "breathing-entry")}{live}</>);
+  const live = !suppressed && entryHost && createPortal(<span className="sr-only breathing-live" role="status">{announcement}</span>, entryHost, "breathing-status");
+  if (!open) return children(<>{!suppressed && entryHost && createPortal(<button className="btn small breathing-entry" ref={entry} onClick={() => setOpen(true)}>Breathe</button>, entryHost, "breathing-entry")}{live}</>);
   const instruction = pattern === "sigh" ? "Two short inhales, then one long exhale. No hold." : "Breathe in, then breathe out. No hold.";
   const actions = run ? frame.done ? <button className="btn small" onClick={close}>Close</button> : undefined :
     <div className="recovery-buttons">{([1, 5] as const).map(minutes => <button className="btn small" key={minutes}

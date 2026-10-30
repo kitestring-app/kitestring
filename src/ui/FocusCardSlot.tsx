@@ -20,7 +20,7 @@ export function FocusCardSlot({ onChooseTask, onRecall, override }: { onChooseTa
     {override}
     <div className="focus-card-default" hidden={!!override}>
     {view.state.segment !== "focus" ?
-      <BreathingBreak key={view.state.segId} hiddenTime={view.hiddenTime}>{guide => recovery(guide)}</BreathingBreak> :
+      <BreathingBreak key={view.state.segId} hiddenTime={view.hiddenTime} suppressed={!!override}>{guide => recovery(guide)}</BreathingBreak> :
       recovery(<LongerOfferCard />)}
     </div>
   </div>
