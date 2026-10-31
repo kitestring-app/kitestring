@@ -17,6 +17,7 @@ const { APP_ORIGIN, LOGIN_ITEMS_URL, isAppURL, isExternalURL, mayGrant, statusTe
 const { initialAttention, decideAttention, RATE_LIMIT_MS } = require('./attention.cjs');
 const { createBanners, moveMainToDisplay } = require('./multi-monitor.cjs');
 const { attachFullscreen } = require('./fullscreen.cjs');
+const { createShowWorkspaces } = require('./show-workspaces.cjs');
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: {
   standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true,
@@ -34,7 +35,8 @@ let quitting = false;
 let attention = initialAttention();
 let releaseTimer;
 let bounceId = null;
-let workspaceReset;
+const showWorkspaces = createShowWorkspaces({ isAttentionActive: () => attention.releaseAt !== null,
+  isTransitioning: () => fullscreen.isTransitioning(), setTimer: setTimeout, clearTimer: clearTimeout });
 let attentionSegment = null;
 let attentionKind = null;
 let currentStatus = '';
@@ -98,7 +100,7 @@ function changeAttention(type, kind) {
   attention = next;
   attentionSegment = null;
   attentionKind = attention.releaseAt !== null ? kind : null;
-  clearTimeout(workspaceReset);
+  showWorkspaces.cancel();
   banners?.stop();
   clearTimeout(releaseTimer);
   if (bounceId !== null) { app.dock?.cancelBounce(bounceId); bounceId = null; }
@@ -135,23 +137,15 @@ function scheduleRelease(now) {
 }
 function showWindow() {
   if (!window || window.isDestroyed()) return;
-  const shown = window;
-  clearTimeout(workspaceReset);
-  if (!shown.isFullScreen()) {
-    shown.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
-  }
+  showWorkspaces.join(window);
   if (window.isMinimized()) window.restore();
   window.show();
   window.moveTop();
   window.focus();
   // This is an explicit user request. Automatic attention never activates the app.
   app.focus({ steal: true });
-  workspaceReset = setTimeout(() => {
-    if (shown.isDestroyed() || attention.releaseAt !== null) return;
-    shown.setVisibleOnAllWorkspaces(false, { skipTransformProcessType: true });
-  }, 250);
-  workspaceReset.unref?.();
 }
+
 function createWindow() {
   if (quitting || (window && !window.isDestroyed())) return;
   window = new BrowserWindow({

@@ -936,6 +936,7 @@ export async function answerNativeAttention(command: DesktopAttentionCommand): P
   else if (command.choice === "dismiss") {
     result = timerActions.stopSound();
     if (transitionStore.get()?.nextSegId === s.segId) timerActions.answerTransition("dismiss");
+    if ((s.boundary || s.reentry) && !answerRecovery(recoveryCommand(), "dismiss")) return stale();
   } else if (transitionStore.get()?.nextSegId === s.segId) result = timerActions.answerTransition("start");
   else if (s.boundary) {
     if (!answerRecovery(recoveryCommand(), s.boundary.ended === "focus" ? "break" : "continue")) return stale();

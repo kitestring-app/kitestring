@@ -77,3 +77,14 @@ it("break-end Continue starts focus, and only pointer actions bypass the typing 
   expect(await t.runTimerCommand(command(t.timer.get().segId), "pointer")).toEqual({ ok: true });
   expect(t.timer.get().segment).toBe("focus"); expect(t.timer.get().startedAt).not.toBeNull();
 });
+
+
+it.each([false, true])("native Dismiss clears the dashboard boundary without changing time with takeover=%s", async takeover => {
+  const t = await boundary(takeover), before = t.timer.get();
+  const stats = (await import('./stats')).stats.get();
+  expect(t.recoveryOffer()).toBe(takeover ? null : "missed-end");
+  expect(await t.runTimerCommand(command(before.segId, 'dismiss'), 'pointer')).toEqual({ ok: true });
+  expect(t.timer.get()).toEqual({ ...before, boundary: undefined });
+  expect(t.recoveryOffer()).toBeNull();
+  expect((await import('./stats')).stats.get()).toBe(stats);
+});
