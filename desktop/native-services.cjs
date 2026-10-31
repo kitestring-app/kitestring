@@ -21,7 +21,7 @@ function announcement(input) {
   return input.kind === 'focus-done' ? 'Focus session done. Time for a break.' : 'Break is over. Time to focus.';
 }
 function createNativeServices({ Notification, powerSaveBlocker, execFile, stateFile, alertsDir, attention, showWindow, onRing = () => {}, onStopSound = () => {},
-  now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout, readJSON: read = readJSON, writeJSON: write = writeJSON }) {
+  now = Date.now, setTimer = setTimeout, clearTimer = clearTimeout, writeJSON: write = writeJSON }) {
   let pending = null, timer = null, power = null, sound = null, speech = null, activeAnnouncement = null, version = 0;
   let suspended = false;
   let failed = false;
@@ -129,7 +129,7 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
   return {
     testReminder,
     arm, disarm, check, suspend, resume, cancelSpeech, speak, notificationStatus,
-    restore() { read(stateFile); disarm(); },
+    restore() { disarm(); },
     preventSleep(enabled) { if (enabled === true && power === null) power = powerSaveBlocker.start('prevent-display-sleep'); else if (enabled === false) releasePower(); },
     releasePower,
     dispose() { if (timer !== null) clearTimer(timer); timer = null; cancelSpeech(); stopSound(); releasePower(); notification?.close(); },

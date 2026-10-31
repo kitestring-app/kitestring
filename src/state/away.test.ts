@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { IDBFactory } from "fake-indexeddb";
+import { IDBFactory, IDBDatabase } from "fake-indexeddb";
 vi.mock("../audio/core", () => ({ cancelAllChimes: vi.fn(), playTimerTick: vi.fn(), cancelChime: vi.fn(), cancelEnd: vi.fn(), releaseChime: vi.fn(), scheduleChime: vi.fn(), scheduleEnd: vi.fn() }));
 vi.mock("../audio/companion", () => ({ armCompanionWithSpeech: vi.fn().mockResolvedValue(false), companionAvailable: vi.fn().mockResolvedValue(false), companionKnownUp: vi.fn(() => false), disarmCompanion: vi.fn() }));
 let m: Awaited<ReturnType<typeof setup>>;
@@ -9,7 +9,10 @@ async function setup() {
   return { ...t, ...s, ...e, ...st, ...store, ...db };
 }
 beforeEach(async () => {
-  vi.resetModules(); vi.stubGlobal("indexedDB", new IDBFactory()); vi.stubGlobal("BroadcastChannel", undefined); vi.stubGlobal("navigator", {});
+  vi.resetModules();
+  const storage = new Map<string, string>();
+  vi.stubGlobal("localStorage", { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) });
+  vi.stubGlobal("indexedDB", new IDBFactory()); vi.stubGlobal("BroadcastChannel", undefined); vi.stubGlobal("navigator", {});
   vi.stubGlobal("window", { addEventListener: vi.fn(), desktop: { armAlarm: vi.fn().mockResolvedValue(true), disarmAlarm: vi.fn(), release: vi.fn(), cancelSpeech: vi.fn(), onLifecycle: vi.fn() } });
   vi.stubGlobal("document", { addEventListener: vi.fn(), visibilityState: "visible" });
   vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout", "setInterval", "clearInterval", "performance"] }); vi.setSystemTime(Date.UTC(2026, 9, 20, 12));
@@ -192,4 +195,45 @@ it.each(["web", "Mac"])("a %s task selection before wake reconciliation owns the
   expect(chunks.filter(chunk => chunk.taskId === first).reduce((n, chunk) => n + chunk.ms, 0)).toBe(30_000);
   expect(chunks.filter(chunk => chunk.taskId === next).reduce((n, chunk) => n + chunk.ms, 0)).toBe(5_000);
   expect(away()[0]?.ms).toBe(60_000);
+});
+
+
+it.each([false, true])("an abrupt web unload preserves the departure cutoff without duplicate credit (already banked=%s)", async banked => {
+  window.desktop = undefined;
+  m.timerActions.start(); vi.advanceTimersByTime(30_000);
+  if (banked) { m.timerActions.pause(); m.timerActions.start(); }
+  await m.flushReadyStores();
+  vi.advanceTimersByTime(7_500);
+  const at = Date.now();
+  const transaction = IDBDatabase.prototype.transaction;
+  const failure = vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementation(function (this: IDBDatabase, ...args: Parameters<IDBDatabase['transaction']>) {
+    if (args[1] === 'readwrite') throw new DOMException('Page terminated before commit', 'AbortError');
+    return transaction.apply(this, args);
+  });
+  hide();
+  await expect(m.flushReadyStores()).rejects.toThrow();
+  failure.mockRestore();
+  // Discard the old realm without its normal awaited flush.
+  vi.clearAllTimers(); vi.setSystemTime(at + 3_600_000); vi.resetModules();
+  m = await setup(); m.startTicker(); await Promise.resolve();
+  expect(focus()).toBe(37_500);
+  expect(away()).toMatchObject([{ ms: 3_600_000, start: at }]);
+  await reopen(60_000);
+  expect(focus()).toBe(37_500); expect(away()).toHaveLength(1);
+});
+
+it('a stale departure marker cannot stop or credit a newer running span', async () => {
+  window.desktop = undefined; m.timerActions.start(); vi.advanceTimersByTime(30_000);
+  const old = m.timer.get();
+  localStorage.setItem('custom-pomodoro:web-departure', JSON.stringify({ segId: old.segId, startedAt: old.startedAt, elapsedBefore: old.elapsedBefore, at: Date.now() }));
+  m.timerActions.pause(); vi.advanceTimersByTime(1_000); m.timerActions.start();
+  vi.advanceTimersByTime(15_000); await reopen(60_000);
+  expect(focus()).toBe(45_000); expect(away()[0]?.ms).toBe(60_000);
+});
+
+it('unavailable synchronous storage does not disrupt an ordinary durable departure', async () => {
+  window.desktop = undefined; m.timerActions.start(); vi.advanceTimersByTime(30_000); await m.flushReadyStores();
+  vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new DOMException('Blocked', 'SecurityError'); });
+  vi.advanceTimersByTime(7_500); expect(hide).not.toThrow(); await reopen(60_000);
+  expect(focus()).toBe(37_500); expect(away()[0]?.ms).toBe(60_000);
 });

@@ -378,6 +378,59 @@ test('explicit Show Kitestring temporarily joins Spaces before show and resets w
   advance(45000);
 });
 
+test('explicit Show in native full screen leaves workspace visibility alone', async () => {
+  window.fullscreen = true; window.workspaceCalls = [];
+  try {
+    tray.menu.find(item => item.label === 'Show Kitestring').click();
+    advance(250);
+    assert.deepEqual(window.workspaceCalls, []);
+  } finally { window.fullscreen = false; window.emit('leave-full-screen'); await new Promise(resolve => setTimeout(resolve, 70)); advance(1000); }
+});
+
+test('Show defers workspace reset until a newly entered native full screen is left', async () => {
+  window.fullscreen = false; window.workspaceCalls = [];
+  try {
+    tray.menu.find(item => item.label === 'Show Kitestring').click();
+    advance(100); window.fullscreen = true; window.emit('enter-full-screen'); advance(150);
+    assert.deepEqual(window.workspaceCalls, [[true, { visibleOnFullScreen: true, skipTransformProcessType: true }]]);
+    window.fullscreen = false; window.emit('leave-full-screen');
+    await new Promise(resolve => setTimeout(resolve, 70)); advance(60);
+    assert.deepEqual(window.workspaceCalls.at(-1), [false, { skipTransformProcessType: true }]);
+  } finally { window.fullscreen = false; window.emit('leave-full-screen'); await new Promise(resolve => setTimeout(resolve, 70)); advance(1000); }
+});
+
+test('Show also defers its reset while native full-screen entry has not settled', async () => {
+  await new Promise(resolve => setTimeout(resolve, 70));
+  const setFullScreen = window.setFullScreen;
+  let requested;
+  window.setFullScreen = value => { requested = value; };
+  window.fullscreen = false; window.workspaceCalls = [];
+  try {
+    tray.menu.find(item => item.label === 'Show Kitestring').click();
+    advance(100); ipc.invoke('desktop:toggle-fullscreen', event()); advance(150);
+    assert.equal(requested, true); assert.equal(window.isFullScreen(), false);
+    assert.deepEqual(window.workspaceCalls, [[true, { visibleOnFullScreen: true, skipTransformProcessType: true }]]);
+    window.fullscreen = true; window.emit('enter-full-screen'); advance(200);
+    assert.equal(window.workspaceCalls.length, 1);
+    window.fullscreen = false; window.emit('leave-full-screen');
+    await new Promise(resolve => setTimeout(resolve, 70)); advance(120);
+    assert.deepEqual(window.workspaceCalls.at(-1), [false, { skipTransformProcessType: true }]);
+  } finally { window.setFullScreen = setFullScreen; window.fullscreen = false; window.emit('leave-full-screen'); await new Promise(resolve => setTimeout(resolve, 70)); advance(1000); }
+});
+
+test('repeated Show in full screen preserves the earlier workspace cleanup', async () => {
+  await new Promise(resolve => setTimeout(resolve, 70));
+  window.fullscreen = false; window.workspaceCalls = [];
+  try {
+    tray.menu.find(item => item.label === 'Show Kitestring').click();
+    advance(100); window.fullscreen = true; window.emit('enter-full-screen'); advance(150);
+    tray.menu.find(item => item.label === 'Show Kitestring').click();
+    window.fullscreen = false; window.emit('leave-full-screen');
+    await new Promise(resolve => setTimeout(resolve, 70)); advance(120);
+    assert.deepEqual(window.workspaceCalls.at(-1), [false, { skipTransformProcessType: true }]);
+  } finally { window.fullscreen = false; window.emit('leave-full-screen'); await new Promise(resolve => setTimeout(resolve, 70)); advance(1000); }
+});
+
 test('attention restores and floats only for trusted main-frame requests without stealing keyboard focus, then releases', () => {
   window.hide();
   window.minimized = true;
