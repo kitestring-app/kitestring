@@ -194,8 +194,9 @@ function EstimateHistory({ task, all, completed = false }: { task: Task; all: Ta
   const similar = similarTasks(task, all, data);
   const comparison = (item: Task) => {
     const ms = recordedTaskMs(item, all, data);
-    return <>{item.etaMin === undefined ? "No guess" : `Guess: about ${item.etaMin} min`} · {ms > 0 ? `Recorded active time: ${activeMinutes(ms)}` : "No active time recorded"}</>;
+    return <>{item.etaMin == null ? "No guess" : `Guess: about ${item.etaMin} min`} · {ms > 0 ? `Recorded active time: ${activeMinutes(ms)}` : "No active time recorded"}</>;
   };
+  if (!completed && !similar.length) return null;
   return <div className="task-comparison">
     {completed && <p>{comparison(task)}</p>}
     {similar.length > 0 && <details>
@@ -253,7 +254,7 @@ function TaskRow({ task, all, isCurrent, collapsed, onCollapse, onCreate, onTogg
         <button ref={etaRef} className="task-eta" aria-label={`Estimate for ${title}`} aria-expanded={picker === "eta"} aria-haspopup="dialog" onClick={() => openPicker("eta")}>{task.etaMin ? `${task.etaMin}m` : "+ ETA"}</button>}
       <button ref={actionsRef} className="task-more" aria-label={`Actions for ${title}`} aria-expanded={picker === "actions"} aria-haspopup="dialog" onClick={() => openPicker("actions")}><Icon.more /></button>
     </div>
-    {!kids.length && typeof task.transitionAllowanceMin === "number" && <p className="task-transition">{task.etaMin === undefined ? "Work guess not set" : `Work guess ${task.etaMin} min`}; transition allowance {task.transitionAllowanceMin} min</p>}
+    {!kids.length && typeof task.transitionAllowanceMin === "number" && <p className="task-transition">{task.etaMin == null ? "Work guess not set" : `Work guess ${task.etaMin} min`}; transition allowance {task.transitionAllowanceMin} min</p>}
     {task.done && <EstimateHistory task={task} all={all} completed />}
     {kids.length > 0 && <button className="task-collapse" aria-expanded={!collapsed} aria-controls={`task-children-${task.id}`} onClick={onCollapse}>
       <span aria-hidden="true">{collapsed ? "▸" : "▾"}</span> {kids.filter((t) => t.done).length}/{kids.length} subtasks

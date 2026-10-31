@@ -104,4 +104,31 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('optional deliberate stop', (
     await chrome.waitFor("import('/src/state/stopOutcomes.ts').then(o=>Object.keys(o.stopOutcomes.get()).length===44)"); expect(await snapshot()).toEqual(raw); chrome.assertHealthy();
   });
 
+  it('returns focus after label and Close even when animation frames are suspended', async () => {
+    await seed(); await start(); await stop();
+    await chrome.evaluate("window.__savedRAF=requestAnimationFrame;window.requestAnimationFrame=()=>0");
+    try{
+      await click('Record as deliberately stopped');
+      await chrome.waitFor("document.querySelector('.stopped-card [role=status]')?.textContent==='Label saved.'");
+      expect(await chrome.evaluate('document.activeElement.textContent')).toBe('Undo label');
+      await chrome.evaluate("document.querySelector('.stopped-card [aria-label=Close]').click()");
+      await chrome.waitFor("!document.querySelector('.stopped-card')");
+      expect(await chrome.evaluate("document.activeElement.getAttribute('aria-label')")).toBe('Start · Space');
+    }finally{await chrome.evaluate('window.requestAnimationFrame=window.__savedRAF;delete window.__savedRAF')}
+  });
+
+  it('disables Close while a stop-label transaction is committing', async () => {
+    await seed(); await start(); await stop(); await page('await b.flushReadyStores();');
+    await chrome.evaluate(`window.__savedStopTx=IDBDatabase.prototype.transaction;window.__stopCompletes=[];
+      IDBDatabase.prototype.transaction=function(...args){const tx=window.__savedStopTx.apply(this,args);if(args[1]==='readwrite')Object.defineProperty(tx,'oncomplete',{set(callback){tx.addEventListener('complete',event=>window.__stopCompletes.push(()=>callback.call(tx,event)))}});return tx}`);
+    try{
+      await click('Record as deliberately stopped');
+      await chrome.waitFor('window.__stopCompletes.length>0');
+      expect(await chrome.evaluate("document.querySelector('.stopped-card [aria-label=Close]').disabled")).toBe(true);
+    }finally{
+      await chrome.evaluate('IDBDatabase.prototype.transaction=window.__savedStopTx;window.__stopCompletes.splice(0).forEach(done=>done());delete window.__savedStopTx');
+      await page('await b.flushReadyStores();');
+    }
+  });
+
 });

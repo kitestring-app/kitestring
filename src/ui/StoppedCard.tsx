@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { ReactNode } from 'react';
 import { useStore } from '../lib/store';
 import { settings } from '../state/settings';
@@ -15,17 +16,19 @@ export function StoppedCard({ fallback }: { fallback: ReactNode }) {
 }
 function StopOffer({ attempt, label }: { attempt: StopAttempt; label?: StopLabel }) {
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
-  const focus = () => requestAnimationFrame(() => (document.querySelector<HTMLButtonElement>('.stopped-card .recovery-buttons button:not([disabled])') ?? document.querySelector<HTMLButtonElement>('[aria-label="Start · Space"]'))?.focus());
+  const focus = () => (document.querySelector<HTMLButtonElement>('.stopped-card .recovery-buttons button:not([disabled])') ?? document.querySelector<HTMLButtonElement>('[aria-label="Start · Space"]'))?.focus();
   const change = async (close = false) => {
     if (busy) return; setBusy(true); setError('');
+    let saved = false;
     try {
       const result = await (close ? dismissStopOffer(attempt) : label ? removeStopLabel(label) : recordStopLabel(attempt.id));
       if (!result.ok) throw new Error('This stop has changed. Your recorded time is unchanged.');
-      focus();
+      saved = true;
     } catch (cause) { setError((cause as Error).message || 'Could not save the label. Try again.'); }
-    finally { setBusy(false); }
+    finally { flushSync(() => setBusy(false)); }
+    if (saved) focus();
   };
-  return <FocusCard title={label ? 'Deliberately stopped' : 'Session stopped'} icon="square" label="Optional stop label" className="stopped-card" keepVisible
+  return <FocusCard title={label ? 'Deliberately stopped' : 'Session stopped'} icon="square" label="Optional stop label" className="stopped-card" keepVisible closeDisabled={busy}
     note="This label leaves recorded time, your task and your pin unchanged." onClose={() => void change(true)}
     actions={<div className="recovery-buttons"><button className="btn small" type="button" disabled={busy} onClick={() => void change()}>{busy ? 'Saving…' : label ? 'Undo label' : 'Record as deliberately stopped'}</button></div>}>
     {attempt.action && <p className="recovery-action">{attempt.action}</p>}
