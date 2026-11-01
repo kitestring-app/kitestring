@@ -16,6 +16,8 @@ const { shouldBlockYouTube, youtubeEmbedHeaders } = require('./youtube-policy.cj
 const { APP_ORIGIN, LOGIN_ITEMS_URL, isAppURL, isExternalURL, mayGrant, statusText } = require('./security.cjs');
 const { initialAttention, decideAttention, RATE_LIMIT_MS } = require('./attention.cjs');
 const { createBanners, moveMainToDisplay } = require('./multi-monitor.cjs');
+const fs = require('node:fs');
+const { createAttentionLog } = require('./attention-log.cjs');
 const { attachFullscreen } = require('./fullscreen.cjs');
 const { createShowWorkspaces } = require('./show-workspaces.cjs');
 
@@ -63,6 +65,7 @@ const smokeTest = app.commandLine.hasSwitch('smoke-test');
 const smokeFrames = [];
 const smokeAttention = [];
 let banners;
+let attentionLog;
 let floating;
 let floatingControls;
 let parking;
@@ -94,9 +97,13 @@ function changeAttention(type, kind) {
     if (smokeAttention.length > 40) smokeAttention.shift();
   }
   if (next === attention) {
+    // Native alarm and renderer both ask at each boundary; the second is expected to be ignored.
+    if (type === 'attention') attentionLog?.record({ type, kind, outcome: attention.releaseAt !== null ? 'ignored-active' : 'ignored-rate-limit' });
     if (type === 'timeout' && attention.releaseAt !== null) scheduleRelease(now);
     return;
   }
+  attentionLog?.record({ type, kind, outcome: next.releaseAt !== null ? 'shown' : 'released',
+    displays: next.releaseAt !== null ? attentionDisplays().length : undefined, windowVisible: window && !window.isDestroyed() ? window.isVisible() : false });
   attention = next;
   attentionSegment = null;
   attentionKind = attention.releaseAt !== null ? kind : null;
@@ -315,6 +322,7 @@ if (!app.requestSingleInstanceLock()) {
       return (!contents || contents === window?.webContents) && mayGrant(permission, details?.requestingUrl || origin);
     });
     ses.setDevicePermissionHandler(() => false);
+    attentionLog = createAttentionLog({ file: path.join(app.getPath('userData'), 'attention-log.jsonl'), fs });
     banners = createBanners({ BrowserWindow, screen, getDisplays: attentionDisplays, onOpen: (display) => {
       attentionDisplay = display;
       const requestedWindow = window;
