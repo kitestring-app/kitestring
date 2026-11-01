@@ -137,6 +137,7 @@ function scheduleRelease(now) {
 }
 function showWindow() {
   if (!window || window.isDestroyed()) return;
+  fullscreen?.cancelHide();
   showWorkspaces.join(window);
   if (window.isMinimized()) window.restore();
   window.show();
@@ -162,7 +163,7 @@ function createWindow() {
   fullscreen = attachFullscreen(createdWindow);
   window.on('close', (event) => {
     if (smokeTest) console.log('Smoke window close event; quitting:', quitting);
-    if (!quitting) { event.preventDefault(); window.hide(); }
+    if (!quitting) { event.preventDefault(); fullscreen.hideSafely(() => { if (!createdWindow.isDestroyed()) createdWindow.hide(); }); }
   });
   window.on('hide', () => changeAttention('hide'));
   window.on('closed', () => { if (window !== createdWindow) return; if (smokeTest) console.log('Smoke window closed'); changeAttention('release'); window = null; });

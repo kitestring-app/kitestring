@@ -132,3 +132,59 @@ test('publishes native fullscreen state on completion', t => {
     assert.ok(h.messages.some(message => message[0] === 'desktop:fullscreen-state' && message[1] === full));
   }
 });
+
+test('closing in full screen leaves the Space before hiding, so no black Space remains', t => {
+  const h = fixture(t);
+  h.nativeState(true);
+  const hidden = [];
+  h.controller.hideSafely(() => hidden.push(h.window.isFullScreen()));
+  assert.deepEqual(h.calls, [false], 'asks macOS to leave full screen first');
+  assert.deepEqual(hidden, [], 'does not hide while the Space still exists');
+  h.controller.hideSafely(() => hidden.push('second'));
+  assert.deepEqual(h.calls, [false], 'a second close does not stack another exit');
+  h.complete(false);
+  assert.deepEqual(hidden, ['second'], 'hides once, after the exit settles, windowed');
+});
+
+test('closing while windowed hides at once', t => {
+  const h = fixture(t);
+  let hidden = 0;
+  h.controller.hideSafely(() => hidden++);
+  assert.equal(hidden, 1);
+  assert.deepEqual(h.calls, []);
+});
+
+test('closing mid-entry waits for the entry, then leaves full screen, then hides', t => {
+  const h = fixture(t);
+  let hidden = 0;
+  h.controller.toggle();
+  h.controller.hideSafely(() => hidden++);
+  assert.equal(hidden, 0);
+  h.complete(true);
+  assert.deepEqual(h.calls, [true, false]);
+  assert.equal(hidden, 0);
+  h.complete(false);
+  assert.equal(hidden, 1);
+});
+
+test('a stuck exit still hides after bounded retries instead of trapping the window', t => {
+  const h = fixture(t);
+  h.nativeState(true);
+  let hidden = 0;
+  h.controller.hideSafely(() => hidden++);
+  t.mock.timers.tick(2500);
+  t.mock.timers.tick(2500);
+  assert.deepEqual(h.calls, [false, false]);
+  assert.equal(hidden, 1);
+});
+
+test('Show before the exit finishes cancels the pending hide', t => {
+  const h = fixture(t);
+  h.nativeState(true);
+  let hidden = 0;
+  h.controller.hideSafely(() => hidden++);
+  h.controller.cancelHide();
+  h.complete(false);
+  t.mock.timers.tick(5000);
+  assert.equal(hidden, 0, 'the reopened window stays open');
+});
