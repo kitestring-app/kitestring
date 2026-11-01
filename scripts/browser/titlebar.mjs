@@ -40,8 +40,9 @@ try {
     if (mode) {
       let full = false;
       window.__fullscreenAnswered = false;
-      let listener;
+      let listener; const transitions = new Set();
       window.__nativeFullscreen = value => { full=value; listener?.(value); };
+      window.__nativeTransition = phase => transitions.forEach(callback => callback(phase));
       window.desktop = {
         platform: mode === 'linux' ? 'linux' : 'darwin', mini: mode === 'mini',
         getFullScreen: mode === 'missing' ? undefined : () => new Promise((resolve, reject) => {
@@ -49,6 +50,7 @@ try {
           window.__rejectFullscreen = error => { window.__fullscreenAnswered = true; reject(error); };
         }),
         onFullScreenChange: callback => { listener=callback; return () => { listener=undefined; }; },
+        onFullScreenTransition: callback => { transitions.add(callback); return () => { transitions.delete(callback); }; },
         floatTimer: async () => { window.__floatRequested=true; return true; },
         toggleFullScreen: async () => { window.__nativeFullscreen(!full); return full; },
       };
@@ -71,7 +73,7 @@ try {
       s.textContent='*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'; document.head.append(s);
     });
   ` });
-  for (const mode of baseline ? ['web'] : ['web', 'mac', 'fullscreen', 'linux', 'mini', 'race', 'race-windowed', 'null', 'rejected', 'pending', 'missing']) {
+  for (const mode of baseline ? ['web'] : ['web', 'mac', 'fullscreen', 'linux', 'mini', 'race', 'race-windowed', 'transition', 'null', 'rejected', 'pending', 'missing']) {
     await c.send('Page.navigate', { url: 'about:blank' });
     await c.waitFor("location.href === 'about:blank'");
     await c.send('Storage.clearDataForOrigin', { origin: c.origin, storageTypes: 'all' });
@@ -100,6 +102,25 @@ try {
       } else if (mode === 'rejected') await ev("window.__rejectFullscreen(new Error('Bridge unavailable'))");
       else if (native && !['pending', 'missing'].includes(mode)) {
         await ev(`window.__resolveFullscreen(${mode === 'fullscreen' ? 'true' : mode === 'null' ? 'null' : 'false'})`);
+      }
+      if (mode === 'transition') {
+        const inset = () => ev("document.documentElement.classList.contains('mac-titlebar')");
+        await settle();
+        assert.equal(await inset(), true, 'transition starts windowed');
+        await ev("window.__nativeTransition('start')");
+        await c.waitFor("!document.documentElement.classList.contains('mac-titlebar')");
+        await ev("window.__nativeFullscreen(true); window.__nativeTransition('end')");
+        await settle();
+        assert.equal(await inset(), false, 'entry inset drops while content is hidden, before the settled state');
+        await ev("window.__nativeTransition('start')");
+        await c.waitFor("document.documentElement.classList.contains('mac-titlebar')");
+        await ev("window.__nativeFullscreen(true); window.__nativeTransition('end')");
+        await settle();
+        assert.equal(await inset(), false, 'a cancelled exit is corrected by the settled state');
+        await ev("window.__nativeTransition('start')");
+        await c.waitFor("document.documentElement.classList.contains('mac-titlebar')");
+        await ev("window.__nativeFullscreen(false); window.__nativeTransition('end')");
+        await settle();
       }
       await settle();
       const expected = native && !['fullscreen', 'race'].includes(mode);
