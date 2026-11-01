@@ -68,6 +68,8 @@ function attachFullscreen(window) {
       pendingHide = hide;
       if (!transitioning) continueHide();
     },
+    // An explicit Show after Close wins: drop any hide still waiting on the exit.
+    cancelHide() { pendingHide = undefined; exitAttempts = 0; },
     toggle() {
       if (transitioning) return window.isFullScreen();
       const next = !window.isFullScreen();

@@ -177,3 +177,14 @@ test('a stuck exit still hides after bounded retries instead of trapping the win
   assert.deepEqual(h.calls, [false, false]);
   assert.equal(hidden, 1);
 });
+
+test('Show before the exit finishes cancels the pending hide', t => {
+  const h = fixture(t);
+  h.nativeState(true);
+  let hidden = 0;
+  h.controller.hideSafely(() => hidden++);
+  h.controller.cancelHide();
+  h.complete(false);
+  t.mock.timers.tick(5000);
+  assert.equal(hidden, 0, 'the reopened window stays open');
+});

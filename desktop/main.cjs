@@ -137,6 +137,7 @@ function scheduleRelease(now) {
 }
 function showWindow() {
   if (!window || window.isDestroyed()) return;
+  fullscreen?.cancelHide();
   showWorkspaces.join(window);
   if (window.isMinimized()) window.restore();
   window.show();
