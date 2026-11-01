@@ -254,11 +254,13 @@ test('the static page labels the boundary and exposes pointer actions only', () 
     for (const id of ['continue', 'stop', 'open', 'dismiss']) buttons[id].addEventListener = (name, callback) => {
       assert.equal(name, 'click'); buttons[id].click = callback;
     };
+    const classes = new Set();
     vm.runInNewContext(readFileSync(path.join(__dirname, '..', '..', 'public', 'banner.js'), 'utf8'), {
-      document: { getElementById: id => buttons[id] }, URLSearchParams, location: { search: `?kind=${kind}` },
+      document: { getElementById: id => buttons[id], body: { classList: { add: name => classes.add(name) } } }, URLSearchParams, location: { search: `?kind=${kind}` },
       window: { banner: { open: action => actions.push(action) } },
     });
     assert.equal(buttons.label.textContent, kind === 'focus-done' ? 'Focus complete' : 'Break over');
+    assert.deepEqual([...classes], [kind], 'each kind gets its own colour so a replaced bar is visible');
     assert.equal(buttons.continue.textContent, 'Continue');
     for (const id of ['continue', 'stop', 'open', 'dismiss']) buttons[id].click();
     assert.deepEqual(actions, ['continue', 'stop', 'open', 'dismiss']);
@@ -286,7 +288,7 @@ test('banner action copy never promises a break when Continue may restart single
     }]));
     vm.runInNewContext(readFileSync(path.join(__dirname, '../../public/banner.js'), 'utf8'), {
       URLSearchParams, location: { search: `?kind=${kind}` },
-      document: { getElementById: id => elements[id] }, window: { banner: { open: action => actions.push(action) } },
+      document: { getElementById: id => elements[id], body: { classList: { add() {} } } }, window: { banner: { open: action => actions.push(action) } },
     });
     assert.equal(elements.continue.textContent, 'Continue');
     elements.continue.listeners.click();

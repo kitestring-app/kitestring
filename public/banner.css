@@ -1,17 +1,21 @@
-:root { color-scheme: dark; font-family: system-ui, sans-serif; background: #14121c; color: #f6f4ff; }
+:root { --accent: #7c5cff; --flash: #44316c; --hover: #252039; color-scheme: dark; font-family: system-ui, sans-serif; background: #14121c; color: #f6f4ff; }
 * { box-sizing: border-box; }
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
-body { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; border: 1px solid #7c5cff; }
+body { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; border: 1px solid var(--accent); border-left-width: 6px; animation: bar-arrival 2.4s ease-out 1; }
+/* Break over is green, Focus complete violet. */
+body.break-over { --accent: #2fbf8f; --flash: #1d5a46; --hover: #173a30; }
+strong::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: var(--accent); vertical-align: 1px; }
 strong { font-size: 16px; }
 nav { display: flex; gap: 6px; }
 button {
-  min-height: 40px; padding: 4px 12px; border: 1px solid #7c5cff; border-radius: 6px;
+  min-height: 40px; padding: 4px 12px; border: 1px solid var(--accent); border-radius: 6px;
   background: #14121c; color: inherit; font: 600 14px system-ui, sans-serif;
   cursor: pointer; animation: arrival 2.4s ease-out 1;
 }
-button:hover { background: #252039; }
+button:hover { background: var(--hover); }
 button:focus-visible { outline: 3px solid #c8baff; outline-offset: -4px; }
-@keyframes arrival { 0%, 100% { background: #14121c; } 35% { background: #44316c; } }
-@media (prefers-reduced-motion: reduce) { button { animation: none; } }
-.reduce-motion button { animation: none; }
+@keyframes arrival { 0%, 100% { background: #14121c; } 35% { background: var(--flash); } }
+@keyframes bar-arrival { 0% { background: var(--flash); } 100% { background: #14121c; } }
+@media (prefers-reduced-motion: reduce) { body, button { animation: none; } }
+.reduce-motion :is(body, button) { animation: none; }
 @media (max-width: 650px) { body { padding: 4px; gap: 4px; } strong { font-size: 12px; } button { padding: 4px; font-size: 12px; } nav { gap: 3px; } }
