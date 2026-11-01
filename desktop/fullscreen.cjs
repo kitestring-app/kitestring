@@ -3,14 +3,29 @@ function attachFullscreen(window) {
   let transitioning = false;
   let settled = window.isFullScreen();
   let repair, safety;
+  // Hiding a window that still owns a native full-screen Space leaves that
+  // Space behind as a black screen, so a hide waits until the exit settles.
+  let pendingHide, exitAttempts = 0;
   const end = () => {
     clearTimeout(repair); clearTimeout(safety);
     repair = safety = undefined;
     transitioning = false;
-    if (window.isDestroyed()) return;
+    if (window.isDestroyed()) { pendingHide = undefined; return; }
     settled = window.isFullScreen();
     window.webContents.send('desktop:fullscreen-state', settled);
     send('end');
+    if (pendingHide) continueHide();
+  };
+  const continueHide = () => {
+    if (window.isFullScreen() && exitAttempts < 2) {
+      exitAttempts++;
+      start();
+      window.setFullScreen(false);
+      return;
+    }
+    const hide = pendingHide;
+    pendingHide = undefined; exitAttempts = 0;
+    hide();
   };
   const armSafety = () => { if (safety === undefined) safety = setTimeout(end, 2500); };
   const send = phase => window.webContents.send('desktop:fullscreen-transition', phase);
@@ -44,9 +59,15 @@ function attachFullscreen(window) {
       end();
     }, 60);
   });
-  window.once('closed', () => { clearTimeout(repair); clearTimeout(safety); transitioning = false; });
+  window.once('closed', () => { clearTimeout(repair); clearTimeout(safety); transitioning = false; pendingHide = undefined; });
   return {
     isTransitioning: () => transitioning,
+    // Leave full screen first (or let a running transition finish), then hide.
+    hideSafely(hide) {
+      if (pendingHide) { pendingHide = hide; return; }
+      pendingHide = hide;
+      if (!transitioning) continueHide();
+    },
     toggle() {
       if (transitioning) return window.isFullScreen();
       const next = !window.isFullScreen();
