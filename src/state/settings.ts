@@ -67,8 +67,10 @@ export interface Settings {
     reduceMotion: boolean;
   };
   sounds: { master: number };
-  /** The whole look of the app, and an optional effect drawn over any wallpaper. */
-  appearance: { lookBackdrop: boolean; look: LookId; fx: WallpaperFx; fxStrength: number; reminderGlass: "clear" | "frosted" };
+  /** The whole look of the app, and an optional effect drawn over any wallpaper.
+   *  scheme: which ink and chrome Classic and Glass use. "auto" follows the wallpaper's brightness,
+   *  "system" follows the OS appearance, "light"/"dark" force one. Paper looks are always light. */
+  appearance: { lookBackdrop: boolean; look: LookId; fx: WallpaperFx; fxStrength: number; reminderGlass: "clear" | "frosted"; scheme: Scheme };
   dash: DashMode;
   lastTab: SettingsTab;
 }
@@ -80,6 +82,8 @@ export function effectiveDefaultTab(extras: Pick<Settings["extras"], "hideStats"
 
 export const LOOKS = ["classic", "glass", "sketch", "companion", "sunrise"] as const;
 export type LookId = (typeof LOOKS)[number];
+export const SCHEMES = ["auto", "system", "light", "dark"] as const;
+export type Scheme = (typeof SCHEMES)[number];
 export const WALLPAPER_FX = ["none", "frost", "frosted-blur", "fog-window", "rain-glass", "grain", "vignette", "dim"] as const;
 export type WallpaperFx = (typeof WALLPAPER_FX)[number];
 
@@ -131,7 +135,7 @@ export const DEFAULT_SETTINGS: Settings = {
     reduceMotion: false,
   },
   sounds: { master: 0.7 },
-  appearance: { lookBackdrop: true, look: "glass", fx: "none", fxStrength: 0.5, reminderGlass: "frosted" },
+  appearance: { lookBackdrop: true, look: "glass", fx: "none", fxStrength: 0.5, reminderGlass: "frosted", scheme: "auto" },
   dash: "focus",
   lastTab: "timer",
 };
@@ -220,6 +224,7 @@ export function sanitizeSettings(stored: unknown): Settings {
       fx: oneOf(s.appearance.fx, WALLPAPER_FX, "none"),
       fxStrength: clamp(s.appearance.fxStrength, 0, 1, d.appearance.fxStrength),
       reminderGlass: oneOf(s.appearance.reminderGlass, ["clear", "frosted"] as const, "frosted"),
+      scheme: oneOf(s.appearance.scheme, SCHEMES, "auto"),
     },
     dash: oneOf(s.dash, ["home", "focus", "ambient"] as const, d.dash),
     lastTab: oneOf(s.lastTab, ["themes", "clock", "timer", "stats", "quotes", "extras", "data", "about"] as const, d.lastTab),

@@ -483,8 +483,7 @@ function MixerControls({
         ))}
       </div>
       <p className="muted small">
-        Layer sounds to make your own space. Binaural tones: use headphones. The
-        16 Hz pulse modulates only the 200 Hz–1 kHz band.
+        Layer sounds to make your own space. Tones marked with a headphone glyph are binaural: use headphones.
       </p>
       <div className="sounds-grid">
         {SOUNDS.filter(
@@ -502,7 +501,7 @@ function MixerControls({
                   <Glyph name={s.glyph} size={26} />
                 </span>
                 <b>{s.name}</b>
-                {s.beat ? <span className="sound-note">Headphones</span> : null}
+                {s.beat ? <span className="sound-note" title="Binaural: use headphones"><Glyph name="headphones" size={13} /><span className="sr-only">Headphones</span></span> : null}
               </button>
               {layer && (
                 <label className="sound-volume small">

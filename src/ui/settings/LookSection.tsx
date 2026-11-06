@@ -1,5 +1,6 @@
 import { useStore } from "../../lib/store";
-import { LOOKS, settings, settingsUpdate, WALLPAPER_FX, type LookId, type WallpaperFx } from "../../state/settings";
+import { LOOKS, SCHEMES, settings, settingsUpdate, WALLPAPER_FX, type LookId, type Scheme, type WallpaperFx } from "../../state/settings";
+import { PAPER_LOOKS } from "../Look";
 import { applyFont } from "./ClockTab";
 import "./LookSection.css";
 
@@ -10,6 +11,13 @@ export const LOOK_INFO: Record<LookId, { name: string; blurb: string; bg: string
   sketch: { name: "Sketchbook", blurb: "Paper, ink outlines and a marigold highlighter.", bg: "radial-gradient(circle, rgb(51 48 43 / 9%) 1px, transparent 1.2px) 0 0 / 12px 12px, #faf5ea", ink: "#33302b", chip: "#fffdf6", chipInk: "#33302b", accent: "#f2b63c", accentInk: "#33302b", font: "var(--preview-round)", weight: 800 },
   companion: { name: "Companion", blurb: "Warm paper, terracotta and sage, serif digits.", bg: "radial-gradient(circle at 85% 15%, #f2e3d4 0 30%, transparent 31%), #f9f2e9", ink: "#35201a", chip: "#fcf8f1", chipInk: "#35201a", accent: "#ba4b4c", accentInk: "#fbf8f2", font: "var(--preview-serif)", weight: 400 },
   sunrise: { name: "Sunrise", blurb: "Warm cream, sunny orange, round shapes.", bg: "radial-gradient(circle at 50% 130%, #ffa25e 0 25%, #ffc887 26% 40%, #ffe1b8 41% 55%, transparent 56%), #fff4e4", ink: "#2a2014", chip: "#ffffff", chipInk: "#2a2014", accent: "#ff8a3d", accentInk: "#2a2014", font: "var(--preview-round)", weight: 800 },
+};
+
+const SCHEME_INFO: Record<Scheme, { name: string; blurb: string }> = {
+  auto: { name: "Auto", blurb: "Light chrome over light wallpapers, dark over dark." },
+  system: { name: "System", blurb: "Follows your Mac or browser appearance." },
+  light: { name: "Light", blurb: "Always light chrome." },
+  dark: { name: "Dark", blurb: "Always dark chrome." },
 };
 
 const FX_INFO: Record<WallpaperFx, { name: string; blurb: string }> = {
@@ -53,6 +61,19 @@ export function LookSection() {
               </button>
             );
           })}
+        </div>
+        <div className="look-scheme" role="group" aria-labelledby="scheme-label">
+          <div className="look-scheme-head">
+            <b id="scheme-label">Light or dark</b>
+            <span className="look-blurb">{PAPER_LOOKS.includes(a.look) ? `${LOOK_INFO[a.look].name} is drawn on paper, so it is always light.` : SCHEME_INFO[a.scheme].blurb}</span>
+          </div>
+          {!PAPER_LOOKS.includes(a.look) && (
+            <div className="segmented" role="group" aria-label="Scheme">
+              {SCHEMES.map((id) => (
+                <button key={id} type="button" aria-pressed={a.scheme === id} onClick={() => settingsUpdate("appearance", { scheme: id })}>{SCHEME_INFO[id].name}</button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

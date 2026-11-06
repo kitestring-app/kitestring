@@ -53,7 +53,7 @@ const alternateStrings: Record<string, string> = {
   "themes.home.kind": "color", "themes.focus.kind": "color", "themes.ambient.kind": "color",
   "themes.home.id": "#123abc", "themes.focus.id": "#345abc", "themes.ambient.id": "#567abc",
   "quotes.category": "focus", "extras.defaultTab": "data", "extras.randomizer": "daily",
-  "appearance.look": "companion", "appearance.fx": "grain", "appearance.reminderGlass": "clear",
+  "appearance.look": "companion", "appearance.fx": "grain", "appearance.scheme": "dark", "appearance.reminderGlass": "clear",
   "dash": "home", "lastTab": "about",
 };
 function changedLeaves(value: unknown, path = ""): unknown {

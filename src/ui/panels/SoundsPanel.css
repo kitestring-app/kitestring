@@ -23,7 +23,6 @@
 }
 .sounds-panel .ptabs button[aria-pressed="true"] {
   color: var(--fg);
-  box-shadow: 0 2px var(--accent);
 }
 .sounds-wrap,
 .sounds-toolbar {
@@ -100,8 +99,8 @@
 }
 .sounds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
-  align-items: start;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  align-items: stretch;
   gap: 10px;
 }
 .sound-tile {
@@ -118,13 +117,14 @@
 /* The volume caption sets its own dim colour; on a selected tile it follows the tile's ink instead. */
 .sounds-panel .sound-tile.active label { color: var(--tile-on-fg); }
 .sound-toggle {
+  position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 14px 6px 12px;
-  min-height: 92px;
+  gap: 8px;
+  padding: 14px 8px 12px;
+  min-height: 96px;
   justify-content: center;
   color: inherit;
 }
@@ -132,8 +132,12 @@
 .sound-toggle b {
   font-size: 13px;
   font-weight: 650;
+  line-height: 1.2;
+  text-wrap: balance;
 }
-.sound-note { font-size: 11px; color: var(--fg-dim); }
+/* Binaural marker: a small headphone glyph in the tile corner, said once. */
+.sound-note { position: absolute; top: 7px; right: 8px; display: grid; place-items: center; color: var(--fg-faint); }
+.sound-note svg { width: 13px; height: 13px; }
 .sound-tile.active .sound-note { color: inherit; opacity: 0.75; }
 .sound-emoji { display: grid; place-items: center; color: var(--tile-icon); }
 .sound-emoji svg { width: 24px; height: 24px; }

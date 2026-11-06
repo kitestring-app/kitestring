@@ -135,7 +135,7 @@ describe("timer settings content", () => {
   });
   it("keeps Choices with previews as choice cards", () => {
     const html = renderToStaticMarkup(<Choices value="preview" options={[{ id: "preview", label: "Preview", preview: <span>Artwork</span> }, { id: "plain", label: "Plain" }]} onChange={vi.fn()} />);
-    expect(html).toBe('<div class="grid3"><button class="choice" aria-pressed="true"><span>Artwork</span><span class="lbl">Preview</span></button><button class="choice" aria-pressed="false"><span class="lbl">Plain</span></button></div>');
+    expect(html).toBe('<div class="grid3" style="--cols:2"><button class="choice" aria-pressed="true"><span>Artwork</span><span class="lbl">Preview</span></button><button class="choice" aria-pressed="false"><span class="lbl">Plain</span></button></div>');
   });
   it.each(["pomodoro", "animedoro"] as const)("offers presets, all length fields, and quick break values in %s", (mode) => {
     settings.set({ ...DEFAULT_SETTINGS, timer: { ...DEFAULT_SETTINGS.timer, mode } });

@@ -42,22 +42,24 @@ export function StatsTab() {
         <button type="button" aria-pressed={page === "log"} onClick={() => setPage("log")}>Log</button>
       </div>
       {page === "log" ? <SessionLog /> : <>
-        <div className="stats-pills stats-ranges" role="group" aria-label="Stats range">
-          {RANGES.map(r => <button type="button" key={r.id} aria-pressed={range === r.id} onClick={() => setRange(r.id)}>{r.label}</button>)}
+        <div className="stats-controls">
+          <div className="stats-pills stats-ranges" role="group" aria-label="Stats range">
+            {RANGES.map(r => <button type="button" key={r.id} aria-pressed={range === r.id} onClick={() => setRange(r.id)}>{r.label}</button>)}
+          </div>
+          {range !== "today" && <div className="stats-pills" role="group" aria-label="Record grouping">
+            <button type="button" aria-pressed={!weekly} onClick={() => setWeekly(false)}>Daily</button>
+            <button type="button" aria-pressed={weekly} onClick={() => setWeekly(true)}>Weekly</button>
+          </div>}
         </div>
-        <div className="stats-pills" role="group" aria-label="Record grouping">
-          <button type="button" aria-pressed={!weekly} onClick={() => setWeekly(false)}>Daily</button>
-          <button type="button" aria-pressed={weekly} onClick={() => setWeekly(true)}>Weekly</button>
-        </div>
-        {!hasData && <p className="stats-empty" role="status">No records in this period.</p>}
-        <table className="stats-records">
+        {!hasData && <p className="stats-empty" role="status">No records in this period. Start a block and it will appear here.</p>}
+        {hasData && <table className="stats-records">
           <caption>{weekly ? "Weekly records (Monday to Sunday, within the selected period)" : "Daily records"}</caption>
           <thead><tr><th scope="col">{weekly ? "Week" : "Day"}</th><th scope="col">Time focused</th><th scope="col">Actions finished</th></tr></thead>
           <tbody>{records.map(record => <tr key={record.start}>
             <th scope="row">{dateLabel(record.start)}{record.end !== record.start && <> to {dateLabel(record.end)}</>}</th>
             <td>{formatStatsDuration(record.focusMs)}</td><td>{record.tasks.toLocaleString()}</td>
           </tr>)}</tbody>
-        </table>
+        </table>}
       </>}
     </section>
   );

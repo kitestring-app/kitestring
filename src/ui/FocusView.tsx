@@ -68,7 +68,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
 
   return (
     <NextAction closeOutVisible={closeOutVisible}>{(pin, closeOut) => <section ref={fit} className={`center focus-center size-${size}`} aria-label="Focus timer">
-      <h1 className={`headline ${task?.title ? "task" : ""}`}>
+      <h1 className={`headline ${task?.title ? "task" : "prompt"}`}>
         {task?.title ? (
           <>
             {glyphFor(task.emoji) && <Glyph name={glyphFor(task.emoji)!} size={30} />}
@@ -91,7 +91,9 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
         {Array.from({ length: n }, (_, i) => {
           const glyph = tallyGlyph(t.tally, i);
           const on = i < filled;
-          return glyph ? <span key={i} className={`tally ${on ? "on" : ""}`}><Glyph name={glyph} size={18} filled={on && (glyph === "star" || glyph === "apple")} /></span> : <span key={i} className={`dot ${on ? "on" : ""}`} />;
+          const current = !on && i === filled && v.state.segment === "focus";
+          const cls = `${on ? "on" : ""} ${current ? "current" : ""}`.trim();
+          return glyph ? <span key={i} className={`tally ${cls}`}><Glyph name={glyph} size={18} filled={on && (glyph === "star" || glyph === "apple")} /></span> : <span key={i} className={`dot ${cls}`} />;
         })}
       </div>
       <div className="time-display">
