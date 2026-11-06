@@ -3,6 +3,10 @@ import { ALERT_KINDS, ALERT_SAMPLE_RATE, ALERT_SOUNDS, renderSelectedAlert } fro
 
 afterEach(() => { vi.unstubAllGlobals(); vi.resetModules(); });
 
+function sameSamples(a: Float32Array, b: Float32Array) {
+  return a.length === b.length && a.every((value, i) => value === b[i]);
+}
+
 it("previews and schedules the bundled waveform, phase and volume on any output sample rate", async () => {
   const buffers: { samples: Float32Array; rate: number }[] = [];
   const sources: { buffer: unknown; start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn> }[] = [];
@@ -38,7 +42,9 @@ it("previews and schedules the bundled waveform, phase and volume on any output 
       const preview = sources.at(-1)!;
       const buffer = buffers.at(-1)!;
       expect(buffer.rate).toBe(ALERT_SAMPLE_RATE);
-      expect(buffer.samples).toEqual(renderSelectedAlert(sound, kind));
+      // Typed-array equality by hand: toEqual walks ~280k floats through deep-equal and
+      // alone took longer than vitest's 5 s test timeout on slower CI runners.
+      expect(sameSamples(buffer.samples, renderSelectedAlert(sound, kind))).toBe(true);
       expect(preview.start).toHaveBeenCalledWith(10);
       expect(gains.at(-1)!.gain.value).toBe(0.4);
       scheduleChime(sound, 0.4, 30, kind);
