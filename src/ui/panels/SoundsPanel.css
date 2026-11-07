@@ -122,9 +122,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 14px 8px 12px;
-  min-height: 96px;
+  gap: 6px;
+  padding: 12px 8px 10px;
+  min-height: 84px;
   justify-content: center;
   color: inherit;
 }
@@ -270,4 +270,6 @@
 .sounds-mixes select.input { padding-block: 0; }
 .sound-note { color: var(--fg-dim); }
 .sound-note svg { width: 14px; height: 14px; }
-.sounds-panel .panel-body { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); padding-bottom: 28px; }
+.sounds-panel .panel-body { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--fg) 30%, transparent) transparent; }
+/* A wide panel sits over the timer: keep it opaque enough that the digits never smear through. */
+.sounds-panel { background: color-mix(in srgb, var(--surface-solid) 94%, transparent); }

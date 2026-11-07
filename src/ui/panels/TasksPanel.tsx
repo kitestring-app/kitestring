@@ -418,7 +418,7 @@ export function TasksPanel({ onClose }: { onClose: () => void }) {
   }}>
     <div className="panel-head">
       <span className="badge"><Icon.tasks /></span><h2>Tasks</h2>
-      <span className="tasks-count" aria-label={`${done} of ${all.length} tasks completed`} aria-live="polite">{done}/{all.length}</span>
+      {all.length > 0 && <span className="tasks-count" aria-label={`${done} of ${all.length} tasks completed`} aria-live="polite">{done}/{all.length}</span>}
       <button className="iconbtn tasks-close" onClick={onClose} aria-label="Close tasks · Escape"><Icon.close /></button>
     </div>
     <div className="panel-body tasks-body">

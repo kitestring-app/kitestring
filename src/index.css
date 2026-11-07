@@ -195,8 +195,8 @@ html.theme-light:is(:not([data-look]), [data-look="classic"]) {
 }
 /* A forced scheme that disagrees with the wallpaper veils it, so the timer, quote and footer follow the scheme
    along with the chrome. The wallpaper still shows through, softened. */
-html.theme-forced.theme-light.wallpaper-light { --scrim: linear-gradient(rgb(242 242 250 / 84%), rgb(242 242 250 / 88%)); }
-html.theme-forced:not(.theme-light):not(.wallpaper-light) { --scrim: linear-gradient(rgb(14 13 30 / 80%), rgb(14 13 30 / 86%)); }
+html.theme-forced.theme-light.wallpaper-light { --scrim: linear-gradient(rgb(247 247 252 / 90%), rgb(247 247 252 / 93%)); }
+html.theme-forced:not(.theme-light):not(.wallpaper-light) { --scrim: linear-gradient(rgb(19 18 30 / 90%), rgb(19 18 30 / 93%)); }
 
 /* ---------- base ---------- */
 * { box-sizing: border-box; }
@@ -551,3 +551,9 @@ input[type="radio"] { accent-color: var(--accent); }
 :root[data-look="sketch"] .tiny-chip { border-radius: var(--r-pill); }
 :root[data-look="sketch"] :is(.tiny-chip .btn, .controls .iconbtn:not(.primary))::before { display: none; }
 :root[data-look="sketch"] .tiny-chip .btn { border-color: transparent; }
+/* Round 4. Mode tabs keep a 32px target; the start chip reads as a quiet text action under Play. */
+.focus-center .tabs button { min-height: 32px; padding-inline: 4px; }
+.focus-center .tiny-chip .btn { background: transparent; border-color: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--on-bg-dim); text-shadow: var(--on-bg-shadow); }
+@media (hover: hover) { .focus-center .tiny-chip .btn:hover:not(:disabled) { background: var(--surface); border-color: var(--border); color: var(--on-bg); text-shadow: none; } }
+.focus-center .tiny-chip .tiny-menu-toggle { box-shadow: inset 1px 0 0 color-mix(in srgb, var(--on-bg) 22%, transparent); }
+.controls .iconbtn.primary { margin-inline: 6px; }

@@ -115,20 +115,21 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
       )}
       {pin}
       {reminder && <p className="muted small" role="status">{reminder}</p>}
+      {/* Play sits in the middle, with reset and skip before it and floating timer and park after. */}
       <div className="controls chrome">
-        <button className="iconbtn primary" disabled={v.hardLocked && v.running} title={v.hardLocked && v.running ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.toggle()} aria-label={v.running ? "Pause · Space" : "Start · Space"}>
-          {v.running ? <Icon.pause /> : <Icon.play />}
-        </button>
         <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.reset()} aria-label="Reset this session · R">
           <Icon.reset />
         </button>
         <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.skip()} aria-label={t.mode === "stopwatch" ? "Finish session · N" : "Skip to next · N"}>
           {t.mode === "stopwatch" ? <Icon.stop /> : <Icon.skip />}
         </button>
+        <button className="iconbtn primary" disabled={v.hardLocked && v.running} title={v.hardLocked && v.running ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.toggle()} aria-label={v.running ? "Pause · Space" : "Start · Space"}>
+          {v.running ? <Icon.pause /> : <Icon.play />}
+        </button>
         <button className={`iconbtn ${typeof window !== "undefined" && !window.desktop?.floatTimer && !window.documentPictureInPicture ? "pip-unavailable" : ""}`} onClick={() => void openPip().then((err) => err && setPipMsg(err))} aria-label="Floating timer">
           <Icon.pip />
         </button>
-        <button className="iconbtn" onClick={onPark} aria-label="Park a thought · P" title="Park a thought · P"><Icon.note /></button>
+        <button className="iconbtn" onClick={onPark} aria-label="Park a thought · P" title="Park a thought · P"><Icon.park /></button>
         {!v.hardLocked && <EndSessionControl />}
       </div>
       <FocusCardSlot override={closeOut} onChooseTask={onChooseTask} onRecall={onRecall} />

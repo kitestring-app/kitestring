@@ -52,7 +52,7 @@ export function InkFilters() {
       {[2, 7, 11].map((seed, i) => (
         <filter key={seed} id={`ink-${i}`} x="-12%" y="-12%" width="124%" height="124%">
           <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves={2} seed={seed} result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale={3.2} />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale={2.4} />
         </filter>
       ))}
     </svg>
@@ -77,9 +77,9 @@ export function LookBackdrop({ look }: { look: LookId }) {
       <svg className="look-bg look-bg-sunrise" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="1200" height="800" fill="#fff4e4" />
         <g className="sun">
-          <circle cx="600" cy="880" r="470" fill="#ffe1b8" />
-          <circle cx="600" cy="880" r="340" fill="#ffc887" />
-          <circle cx="600" cy="880" r="215" fill="#ffa25e" />
+          <circle cx="600" cy="960" r="470" fill="#ffe4c2" />
+          <circle cx="600" cy="960" r="340" fill="#ffd09a" />
+          <circle cx="600" cy="960" r="215" fill="#ffad72" />
         </g>
         <circle cx="150" cy="150" r="74" fill="#ffe9c9" />
         <circle cx="1080" cy="250" r="46" fill="#ffe9c9" />

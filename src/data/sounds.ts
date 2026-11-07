@@ -65,7 +65,7 @@ export const SOUNDS: readonly SoundDefinition[] = [
   { id: "ocean", name: "Ocean", glyph: "waves", category: "Nature" },
   { id: "fireplace", name: "Fireplace", glyph: "flame", category: "Nature" },
   { id: "underwater", name: "Underwater", glyph: "droplet", category: "Nature" },
-  { id: "space", name: "Outer space rumble", glyph: "orbit", category: "Places" },
+  { id: "space", name: "Space rumble", glyph: "orbit", category: "Places" },
   { id: "fan", name: "Room fan", glyph: "fan", category: "Machines" },
   { id: "ac", name: "Air conditioner", glyph: "snowflake", category: "Machines" },
   { id: "clock", name: "Clock ticking", glyph: "clock", category: "Machines" },
