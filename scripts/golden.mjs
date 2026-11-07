@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Dev-only visual guard. Uses Vite and Node's built-in WebSocket, never a personal browser.
-import { chromeArgs } from './browser/chrome-args.ts';
+import { chromeArgs, chromeSpawn, guardChromeTree, isNavigationRace, killChromeTree } from './browser/chrome-args.ts';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
@@ -48,7 +48,7 @@ export class Chrome {
     const executable = [process.env.CHROME_BIN, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'].find(path => path && existsSync(path));
     if (!executable) throw new Error('Chrome not found. Set CHROME_BIN to a Chrome/Chromium executable.');
     this.profile = await mkdtemp(join(tmpdir(), 'pomodoro-golden-chrome-'));
-    this.process = spawn(executable, chromeArgs(this.profile, [
+    this.process = guardChromeTree(spawn(executable, chromeArgs(this.profile, [
       '--disable-extensions',
       '--disable-gpu', '--disable-gpu-compositing', '--disable-skia-runtime-opts',
       '--disable-lcd-text', '--font-render-hinting=none',
@@ -56,7 +56,7 @@ export class Chrome {
       '--run-all-compositor-stages-before-draw', '--disable-threaded-animation', '--disable-threaded-scrolling',
       '--force-color-profile=srgb', '--force-device-scale-factor=1', '--lang=en-US',
       '--remote-debugging-address=127.0.0.1',
-    ]), { stdio: 'ignore' });
+    ]), { ...chromeSpawn, stdio: 'ignore' }));
     this.process.on('error', error => { this.launchError = error; });
     const portFile = join(this.profile, 'DevToolsActivePort');
     for (let i = 0; i < 200 && !existsSync(portFile); i++) {
@@ -113,7 +113,8 @@ export class Chrome {
   async waitFor(expression) {
     for (let i = 0; i < 150; i++) {
       this.assertHealthy();
-      if (await this.evaluate(`Promise.resolve(${expression}).then(Boolean)`)) return;
+      try { if (await this.evaluate(`Promise.resolve(${expression}).then(Boolean)`)) return; }
+      catch (error) { if (!isNavigationRace(error)) throw error; }
       await delay(50);
     }
     throw new Error(`Page did not reach: ${expression}`);
@@ -137,10 +138,10 @@ export class Chrome {
     this.pending.clear();
     if (this.process && this.process.exitCode === null && this.process.signalCode === null) {
       const exited = once(this.process, 'exit');
-      this.process.kill('SIGKILL');
+      killChromeTree(this.process);
       await exited;
     }
-    if (this.profile) await rm(this.profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    if (this.profile) await rm(this.profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   }
 }
 

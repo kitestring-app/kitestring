@@ -19,5 +19,5 @@ try {
     child.once('exit', (code, signal) => resolve(code ?? (signal ? 1 : 0)));
   });
 } finally {
-  await rm(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  await rm(temp, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
 }

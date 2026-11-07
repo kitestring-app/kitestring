@@ -1,4 +1,4 @@
-import { chromeArgs } from "../../../scripts/browser/chrome-args.ts";
+import { chromeArgs, chromeSpawn, guardChromeTree, killChromeTree } from "../../../scripts/browser/chrome-args.ts";
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -70,12 +70,13 @@ describe.each(["Chrome", "Electron"])("session log and backups in isolated %s", 
         });`);
       browser = spawn(electronPath, [main, "--mute-audio", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--disable-background-networking"], { stdio: "ignore", env: { ...process.env, ELECTRON_RUN_AS_NODE: "" } });
     } else {
-      browser = spawn(chromePath!, chromeArgs(profile), { stdio: ["ignore", "ignore", "pipe"] });
+      browser = guardChromeTree(spawn(chromePath!, chromeArgs(profile), { ...chromeSpawn, stdio: ["ignore", "ignore", "pipe"] }));
     }
     let launchErrors = "";
     browser.stderr?.on("data", data => { launchErrors = (launchErrors + String(data)).slice(-8192); });
     const portFile = join(profile, "DevToolsActivePort");
-    for (let n = 0; n < 150 && !existsSync(portFile); n++) await delay(50);
+    // A cold CI runner can take over 7.5 s to start the first Chrome.
+    for (let n = 0; n < 300 && !existsSync(portFile); n++) await delay(50);
     if (!existsSync(portFile)) throw new Error(`Test browser launch failed: exit=${browser.exitCode}, signal=${browser.signalCode}; ${launchErrors}`);
     const port = readFileSync(portFile, "utf8").split("\n")[0];
     const pages = await fetch(`http://127.0.0.1:${port}/json/list`).then(r => r.json()) as { type: string; url: string; webSocketDebuggerUrl: string }[];
@@ -99,19 +100,19 @@ describe.each(["Chrome", "Electron"])("session log and backups in isolated %s", 
     const navigation = await send("Page.navigate", { url: origin });
     if (navigation.errorText) throw new Error(`Test navigation failed: ${navigation.errorText}; ${JSON.stringify(errors)}`);
     await waitFor("document.querySelector('[data-tip]')");
-  }, 20000);
+  }, 30000);
 
   afterAll(async () => {
     socket?.close();
     for (const request of pending.values()) clearTimeout(request.timer);
     if (browser && browser.exitCode === null) {
       const exited = new Promise<void>(resolve => browser.once("exit", () => resolve()));
-      browser.kill("SIGKILL");
+      killChromeTree(browser);
       await exited;
     }
     await server?.close();
     if (downloads) rmSync(downloads, { recursive: true, force: true });
-    if (profile) rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    if (profile) rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   });
 
   const byText = async (text: string) => {
