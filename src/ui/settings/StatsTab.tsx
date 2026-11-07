@@ -51,15 +51,14 @@ export function StatsTab() {
             <button type="button" aria-pressed={weekly} onClick={() => setWeekly(true)}>Weekly</button>
           </div>}
         </div>
-        {!hasData && <p className="stats-empty" role="status">No records in this period. Start a block and it will appear here.</p>}
-        {hasData && <table className="stats-records">
+        <table className="stats-records">
           <caption>{weekly ? "Weekly records (Monday to Sunday, within the selected period)" : "Daily records"}</caption>
           <thead><tr><th scope="col">{weekly ? "Week" : "Day"}</th><th scope="col">Time focused</th><th scope="col">Actions finished</th></tr></thead>
-          <tbody>{records.map(record => <tr key={record.start}>
+          <tbody>{!hasData ? <tr className="stats-records-empty"><td colSpan={3} role="status">No records in this period. Start a block and it shows up here.</td></tr> : records.map(record => <tr key={record.start}>
             <th scope="row">{dateLabel(record.start)}{record.end !== record.start && <> to {dateLabel(record.end)}</>}</th>
             <td>{formatStatsDuration(record.focusMs)}</td><td>{record.tasks.toLocaleString()}</td>
           </tr>)}</tbody>
-        </table>}
+        </table>
       </>}
     </section>
   );

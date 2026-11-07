@@ -22,3 +22,6 @@
 .stats-pills { border-radius: var(--r-seg); }
 .stats-pills button { border-radius: calc(var(--r-seg) - 4px); }
 .stats-empty { border-radius: calc(var(--radius) - 6px); }
+
+/* One empty state, inside the table it describes, so a zero row never contradicts it. */
+.stats-records-empty td { padding: 18px 12px; color: var(--fg-dim); text-align: center; font-style: normal; }

@@ -106,7 +106,7 @@ export function TimerTab() {
         <div className="row" role="group" aria-label="Support preset">
           {supportPresetLabel() !== "Calm" && <button className="btn small" disabled={presetBusy} onClick={() => void chooseSupport("Calm")}>Try Calm</button>}
           {supportPresetLabel() !== "Strong" && <button className="btn small" aria-describedby="strong-preset-help" disabled={presetBusy} onClick={() => void chooseSupport("Strong")}>Strong</button>}
-          {support.snapshot && <button className="btn small" disabled={presetBusy} title="Puts back the reminder choices saved on this device before the last preset change" onClick={() => void chooseSupport("Restore")}>Restore my choices</button>}
+          {support.snapshot && <button className="btn small" disabled={presetBusy} title="Puts back the reminder choices saved on this device before the last preset change" onClick={() => void chooseSupport("Restore")}>Restore</button>}
         </div>
         {supportPresetLabel() !== "Strong" && <p className="help" id="strong-preset-help">Resets reminders to defaults</p>}
         {presetMessage && <p className="help" role="status">{presetMessage}</p>}

@@ -1,19 +1,19 @@
-/* One surface for the fixed header, navigation and scrolling content. */
-.drawer { grid-template-rows: auto minmax(0, 1fr); background: var(--surface-solid); }
-.settings-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: var(--surface-solid); border-bottom: 1px solid var(--line); }
+/* One surface for the fixed header, navigation and scrolling content: the settings canvas, so cards lift off it. */
+.drawer { --drawer-surface: var(--canvas, var(--surface-solid)); grid-template-rows: auto minmax(0, 1fr); background: var(--drawer-surface); }
+.settings-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; background: var(--drawer-surface); border-bottom: 1px solid var(--line); }
 .settings-header h2 { margin: 0; font: 700 20px/1.2 var(--display); }
 .settings-close { display: grid; place-items: center; width: 44px; height: 44px; padding: 4px; flex: none; }
 .settings-close .iconbtn { width: 36px; height: 36px; pointer-events: none; }
-.drawer nav { min-height: 0; }
+.drawer nav { min-height: 0; background: var(--drawer-surface); }
 .drawer nav button.tab { white-space: nowrap; flex-shrink: 0; }
 .drawer nav button.tab svg { flex: none; }
-:root[data-look] .drawer main, :root:not([data-look]) .drawer main { min-width: 0; min-height: 0; background: var(--canvas, var(--surface-solid)); }
+:root[data-look] .drawer main, :root:not([data-look]) .drawer main { min-width: 0; min-height: 0; background: var(--drawer-surface); }
 /* The fixed header supplies the visible title. Keep each body's heading for assistive technology. */
 .drawer main h1 { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 /* Only preview choices keep the same material when selected. Text pills retain their own styling. */
 .drawer .grid3 > .choice { position: relative; background: var(--surface-sunk); color: var(--fg); border-color: var(--border); }
 .drawer .grid3 > .choice[aria-pressed="true"] { background: var(--surface-sunk); color: var(--fg); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-.drawer :is(.grid3 > .choice[aria-pressed="true"], .theme-tile[aria-pressed="true"], .look-option[aria-checked="true"], .fx-option[aria-checked="true"])::after { content: ""; position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--surface-solid); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5L20 7'/%3E%3C/svg%3E"); background-size: 12px; background-repeat: no-repeat; background-position: center; }
+.drawer :is(.grid3 > .choice[aria-pressed="true"], .theme-tile[aria-pressed="true"], .look-option[aria-checked="true"], .fx-option[aria-checked="true"])::after { content: "✓"; font: 800 12px/1 system-ui; position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--accent-fg, #fff); box-shadow: 0 0 0 2px var(--surface-solid); }
 .drawer :is(.theme-tile, .look-option, .fx-option) { position: relative; }
 .drawer :is(.look-option, .fx-option)[aria-checked="true"] { box-shadow: inset 0 0 0 1px var(--accent); }
 .drawer .theme-tile[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent); }

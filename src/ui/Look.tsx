@@ -8,12 +8,18 @@ import { installFullscreenTransition } from "./fullscreenTransition";
 export const PAPER_LOOKS: readonly LookId[] = ["sketch", "companion", "sunrise"];
 
 /** Puts the current look on <html data-look> so every token in index.css follows it. */
+/** Point <meta theme-color> (the Mac title bar and browser UI) at the --bg now in force. Call after any change to data-look or the scheme classes. */
+export function syncThemeColor() {
+  if (typeof document === "undefined") return;
+  const colour = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+  if (colour) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colour);
+}
+
 export function useLook() {
   const look = useStore(settings, (s) => s.appearance.look);
   useEffect(() => {
     const root = typeof document === "undefined" ? null : document.documentElement;
-    // Background syncs <meta theme-color> once the scheme classes are in place.
-    if (root?.dataset) root.dataset.look = look;
+    if (root?.dataset) { root.dataset.look = look; syncThemeColor(); }
   }, [look]);
   useEffect(() => {
     const subscribe = typeof window === "undefined" ? undefined : window.desktop?.onFullScreenTransition;

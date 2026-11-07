@@ -4,7 +4,7 @@ import { useStore } from "../lib/store";
 import { settings, type LookId, type Scheme, type ThemeRef, type WallpaperFx } from "../state/settings";
 import { findTheme, THEMES } from "../data/themes";
 import { useBackgroundMotion } from "./BackgroundMotion";
-import { LookBackdrop, PAPER_LOOKS, WallpaperEffect } from "./Look";
+import { LookBackdrop, PAPER_LOOKS, syncThemeColor, WallpaperEffect } from "./Look";
 
 /** Custom uploads are stored as Blobs in IndexedDB under `custom-bg:<id>`. */
 function useCustomUrl(ref: ThemeRef) {
@@ -140,9 +140,9 @@ export function Background() {
     root.classList.toggle("theme-light", light);
     root.classList.toggle("theme-forced", forced);
     root.classList.toggle("paper-dimmed", paperDimmed);
-    // The Mac title bar and the browser UI follow the scheme in force.
-    const colour = getComputedStyle(root).getPropertyValue("--bg").trim();
-    if (colour) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colour);
+    // The Mac title bar and the browser UI follow the scheme in force. useLook syncs again when data-look changes,
+    // because this child effect runs before the App-level effect that sets data-look.
+    syncThemeColor();
   }, [light, forced, paperDimmed, paper, lookBackdrop, photo, look, builtin, darkInk]);
   return (
     <>

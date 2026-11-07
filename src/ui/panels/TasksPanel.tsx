@@ -1,6 +1,6 @@
 import { validAllowance } from "../../lib/taskAllowance";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
+import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useStore } from "../../lib/store";
 import {
@@ -81,17 +81,22 @@ function TaskPopover({ anchor, label, onClose, children }: {
   anchor: RefObject<HTMLButtonElement | null>; label: string; onClose: () => void | false; children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const [position, setPosition] = useState<CSSProperties>({ left: 0, top: 0 });
   useLayoutEffect(() => {
     const button = anchor.current, popup = ref.current;
     if (!button || !popup) return;
+    // Open below the anchor when it fits, otherwise on the roomier side. The far edge is pinned to the anchor and
+    // the height capped to that side's room, so content that grows later (an opened <details>) scrolls inside the
+    // popover instead of running off screen before the next placement pass.
     const place = () => {
       const box = button.getBoundingClientRect();
       const { width, height } = popup.getBoundingClientRect();
-      setPosition({
-        left: Math.max(8, Math.min(box.right - width, window.innerWidth - width - 8)),
-        top: box.bottom + height + 8 < window.innerHeight ? box.bottom + 6 : Math.max(8, box.top - height - 6),
-      });
+      const room = { below: window.innerHeight - box.bottom - 14, above: box.top - 14 };
+      const below = height <= room.below || room.below >= room.above;
+      const left = Math.max(8, Math.min(box.right - width, window.innerWidth - width - 8));
+      setPosition(below
+        ? { left, top: box.bottom + 6, maxHeight: Math.max(120, room.below) }
+        : { left, bottom: window.innerHeight - box.top + 6, maxHeight: Math.max(120, room.above) });
     };
     place();
     const resize = new ResizeObserver(place);
