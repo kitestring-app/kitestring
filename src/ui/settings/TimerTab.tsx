@@ -101,7 +101,12 @@ export function TimerTab() {
 
       <div className="card preset-card">
         <div className="preset-row">
-          <h3 id="reminders-label">Reminders</h3>
+          <div className="preset-text">
+            <h3 id="reminders-label">Reminders</h3>
+            <p className="help">{supportPresetLabel() === "Calm" ? "No chimes, notifications, ticking or auto-start. New installs start here."
+              : supportPresetLabel() === "Strong" ? "Chimes, notifications, spoken alerts and auto-start, to pull you back on time."
+              : <><b>{supportPresetLabel()}</b>: your own mix. Pick Calm or Strong to reset it.</>}</p>
+          </div>
           <div className="segmented" role="group" aria-labelledby="reminders-label">
             {(["Calm", "Strong"] as const).map(mode => (
               <button key={mode} type="button" aria-pressed={supportPresetLabel() === mode} disabled={presetBusy}
@@ -109,9 +114,6 @@ export function TimerTab() {
             ))}
           </div>
         </div>
-        <p className="help">{supportPresetLabel() === "Calm" ? "No chimes, notifications, ticking or auto-start. New installs start here."
-          : supportPresetLabel() === "Strong" ? "Chimes, notifications, spoken alerts and auto-start, to pull you back on time."
-          : <><b>{supportPresetLabel()}</b>: your own mix. Pick Calm or Strong to reset it.</>}</p>
         {support.snapshot && <div className="row"><button className="btn small" disabled={presetBusy} title="Puts back the reminder choices saved on this device before the last preset change" onClick={() => void chooseSupport("Restore")}>Restore</button></div>}
         {presetMessage && <p className="help" role="status">{presetMessage}</p>}
       </div>

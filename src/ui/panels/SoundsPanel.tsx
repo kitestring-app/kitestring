@@ -322,14 +322,10 @@ function MixerControls({
   return (
     <>
       <div className="sounds-toolbar">
-        <button
-          className="btn primary"
-          disabled={!layers.length}
-          onClick={playing ? onPause : onPlay}
-        >
+        {layers.length ? <button className="btn primary" onClick={playing ? onPause : onPlay}>
           {playing ? <Icon.pause /> : <Icon.play />}
-          {!layers.length ? "Pick a sound below" : playing ? "Pause all" : "Play mix"}
-        </button>
+          {playing ? "Pause all" : "Play mix"}
+        </button> : <p className="sounds-hint">Tap a sound below to start a mix.</p>}
         {layers.length > 0 && (
           <span className="muted small">
             {layers.length} {layers.length === 1 ? "layer" : "layers"} {playing ? "playing" : "paused"}

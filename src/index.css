@@ -604,3 +604,15 @@ html[data-look="glass"] .sounds-panel { background: var(--surface-strong, var(--
 /* Reminders: the label and its Calm / Strong switch share one row. */
 .preset-card .preset-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 6px; }
 .preset-card .preset-row h3 { margin: 0; }
+
+/* ---------- round 8 ---------- */
+/* Native controls (number steppers, scrollbars) follow the chrome scheme. */
+html:not(.theme-light) { color-scheme: dark; }
+html.theme-light { color-scheme: light; }
+/* More is a real control: a quiet chip, not a stray glyph. */
+.controls .iconbtn.controls-more-toggle { width: 44px; height: 44px; align-self: center; background: var(--surface); border-color: var(--border); color: var(--on-bg); }
+.controls.idle::before { width: 44px; }
+/* Glass tiles keep a floor of tint, so a bright patch of wallpaper can't fake a selected state. */
+html[data-look="glass"] .sounds-panel .sound-tile:not(.active) { background: color-mix(in srgb, var(--surface-solid) 72%, transparent); }
+.preset-card .preset-text { display: grid; gap: 4px; min-width: 0; flex: 1 1 280px; }
+.preset-card .preset-text .help { margin: 0; }
