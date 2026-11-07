@@ -161,7 +161,7 @@ html.theme-light[data-look="glass"] {
   color-scheme: light;
 }
 /* Glass over a dark or mixed photo: a faint shadow keeps white icons legible on bright patches. */
-html:not(.theme-light)[data-look="glass"] :is(.iconbtn, .seg button, .credits) { text-shadow: 0 1px 2px rgb(0 0 0 / 35%); }
+html:not(.theme-light)[data-look="glass"] :is(.iconbtn, .seg button:not([aria-pressed="true"]), .credits) { text-shadow: 0 1px 2px rgb(0 0 0 / 35%); }
 html:not(.theme-light)[data-look="glass"] .iconbtn svg { filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 40%)); }
 
 /* Wallpaper overrides use the same protective scrim while paper cards keep their own ink. */
@@ -193,17 +193,10 @@ html.theme-light:is(:not([data-look]), [data-look="classic"]) {
   --good: #1e7a4b; --warn: #8a5a00; --danger: #b8392d; --danger-bg: #fde3df; --danger-fg: #7a2a1d;
   color-scheme: light;
 }
-/* Classic forced light over a dark wallpaper: the frost stays white; a touch more opacity keeps ink crisp. */
-html.theme-light.theme-forced:not(.wallpaper-light):is(:not([data-look]), [data-look="classic"]) {
-  --surface: rgb(255 255 255 / 80%); --surface-strong: rgb(252 252 255 / 88%);
-}
-/* Glass forced dark over a light wallpaper: smoked glass, so white ink still reads. */
-html.theme-forced:not(.theme-light).wallpaper-light[data-look="glass"] {
-  --surface: rgb(20 25 30 / 46%); --surface-hover: rgb(20 25 30 / 58%);
-  --surface-strong: rgb(20 25 30 / 56%); --surface-sunk: rgb(255 255 255 / 10%); --surface-solid: #2a3236;
-  --border: rgb(255 255 255 / 22%); --line: rgb(255 255 255 / 16%);
-  --scrim: radial-gradient(ellipse at center, rgb(0 0 0 / 10%), rgb(0 0 0 / 34%));
-}
+/* A forced scheme that disagrees with the wallpaper veils it, so the timer, quote and footer follow the scheme
+   along with the chrome. The wallpaper still shows through, softened. */
+html.theme-forced.theme-light.wallpaper-light { --scrim: linear-gradient(rgb(242 242 250 / 84%), rgb(242 242 250 / 88%)); }
+html.theme-forced:not(.theme-light):not(.wallpaper-light) { --scrim: linear-gradient(rgb(14 13 30 / 80%), rgb(14 13 30 / 86%)); }
 
 /* ---------- base ---------- */
 * { box-sizing: border-box; }
@@ -426,10 +419,10 @@ input[type="checkbox"]:not(.switch), input[type="radio"] { accent-color: var(--a
 
 /* ---------- Sketchbook: hand-drawn ink outlines ----------
    The outline lives on ::before so the wobble filter bends the line, never the text. */
-:root[data-look="sketch"] :is(.seg, .iconbtn, .btn, .choice, .credits, .panel, .card, .quote, .sound-tile, .sounds-station, .radio-station, .next-action-pin, .transition-content, .ambient-timer) { position: relative; }
+:root[data-look="sketch"] :is(.seg, .iconbtn, .btn, .choice, .panel, .card, .sound-tile, .sounds-station, .radio-station, .next-action-pin, .transition-content, .ambient-timer, .tiny-chip) { position: relative; }
 /* Popovers are placed in viewport coordinates; they keep position: fixed, which already anchors the ink outline. */
 :root[data-look="sketch"] .panel { position: fixed; }
-:root[data-look="sketch"] :is(.seg, .iconbtn, .btn, .choice, .credits, .panel, .card, .quote, .sound-tile, .sounds-station, .radio-station, .transition-content, .tasks-popover, .ambient-timer)::before {
+:root[data-look="sketch"] :is(.seg, .iconbtn, .btn, .choice, .panel, .card, .sound-tile, .sounds-station, .radio-station, .transition-content, .tasks-popover, .ambient-timer, .tiny-chip)::before {
   content: ""; position: absolute; inset: 0; border: 2.4px solid var(--ink); border-radius: inherit; filter: url(#ink-0); pointer-events: none;
 }
 :root[data-look="sketch"] :is(.sound-tile, .sounds-station, .radio-station, .choice)::before { border-width: 1.6px; }
@@ -484,7 +477,7 @@ html.theme-light[data-look="glass"] { --tile: rgb(255 255 255 / 55%); --tile-bor
 /* Selected chips and pills use the same solid fill as selected tiles. */
 :is(.sounds-panel .btn, .stats-pills button, .choice, .theme-categories button)[aria-pressed="true"] { background: var(--tile-on); color: var(--tile-on-fg); border-color: transparent; }
 :root[data-look="sketch"] :is(.iconbtn, .sound-tile, .btn) svg { filter: url(#ink-1); }
-:root[data-look="sketch"] :is(.seg, .iconbtn, .btn, .choice, .credits, .panel, .card, .quote, .sound-tile, .sounds-station, .radio-station, .transition-content, .tasks-popover, .ambient-timer)::before { border-width: 2px; }
+:root[data-look="sketch"] :is(.seg, .iconbtn, .btn, .choice, .panel, .card, .sound-tile, .sounds-station, .radio-station, .transition-content, .tasks-popover, .ambient-timer, .tiny-chip)::before { border-width: 2px; }
 
 /* While macOS animates into or out of full screen, skip blur and transitions so the morph stays smooth. */
 :root.fs-transition * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; transition: none !important; animation-play-state: paused !important; }
@@ -516,5 +509,45 @@ html.theme-light[data-look="glass"] { --tile: rgb(255 255 255 / 55%); --tile-bor
 .num-field input::-webkit-inner-spin-button { opacity: 0.5; }
 .num-field span { color: var(--fg-dim); font-size: 13px; }
 .quick-picks { display: flex; flex-wrap: wrap; gap: 6px; }
-.quick-picks button { min-width: 40px; height: 30px; padding: 0 10px; border-radius: 99px; font-size: 13px; font-weight: 600; color: var(--fg-dim); background: var(--surface-sunk); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.quick-picks button { min-width: 44px; height: 36px; padding: 0 10px; border-radius: 99px; font-size: 13px; font-weight: 600; color: var(--fg-dim); background: var(--surface-sunk); border: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 .quick-picks button[aria-pressed="true"] { background: var(--tile-on); color: var(--tile-on-fg); border-color: transparent; }
+
+/* ---------- round 3 polish ---------- */
+/* Selected pills carry their own fill, so no wallpaper text-shadow smudges their ink (Glass dark). */
+html[data-look="glass"] button[aria-pressed="true"]:not(.iconbtn) { text-shadow: none; }
+/* Play is the one filled control; the secondary controls are quiet until pointed at or focused. */
+.controls .iconbtn:not(.primary) {
+  background: transparent; border-color: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  color: var(--on-bg-dim);
+}
+@media (hover: hover) {
+  .controls .iconbtn:not(.primary):hover:not(:disabled) { background: var(--surface); border-color: var(--border); color: var(--on-bg); }
+}
+.controls .iconbtn:not(.primary):focus-visible { background: var(--surface); color: var(--on-bg); }
+/* Session dots: done is filled, the current one is a ring with a centre, upcoming ones are open rings. */
+.tallies .dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--on-bg-faint); }
+.tallies .dot.on { background: var(--on-bg); box-shadow: none; }
+.tallies .dot.current { background: var(--accent); box-shadow: none; }
+/* Group the focus column: the mode, the time, the actions, then the quote. */
+.focus-center .tabs { margin-bottom: 6px; }
+.focus-center .controls { margin-top: 22px; }
+/* Segment tabs read as text over the wallpaper with an accent underline, so the top bar keeps the only pill. */
+.focus-center .tabs { gap: 18px; padding: 0; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.focus-center .tabs button { color: var(--on-bg-dim); text-shadow: var(--on-bg-shadow); padding: 6px 2px 8px; border-radius: 0; border-bottom: 2px solid transparent; background: none; }
+.focus-center .tabs button[aria-pressed="true"] { color: var(--on-bg); background: none; border-bottom-color: var(--accent); }
+@media (hover: hover) { .focus-center .tabs button:not([aria-pressed="true"]):hover:not(:disabled) { color: var(--on-bg); background: none; } }
+.timer { font-variant-numeric: tabular-nums lining-nums; }
+/* Help text keeps a readable measure. */
+.lede, .card p.help, .help { max-width: 64ch; }
+/* One checkbox in every look: the accent fill, a drawn tick, a visible ring. */
+input[type="checkbox"]:not(.switch) { appearance: none; width: 18px; height: 18px; margin: 0; flex: none; border-radius: 5px; border: 1.5px solid color-mix(in srgb, var(--fg) 40%, transparent); background: var(--surface-sunk); display: inline-grid; place-content: center; cursor: pointer; vertical-align: -4px; transition: background 0.12s, border-color 0.12s; }
+input[type="checkbox"]:not(.switch)::before { content: ""; width: 10px; height: 10px; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); background: var(--accent-fg); transform: scale(0); transition: transform 0.12s; }
+input[type="checkbox"]:not(.switch):checked { background: var(--accent); border-color: var(--accent); }
+input[type="checkbox"]:not(.switch):checked::before { transform: scale(1); }
+input[type="checkbox"]:not(.switch):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+input[type="radio"] { accent-color: var(--accent); }
+/* The start chip is one control with a hairline before its menu, drawn once in Sketchbook. */
+.tiny-chip .tiny-menu-toggle { box-shadow: inset 1px 0 0 var(--line); }
+:root[data-look="sketch"] .tiny-chip { border-radius: var(--r-pill); }
+:root[data-look="sketch"] :is(.tiny-chip .btn, .controls .iconbtn:not(.primary))::before { display: none; }
+:root[data-look="sketch"] .tiny-chip .btn { border-color: transparent; }

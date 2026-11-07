@@ -15,10 +15,10 @@
 .next-action summary { cursor: pointer; }
 .next-action details label { margin-top: 8px; }
 
-/* The compact desktop entry leaves the established pin row in place. */
-.next-action-buttons-closeout { position: relative; }
+/* The compact desktop entry leaves the established pin row in place and sits just after it, not at the column edge. */
+.next-action-buttons-closeout { position: relative; width: fit-content; max-width: 100%; margin-inline: auto; }
 :root .next-action .next-action-buttons-closeout > .next-action-leave {
-  position: absolute; right: 0; top: 50%; translate: 0 -50%;
+  position: absolute; left: calc(100% + 8px); top: 50%; translate: 0 -50%;
   padding: 6px; width: 32px; height: 32px; border-radius: var(--r-pill);
 }
 @media (max-width: 700px) {

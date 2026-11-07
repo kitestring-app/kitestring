@@ -176,7 +176,7 @@ export function SoundsPanel({
         </nav>
         {tab === "Sounds" && (
           <p className="muted small sounds-guide">
-            Try sound or silence. Keep what works for this task. Binaural tiles need headphones.{" "}
+            Layer a few sounds, or keep silence. Tiles with a headphone mark need headphones.{" "}
             <a href="/research.html" target="_blank" rel="noopener">Why these sounds</a>
           </p>
         )}
@@ -482,9 +482,6 @@ function MixerControls({
           </button>
         ))}
       </div>
-      <p className="muted small">
-        Layer sounds to make your own space. Tones marked with a headphone glyph are binaural: use headphones.
-      </p>
       <div className="sounds-grid">
         {SOUNDS.filter(
           (s) => category === "All" || s.category === category,

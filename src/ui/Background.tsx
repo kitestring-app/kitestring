@@ -135,8 +135,10 @@ export function Background() {
     const root = document.documentElement;
     root.classList.toggle("paper-wallpaper", paper && !lookBackdrop);
     root.classList.toggle("paper-photo", photo);
-    // wallpaper-light: ink drawn straight over the wallpaper. theme-light: the chrome's scheme. They differ when forced.
-    root.classList.toggle("wallpaper-light", !builtin && darkInk);
+    // wallpaper-light: ink drawn straight over the wallpaper. theme-light: the chrome's scheme. A forced scheme lays a
+    // veil over the wallpaper (see .theme-forced in index.css), so the ink over it follows the scheme too and the
+    // whole page agrees instead of only the chrome flipping.
+    root.classList.toggle("wallpaper-light", forced ? light : !builtin && darkInk);
     root.classList.toggle("theme-light", light);
     root.classList.toggle("theme-forced", forced);
     root.classList.toggle("paper-dimmed", paperDimmed);

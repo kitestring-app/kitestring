@@ -322,9 +322,9 @@ function TaskSummary({ all }: { all: Task[] }) {
   const nextDay = finish.toDateString() !== date.toDateString();
   const done = all.filter((t) => t.done).length;
   return <div className="tasks-summary">
-    {config.display !== "hidden" && <><div className="tasks-summary-line"><span><strong>{remaining < 60 ? `${remaining} min` : `${Math.floor(remaining / 60)}h${remaining % 60 ? ` ${remaining % 60}m` : ""}`}</strong> remaining</span>
+    {config.display !== "hidden" && all.some((t) => !t.done) && <><div className="tasks-summary-line"><span><strong>{remaining < 60 ? `${remaining} min` : `${Math.floor(remaining / 60)}h${remaining % 60 ? ` ${remaining % 60}m` : ""}`}</strong> remaining</span>
       <span>Done by {nextDay ? `${finish.toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ` : ""}{finish.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true })}</span></div>
-    <p className="tasks-estimate-note">Estimate uses task ETAs, current focus progress and {Math.ceil(estimate.breakMinutes)} min of scheduled breaks between sessions. Assumes continuous work.</p></>}
+    <p className="tasks-estimate-note">From your estimates, current focus progress and {Math.ceil(estimate.breakMinutes)} min of breaks.</p></>}
     {all.length > 0 && <div className="tasks-progress" role="progressbar" aria-label="Task progress" aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={done}><span style={{ width: `${done / all.length * 100}%` }} /></div>}
   </div>;
 }

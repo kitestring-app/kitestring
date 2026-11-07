@@ -23,7 +23,7 @@ export const SOUNDS: readonly SoundDefinition[] = [
   { id: "white", name: "White noise", glyph: "circle", category: "Noise" },
   { id: "pink", name: "Pink noise", glyph: "flower-2", category: "Noise" },
   { id: "brown", name: "Brown noise", glyph: "bean", category: "Noise" },
-  { id: "pulse", name: "Pink + 16 Hz pulse", glyph: "audio-waveform", category: "Noise" },
+  { id: "pulse", name: "Pulse · 16 Hz", glyph: "audio-waveform", category: "Noise" },
   {
     id: "alpha",
     name: "Alpha · 10 Hz",
