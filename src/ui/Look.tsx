@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useStore } from "../lib/store";
-import { LOOKS, WALLPAPER_FX, settings, settingsUpdate, type LookId, type Settings, type WallpaperFx } from "../state/settings";
+import { LOOKS, SCHEMES, WALLPAPER_FX, settings, settingsUpdate, type LookId, type Scheme, type Settings, type WallpaperFx } from "../state/settings";
 import "./Look.css";
 import { installFullscreenTransition } from "./fullscreenTransition";
 
@@ -12,11 +12,8 @@ export function useLook() {
   const look = useStore(settings, (s) => s.appearance.look);
   useEffect(() => {
     const root = typeof document === "undefined" ? null : document.documentElement;
-    if (root?.dataset) {
-      root.dataset.look = look;
-      const colour = getComputedStyle(root).getPropertyValue("--bg").trim();
-      document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colour);
-    }
+    // Background syncs <meta theme-color> once the scheme classes are in place.
+    if (root?.dataset) root.dataset.look = look;
   }, [look]);
   useEffect(() => {
     const subscribe = typeof window === "undefined" ? undefined : window.desktop?.onFullScreenTransition;
@@ -27,8 +24,9 @@ export function useLook() {
     if (!import.meta.env.DEV || typeof location === "undefined") return;
     const q = new URLSearchParams(location.search);
     const patch: Partial<Settings["appearance"]> = {};
-    const l = q.get("look"), f = q.get("fx"), st = Number(q.get("fxs"));
+    const l = q.get("look"), f = q.get("fx"), st = Number(q.get("fxs")), sc = q.get("scheme");
     if (l && (LOOKS as readonly string[]).includes(l)) patch.look = l as LookId;
+    if (sc && (SCHEMES as readonly string[]).includes(sc)) patch.scheme = sc as Scheme;
     if (f && (WALLPAPER_FX as readonly string[]).includes(f)) patch.fx = f as WallpaperFx;
     if (Number.isFinite(st) && q.has("fxs")) patch.fxStrength = st;
     if (Object.keys(patch).length) settingsUpdate("appearance", patch);

@@ -104,8 +104,10 @@ export function Choices<T extends string>({ value, options, onChange }: { value:
       </div>
     );
   }
+  // 2-5 options sit on one row; 6 and 8 split in two even rows; 7 goes four and three.
+  const cols = options.length <= 5 ? options.length : options.length === 6 ? 3 : 4;
   return (
-    <div className="grid3">
+    <div className="grid3" style={{ ["--cols" as string]: String(cols) }}>
       {options.map((o) => (
         <button key={o.id} className="choice" aria-pressed={value === o.id} onClick={() => onChange(o.id)}>
           {o.preview}

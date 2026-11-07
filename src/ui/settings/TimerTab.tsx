@@ -35,7 +35,7 @@ function CompanionStatus({ volume, alertSound }: { volume: number; alertSound: A
           {msg}
         </>
       ) : (
-        "macOS alerts are off here (the companion only runs at localhost:4747). This tab will still chime and notify while it's open."
+        "Mac notifications: off in this tab (they need the Mac app or the local companion). This tab still chimes and notifies while it's open."
       )}
     </p>
   );
@@ -84,9 +84,9 @@ export function TimerTab() {
         <input id={`len-${k}`} type="number" min={1} max={600} value={t.lengths[k]} onChange={(e) => len(k, e.target.value)} />
         <span aria-hidden="true">min</span>
       </span>
-      {(k === "short" || k === "long") && (
+      {k !== "countdown" && (
         <div className="quick-picks" role="group" aria-label={`${label} quick lengths`}>
-          {(k === "short" ? [5, 10] : [10, 15, 20, 30]).map((n) => (
+          {(k === "short" ? [5, 10] : k === "long" ? [10, 15, 20, 30] : [25, 45, 50, 90]).map((n) => (
             <button key={n} type="button" aria-pressed={t.lengths[k] === n} onClick={() => len(k, String(n))}>{n}</button>
           ))}
         </div>
@@ -98,19 +98,17 @@ export function TimerTab() {
     <>
       <h1>Focus Timer</h1>
       <p className="lede">Customize your timer to match your workflow.</p>
-      <Toggle title="Hard mode" help="Running focus and break blocks cannot be paused, skipped or reset. Ending early requires a 10-second hold and a reason." checked={t.hardMode} onChange={hardMode => set({ hardMode })} />
-      {v.hardModePendingOff && <p role="status" className="help">Hard mode turns off after this block</p>}
 
-      <div className="card">
+      <div className="card preset-card">
+        <p className="card-kicker">Reminder preset</p>
         <h3>{supportPresetLabel()}</h3>
-        <p className="help">Calm turns off timer reminders, ticking and auto-run. Both keep your lengths, sound mix, appearance and Hard mode choice.</p>
+        <p className="help">Calm turns off chimes, notifications, ticking and auto-run. Strong is the default set. Lengths, sound mix, look and Hard mode stay as they are.</p>
         <div className="row" role="group" aria-label="Support preset">
-          <button className="btn small" disabled={presetBusy} onClick={() => void chooseSupport("Calm")}>Try Calm</button>
+          {supportPresetLabel() !== "Calm" && <button className="btn small" disabled={presetBusy} onClick={() => void chooseSupport("Calm")}>Try Calm</button>}
           {supportPresetLabel() !== "Strong" && <button className="btn small" aria-describedby="strong-preset-help" disabled={presetBusy} onClick={() => void chooseSupport("Strong")}>Strong</button>}
-          {support.snapshot && <button className="btn small" disabled={presetBusy} onClick={() => void chooseSupport("Restore")}>Restore</button>}
+          {support.snapshot && <button className="btn small" disabled={presetBusy} title="Puts back the reminder choices saved on this device before the last preset change" onClick={() => void chooseSupport("Restore")}>Restore my choices</button>}
         </div>
         {supportPresetLabel() !== "Strong" && <p className="help" id="strong-preset-help">Resets reminders to defaults</p>}
-        <p className="help">Changing presets saves your current reminder choices once on this device. Restore puts those choices back.</p>
         {presetMessage && <p className="help" role="status">{presetMessage}</p>}
       </div>
       <div className="card">
@@ -119,14 +117,17 @@ export function TimerTab() {
           {MODES.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
         <p className="help" style={{ marginTop: 10 }}>{mode.help}</p>
+        <Toggle title="Hard mode" help="Running blocks cannot be paused, skipped or reset. Ending early takes a 10-second hold and a reason." checked={t.hardMode} onChange={hardMode => set({ hardMode })} />
+        {v.hardModePendingOff && <p role="status" className="help">Hard mode turns off after this block</p>}
         {(t.mode === "pomodoro" || t.mode === "animedoro") && (
           <Toggle title="Use Task ETA mode" help="The focus length follows the estimate of your current task." checked={t.taskEta} onChange={(v) => set({ taskEta: v })} />
         )}
-        <label className="opt">Review parked thoughts
-          <select className="input" aria-label="Review parked thoughts" value={review.boundary} onChange={e => chooseReviewBoundary(e.target.value as ReviewBoundary)}>
+        <div className="field-stack">
+          <label htmlFor="review-parked">Review parked thoughts</label>
+          <select id="review-parked" className="input" style={{ maxWidth: 320 }} aria-label="Review parked thoughts" value={review.boundary} onChange={e => chooseReviewBoundary(e.target.value as ReviewBoundary)}>
             <option value="never">Never automatically</option><option value="block">End of block</option><option value="session">End of session</option>
           </select>
-        </label>
+        </div>
         <h3 style={{ marginTop: 14 }}>Timer lengths</h3>
         {(t.mode === "pomodoro" || t.mode === "animedoro") && (
           <div className="row" role="group" aria-label="Pomodoro presets" style={{ flexWrap: "wrap" }}>
@@ -191,7 +192,7 @@ export function TimerTab() {
 
       <div className="card">
         <h3>Alerts</h3>
-        <Toggle title="Start chime" help="A soft cue when you start a focus block. Uses alert volume and stays silent when both end sounds are None." checked={t.startChime} onChange={startChime => set({ startChime })} />
+        <Toggle title="Start chime" help="A soft cue when a focus block starts." checked={t.startChime} onChange={startChime => set({ startChime })} />
         <div className="row" style={{ marginBottom: 10 }}>
           <label className="row"><span>Start sound</span>
             <select className="input" aria-label="Start sound" value={t.startChimeSound} onChange={e => set({ startChimeSound: e.target.value as Settings["timer"]["startChimeSound"] })}>
@@ -200,7 +201,7 @@ export function TimerTab() {
           </label>
           <button className="btn small" aria-label="Preview start chime" disabled={!t.startChime || t.alertVolume <= 0 || muted || (t.focusDoneSound === "none" && t.breakOverSound === "none")} onClick={() => { if (!localPreferences.get().muted) playStartChime(t.startChimeSound, t.alertVolume); }}>Preview</button>
         </div>
-        <p className="help">Each pack has different focus and break sounds.</p>
+        <p className="help">Each sound pack has its own focus-done and break-over cues.</p>
         {([['focusDoneSound', 'Focus done', 'focus-done'], ['breakOverSound', 'Break over', 'break-over']] as const).map(([field, label, kind]) => (
           <div className="row" key={field} style={{ marginBottom: 10 }}>
             <label className="row"><span>{label}</span>

@@ -4,9 +4,10 @@
 .stats-pills button { padding: 7px 12px; border-radius: 8px; color: var(--fg-dim); font-size: 12px; font-weight: 600; transition: background 0.15s, color 0.15s; }
 .stats-pills button:hover { color: var(--fg); background: var(--panel-2); }
 .stats-pills button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
-.stats-ranges { margin-bottom: 24px; gap: 4px; }
+.stats-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 20px; }
+.stats-ranges { gap: 4px; }
 .stats-ranges button { font-size: 13px; padding: 8px 15px; }
-.stats-empty { display: flex; align-items: center; gap: 18px; padding: 20px; border: 1px dashed var(--line); border-radius: 16px; margin-bottom: 22px; background: var(--panel-2); }
+.stats-empty { display: flex; align-items: center; gap: 18px; padding: 22px 24px; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 22px; background: var(--panel-2); color: var(--fg-dim); }
 .stats-empty > svg { flex: none; width: 28px; height: 28px; color: var(--accent-ink); }
 .stats-empty h2 { font-size: 16px; margin: 0 0 4px; }
 .stats-empty p { font-size: 13px; color: var(--fg-dim); margin: 0; }
