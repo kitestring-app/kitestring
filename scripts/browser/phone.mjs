@@ -220,7 +220,7 @@ try {
   assert.equal(await ev(`!!document.querySelector('.control-tooltip:not([hidden])')`),false);
   await ev(`void Object.defineProperty(window,'documentPictureInPicture',{value:undefined,configurable:true})`);
   // Force a render after removing the API, as on iPhone Safari.
-  await seed('glass','focus-idle');assert.equal(await ev(`getComputedStyle(document.querySelector('[aria-label="Floating timer"]')).display`),'none');
+  await seed('glass','focus-idle');await ev(`document.querySelector('[aria-label="More controls"]').click()`);await new Promise(r=>setTimeout(r,50));assert.equal(await ev(`getComputedStyle(document.querySelector('[aria-label="Floating timer"]')).display`),'none');
   c.assertHealthy();await writeFile(`${shots}/measurements.json`,JSON.stringify({browser:c.version,results},null,2));
   console.log(`PASS: ${results.length} phone layout states; ${phoneSizes.length*5*(views.length+1)+1} screenshots; alarm controls, hosted sign-in, internal scroll, touch wake, tooltips, PiP and install metadata`);
 } finally {await c.close();await server?.close();}

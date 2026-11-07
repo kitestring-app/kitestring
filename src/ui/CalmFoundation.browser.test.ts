@@ -159,7 +159,7 @@ describe.skipIf(!chromePath || process.env.CALM_BROWSER !== "1")("Calm foundatio
     await buttonText("Strong");
     await waitFor("import('/src/state/settings.ts').then(s => s.supportPresetLabel() === 'Strong')");
     expect(await evaluate("import('/src/state/settings.ts').then(s => s.presetState.get().snapshot)")).toEqual(original);
-    await buttonText("Try Calm");
+    await buttonText("Calm");
     await waitFor("import('/src/state/settings.ts').then(s => s.supportPresetLabel() === 'Calm')");
     await buttonText("Restore");
     await waitFor("import('/src/state/settings.ts').then(s => s.supportPresetLabel() === 'Calm' && s.presetState.get().snapshot === null)");
@@ -167,7 +167,7 @@ describe.skipIf(!chromePath || process.env.CALM_BROWSER !== "1")("Calm foundatio
     // An existing Strong setup is snapshotted by Try Calm and restored in full.
     await evaluate("import('/src/state/settings.ts').then(s => s.settingsUpdate('timer', s.STRONG_PATCH))");
     const strong = await evaluate("import('/src/state/settings.ts').then(s => s.presetFields(s.settings.get().timer))");
-    await buttonText("Try Calm");
+    await buttonText("Calm");
     await waitFor("import('/src/state/settings.ts').then(s => s.supportPresetLabel() === 'Calm')");
     await buttonText("Restore");
     await waitFor("import('/src/state/settings.ts').then(s => s.settings.get().timer.takeover)");

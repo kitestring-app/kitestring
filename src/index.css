@@ -589,3 +589,18 @@ html.theme-light[data-look="glass"] :is(.topbar, .bottombar, .panel, .drawer) .i
 html.theme-light[data-look="glass"] .sounds-panel .sound-tile:not(.active) { border-color: rgb(20 25 30 / 26%); }
 /* Glass keeps its frost: the opaque Sounds backing is only for the solid Looks. */
 html[data-look="glass"] .sounds-panel { background: var(--surface-strong, var(--surface)); }
+
+/* ---------- round 7: a simpler idle focus screen ---------- */
+/* Idle: Start stands alone. A spacer the width of More keeps it centred. */
+.controls.idle::before { content: ""; width: 56px; flex: none; }
+.controls-more-wrap { position: relative; display: flex; }
+.controls-more { position: absolute; z-index: var(--z-popover); top: calc(100% + 8px); right: 0; min-width: 196px; display: grid; gap: 2px; padding: 6px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--panel-solid); box-shadow: var(--shadow-lg); color: var(--fg); }
+.controls-more[hidden] { display: none; }
+.controls-more-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 8px; font-size: 13px; text-align: left; white-space: nowrap; }
+.controls-more-item svg { width: 18px; height: 18px; flex: none; }
+.controls-more-item kbd { margin-left: auto; font: inherit; font-size: 12px; color: var(--fg-dim); }
+.controls-more-item:hover, .controls-more-item:focus-visible { background: var(--panel-2); }
+/* Reminders: the label and its Calm / Strong switch share one row. */
+.preset-card .preset-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 6px; }
+.preset-card .preset-row h3 { margin: 0; }

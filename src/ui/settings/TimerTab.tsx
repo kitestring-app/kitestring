@@ -100,15 +100,19 @@ export function TimerTab() {
       <p className="lede">Customize your timer to match your workflow.</p>
 
       <div className="card preset-card">
-        <p className="card-kicker">Reminder preset</p>
-        <h3>{supportPresetLabel()}</h3>
-        <p className="help">Calm turns off chimes, notifications, ticking and auto-run. Strong is the default set. Lengths, sound mix, look and Hard mode stay as they are.</p>
-        <div className="row" role="group" aria-label="Support preset">
-          {supportPresetLabel() !== "Calm" && <button className="btn small" disabled={presetBusy} onClick={() => void chooseSupport("Calm")}>Try Calm</button>}
-          {supportPresetLabel() !== "Strong" && <button className="btn small" aria-describedby="strong-preset-help" disabled={presetBusy} onClick={() => void chooseSupport("Strong")}>Strong</button>}
-          {support.snapshot && <button className="btn small" disabled={presetBusy} title="Puts back the reminder choices saved on this device before the last preset change" onClick={() => void chooseSupport("Restore")}>Restore</button>}
+        <div className="preset-row">
+          <h3 id="reminders-label">Reminders</h3>
+          <div className="segmented" role="group" aria-labelledby="reminders-label">
+            {(["Calm", "Strong"] as const).map(mode => (
+              <button key={mode} type="button" aria-pressed={supportPresetLabel() === mode} disabled={presetBusy}
+                onClick={() => { if (supportPresetLabel() !== mode) void chooseSupport(mode); }}>{mode}</button>
+            ))}
+          </div>
         </div>
-        {supportPresetLabel() !== "Strong" && <p className="help" id="strong-preset-help">Resets reminders to defaults</p>}
+        <p className="help">{supportPresetLabel() === "Calm" ? "No chimes, notifications, ticking or auto-start. New installs start here."
+          : supportPresetLabel() === "Strong" ? "Chimes, notifications, spoken alerts and auto-start, to pull you back on time."
+          : <><b>{supportPresetLabel()}</b>: your own mix. Pick Calm or Strong to reset it.</>}</p>
+        {support.snapshot && <div className="row"><button className="btn small" disabled={presetBusy} title="Puts back the reminder choices saved on this device before the last preset change" onClick={() => void chooseSupport("Restore")}>Restore</button></div>}
         {presetMessage && <p className="help" role="status">{presetMessage}</p>}
       </div>
       <div className="card">

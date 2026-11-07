@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useStore } from "../lib/store";
-import { LOOKS, SCHEMES, WALLPAPER_FX, settings, settingsUpdate, type LookId, type Scheme, type Settings, type WallpaperFx } from "../state/settings";
+import { LOOKS, SCHEMES, WALLPAPER_FX, calmFoundationReady, settings, settingsUpdate, type LookId, type Scheme, type Settings, type WallpaperFx } from "../state/settings";
 import "./Look.css";
 import { installFullscreenTransition } from "./fullscreenTransition";
 
@@ -28,6 +28,8 @@ export function useLook() {
   useEffect(() => {
     // Development only: ?look=sketch&fx=frost&fxs=0.6 lets screenshot tooling review every look. Stripped from builds.
     if (!import.meta.env.DEV || typeof location === "undefined") return;
+    // Wait until a fresh profile has been set up like a real new install (Calm reminders), then apply the overrides.
+    void calmFoundationReady.then(() => {
     const q = new URLSearchParams(location.search);
     const patch: Partial<Settings["appearance"]> = {};
     const l = q.get("look"), f = q.get("fx"), st = Number(q.get("fxs")), sc = q.get("scheme");
@@ -41,6 +43,7 @@ export function useLook() {
       const ref = { kind: "library" as const, id: theme };
       settingsUpdate("themes", { home: ref, focus: ref, ambient: ref });
     }
+    });
   }, []);
   return look;
 }

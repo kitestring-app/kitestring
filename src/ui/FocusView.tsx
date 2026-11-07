@@ -4,7 +4,7 @@ import { FocusCardSlot } from "./FocusCardSlot";
 import { openParkingReview } from "../state/parkingReview";
 import { StartSupport } from "./StartSupport";
 import { EndSessionControl, HardModeBadge } from "./timer/EndSession";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { useStore } from "../lib/store";
 import { settings, settingsUpdate, type TallyId } from "../state/settings";
 import { currentTask, tasks } from "../state/tasks";
@@ -53,6 +53,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
   const reminder = useSyncExternalStore(reminderStatus.subscribe, reminderStatus.get);
   const count = useStore(parked, all => all.filter(item => item.status === "open").length);
   const v = useTimerView();
+  const started = v.running || !!v.state.frozen || v.state.elapsedBefore > 0 || !!v.state.boundary;
   const [pipMsg, setPipMsg] = useState("");
   const t = useStore(settings, (s) => s.timer);
   const size = useStore(settings, (s) => s.clock.size);
@@ -116,21 +117,22 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
       )}
       {pin}
       {reminder && <p className="muted small" role="status">{reminder}</p>}
-      {/* Play sits in the middle, with reset and skip before it and floating timer and park after. */}
-      <div className="controls chrome">
-        <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.reset()} aria-label="Reset this session · R">
-          <Icon.reset />
-        </button>
-        <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.skip()} aria-label={t.mode === "stopwatch" ? "Finish session · N" : "Skip to next · N"}>
-          {t.mode === "stopwatch" ? <Icon.stop /> : <Icon.skip />}
-        </button>
+      {/* Before a block starts, Start stands alone. Reset and skip join once there is something to reset or skip;
+          the floating timer (and park, until a block runs) wait under More. */}
+      <div className={`controls chrome ${started ? "" : "idle"}`}>
+        {started && <>
+          <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.reset()} aria-label="Reset this session · R">
+            <Icon.reset />
+          </button>
+          <button className="iconbtn" disabled={v.hardLocked} title={v.hardLocked ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.skip()} aria-label={t.mode === "stopwatch" ? "Finish session · N" : "Skip to next · N"}>
+            {t.mode === "stopwatch" ? <Icon.stop /> : <Icon.skip />}
+          </button>
+        </>}
         <button className="iconbtn primary" disabled={v.hardLocked && v.running} title={v.hardLocked && v.running ? "Hard mode: this block runs to the end" : undefined} onClick={() => timerActions.toggle()} aria-label={v.running ? "Pause · Space" : "Start · Space"}>
           {v.running ? <Icon.pause /> : <Icon.play />}
         </button>
-        <button className={`iconbtn ${typeof window !== "undefined" && !window.desktop?.floatTimer && !window.documentPictureInPicture ? "pip-unavailable" : ""}`} onClick={() => void openPip().then((err) => err && setPipMsg(err))} aria-label="Floating timer">
-          <Icon.pip />
-        </button>
-        <button className="iconbtn" onClick={onPark} aria-label="Park a thought · P" title="Park a thought · P"><Icon.park /></button>
+        {v.running && <button className="iconbtn" onClick={onPark} aria-label="Park a thought · P" title="Park a thought · P"><Icon.park /></button>}
+        <MoreControls park={v.running ? undefined : onPark} onPipError={setPipMsg} />
         {!v.hardLocked && <EndSessionControl />}
       </div>
       <FocusCardSlot override={closeOut} onChooseTask={onChooseTask} onRecall={onRecall} />
@@ -142,5 +144,35 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
       {pipMsg && <p className="muted small" role="status" style={{ marginTop: 10 }}>{pipMsg}</p>}
       {showQuote && <QuoteLine />}
     </section>}</NextAction>
+  );
+}
+
+/** The rarely used focus controls, one tap away. A disclosure, so Tab order and screen readers stay simple. */
+function MoreControls({ park, onPipError }: { park?: () => void; onPipError: (message: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const wrap = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") { setOpen(false); wrap.current?.querySelector<HTMLButtonElement>(".controls-more-toggle")?.focus(); } };
+    document.addEventListener("pointerdown", away); document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", key); };
+  }, [open]);
+  const pipUnavailable = typeof window !== "undefined" && !window.desktop?.floatTimer && !window.documentPictureInPicture;
+  return (
+    <div className="controls-more-wrap" ref={wrap}>
+      <button type="button" className="iconbtn controls-more-toggle" aria-label="More controls" aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen(o => !o)}>
+        <Icon.more />
+      </button>
+      {open && <div id={id} className="controls-more">
+        <button type="button" className={`controls-more-item ${pipUnavailable ? "pip-unavailable" : ""}`} aria-label="Floating timer" onClick={() => { setOpen(false); void openPip().then((err) => err && onPipError(err)); }}>
+          <Icon.pip /><span aria-hidden="true">Floating timer</span>
+        </button>
+        {park && <button type="button" className="controls-more-item" aria-label="Park a thought · P" onClick={() => { setOpen(false); park(); }}>
+          <Icon.park /><span aria-hidden="true">Park a thought</span><kbd aria-hidden="true">P</kbd>
+        </button>}
+      </div>}
+    </div>
   );
 }
