@@ -68,7 +68,7 @@ export function LookBackdrop({ look }: { look: LookId }) {
     return (
       <svg className="look-bg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="1200" height="800" fill="#f9f2e9" />
-        <circle cx="1050" cy="140" r="250" fill="#f2e3d4" />
+        <circle cx="1130" cy="330" r="210" fill="#f2e3d4" />
         <path d="M0 690 C220 640 380 720 600 680 S980 640 1200 690 V800 H0Z" fill="#ece0d0" />
         <path d="M0 735 C260 705 420 765 700 735 S1020 705 1200 740 V800 H0Z" fill="#dfe9e0" />
       </svg>
@@ -79,12 +79,12 @@ export function LookBackdrop({ look }: { look: LookId }) {
       <svg className="look-bg look-bg-sunrise" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="1200" height="800" fill="#fff4e4" />
         <g className="sun">
-          <circle cx="600" cy="960" r="470" fill="#ffe4c2" />
-          <circle cx="600" cy="960" r="340" fill="#ffd09a" />
-          <circle cx="600" cy="960" r="215" fill="#ffad72" />
+          <circle cx="600" cy="990" r="350" fill="#ffeacf" />
+          <circle cx="600" cy="990" r="255" fill="#ffdcb4" />
+          <circle cx="600" cy="990" r="165" fill="#ffc998" />
         </g>
-        <circle cx="150" cy="150" r="74" fill="#ffe9c9" />
-        <circle cx="1080" cy="250" r="46" fill="#ffe9c9" />
+        <circle cx="150" cy="150" r="74" fill="#ffe9c9" opacity="0.6" />
+        <circle cx="1080" cy="250" r="46" fill="#ffe9c9" opacity="0.6" />
       </svg>
     );
   }

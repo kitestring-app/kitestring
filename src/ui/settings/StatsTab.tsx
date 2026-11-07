@@ -38,7 +38,7 @@ export function StatsTab() {
       if (e.key === " " && (e.target as HTMLElement).closest("button, summary")) e.stopPropagation();
     }}>
       <h1 id="focus-stats-title">Focus records</h1>
-      <p className="stats-lede">Time focused includes partial sessions. Actions finished counts recorded task and subtask completions.</p>
+      <p className="stats-lede">{hasHistory ? "Time focused includes partial sessions. Actions finished counts recorded task and subtask completions." : "Your focus time and finished actions, day by day."}</p>
       <div className="stats-pills" role="group" aria-label="Stats view">
         <button type="button" aria-pressed={page === "overview"} onClick={() => setPage("overview")}>Overview</button>
         <button type="button" aria-pressed={page === "log"} onClick={() => setPage("log")}>Log</button>
@@ -56,7 +56,7 @@ export function StatsTab() {
         <table className="stats-records">
           <caption>{weekly ? "Weekly records (Monday to Sunday, within the selected period)" : "Daily records"}</caption>
           <thead><tr><th scope="col">{weekly ? "Week" : "Day"}</th><th scope="col">Time focused</th><th scope="col">Actions finished</th></tr></thead>
-          <tbody>{!hasData ? <tr className="stats-records-empty"><td colSpan={3} role="status">No records in this period. Start a block and it shows up here.</td></tr> : records.map(record => <tr key={record.start}>
+          <tbody>{!hasData ? <tr className="stats-records-empty"><td colSpan={3} role="status">{hasHistory ? "No records in this period." : "No records yet. Start a block and it shows up here."}</td></tr> : records.map(record => <tr key={record.start}>
             <th scope="row">{dateLabel(record.start)}{record.end !== record.start && <> to {dateLabel(record.end)}</>}</th>
             <td>{formatStatsDuration(record.focusMs)}</td><td>{record.tasks.toLocaleString()}</td>
           </tr>)}</tbody>

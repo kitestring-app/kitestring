@@ -105,7 +105,7 @@ export const SOUNDS: readonly SoundDefinition[] = [
     file: "stream.ogg",
   },
   { id: "airplane-cabin", name: "Airplane cabin", glyph: "plane", category: "Places" },
-  { id: "exam-hall", name: "Exam hall", glyph: "pencil", category: "Places" },
+  { id: "exam-hall", name: "Study hall", glyph: "pencil", category: "Places" },
   { id: "library", name: "Library", glyph: "library", category: "Places", file: "library.ogg" },
   { id: "city-street", name: "City street", glyph: "building-2", category: "Places", file: "city-street.ogg" },
   { id: "light-rain", name: "Light rain", glyph: "cloud-drizzle", category: "Nature" },

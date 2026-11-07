@@ -151,8 +151,8 @@
 
 /* Glass over a light wallpaper: light frost and dark ink, like macOS vibrancy. */
 html.theme-light[data-look="glass"] {
-  --surface: rgb(255 255 255 / 72%); --surface-hover: rgb(255 255 255 / 84%);
-  --surface-strong: rgb(250 251 252 / 74%); --surface-sunk: rgb(20 25 30 / 6%); --surface-solid: #f4f6f7;
+  --surface: rgb(255 255 255 / 64%); --surface-hover: rgb(255 255 255 / 76%);
+  --surface-strong: rgb(250 251 252 / 68%); --surface-sunk: rgb(20 25 30 / 6%); --surface-solid: #f4f6f7;
   --canvas: #e9ecee;
   --border: rgb(255 255 255 / 70%); --line: rgb(20 25 30 / 12%);
   --fg: #15191d; --fg-dim: #30373e; --fg-faint: #3f464e;
@@ -197,8 +197,8 @@ html.theme-light:is(:not([data-look]), [data-look="classic"]) {
 }
 /* A forced scheme that disagrees with the wallpaper veils it, so the timer, quote and footer follow the scheme
    along with the chrome. The wallpaper still shows through, softened. */
-html.theme-forced.theme-light.wallpaper-light { --scrim: linear-gradient(rgb(247 247 252 / 78%), rgb(247 247 252 / 84%)); }
-html.theme-forced:not(.theme-light):not(.wallpaper-light) { --scrim: linear-gradient(rgb(19 18 30 / 76%), rgb(19 18 30 / 82%)); }
+html.theme-forced.theme-light.wallpaper-light { --scrim: linear-gradient(rgb(246 244 250 / 84%), rgb(246 244 250 / 88%)); }
+html.theme-forced:not(.theme-light):not(.wallpaper-light) { --scrim: linear-gradient(rgb(18 18 32 / 82%), rgb(18 18 32 / 86%)); }
 
 /* ---------- base ---------- */
 * { box-sizing: border-box; }
@@ -578,3 +578,14 @@ input[type="radio"] { accent-color: var(--accent); }
 .switch:not(:checked) { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--fg) 42%, transparent); }
 /* On touch screens the question keeps a 44px target; the margins absorb it so the timer does not move. */
 @media (pointer: coarse) { .headline:has(> .headline-ask) { margin-top: -11px; margin-bottom: 7px; } }
+/* The short-start chip is one quiet split button in every Look, not a caption with a stray chevron. */
+:root:not([data-look="sketch"]) .focus-center .tiny-chip { border: 1px solid color-mix(in srgb, var(--on-bg) 20%, transparent); border-radius: var(--r-pill, 999px); }
+/* An empty task list shows one "add" row; a checkbox there would suggest a task that does not exist yet. */
+.task-placeholder-check { display: none; }
+/* Light chrome: controls on panels and bars get a hairline edge of at least 3:1, not just a soft shadow. */
+html.theme-light:not([data-look="sketch"]) :is(.topbar, .bottombar, .panel, .drawer) .iconbtn:not(.primary):not([aria-pressed="true"]),
+html.theme-light .sounds-panel .sound-tile:not(.active) { border-color: rgb(26 23 38 / 30%); }
+html.theme-light[data-look="glass"] :is(.topbar, .bottombar, .panel, .drawer) .iconbtn:not(.primary):not([aria-pressed="true"]),
+html.theme-light[data-look="glass"] .sounds-panel .sound-tile:not(.active) { border-color: rgb(20 25 30 / 26%); }
+/* Glass keeps its frost: the opaque Sounds backing is only for the solid Looks. */
+html[data-look="glass"] .sounds-panel { background: var(--surface-strong, var(--surface)); }

@@ -328,7 +328,7 @@ function MixerControls({
           onClick={playing ? onPause : onPlay}
         >
           {playing ? <Icon.pause /> : <Icon.play />}
-          {playing ? "Pause all" : "Play mix"}
+          {!layers.length ? "Pick a sound below" : playing ? "Pause all" : "Play mix"}
         </button>
         {layers.length > 0 && (
           <span className="muted small">
