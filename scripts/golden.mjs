@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Dev-only visual guard. Uses Vite and Node's built-in WebSocket, never a personal browser.
-import { chromeArgs, chromeSpawn, guardChromeTree, killChromeTree } from './browser/chrome-args.ts';
+import { chromeArgs, chromeSpawn, guardChromeTree, isNavigationRace, killChromeTree } from './browser/chrome-args.ts';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
@@ -113,7 +113,8 @@ export class Chrome {
   async waitFor(expression) {
     for (let i = 0; i < 150; i++) {
       this.assertHealthy();
-      if (await this.evaluate(`Promise.resolve(${expression}).then(Boolean)`)) return;
+      try { if (await this.evaluate(`Promise.resolve(${expression}).then(Boolean)`)) return; }
+      catch (error) { if (!isNavigationRace(error)) throw error; }
       await delay(50);
     }
     throw new Error(`Page did not reach: ${expression}`);

@@ -28,3 +28,8 @@ export function guardChromeTree<T extends ChildProcess>(child: T): T {
   child.once("exit", () => process.off("exit", stop));
   return child;
 }
+
+/** A CDP call that was in flight while a reload replaced the page. Waits retry these as "not ready yet". */
+export function isNavigationRace(error: unknown) {
+  return /Inspected target navigated or closed|Execution context was destroyed|Cannot find context with specified id/.test(String((error as Error)?.message ?? error));
+}

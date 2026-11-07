@@ -1,4 +1,4 @@
-import { chromeArgs, chromeSpawn, guardChromeTree, killChromeTree } from "../../../scripts/browser/chrome-args.ts";
+import { chromeArgs, chromeSpawn, guardChromeTree, isNavigationRace, killChromeTree } from "../../../scripts/browser/chrome-args.ts";
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -30,7 +30,8 @@ describe.skipIf(!chromePath || process.env.NOTEPAD_BROWSER !== "1")("notepad and
   };
   const waitFor = async (expression: string) => {
     for (let n = 0; n < 100; n++) {
-      if (await evaluate(`!!(${expression})`)) return;
+      try { if (await evaluate(`!!(${expression})`)) return; }
+      catch (error) { if (!isNavigationRace(error)) throw error; }
       await delay(50);
     }
     throw new Error(`Dashboard did not reach: ${expression}; errors: ${JSON.stringify(errors)}; page: ${await evaluate("document.body.innerHTML")}`);

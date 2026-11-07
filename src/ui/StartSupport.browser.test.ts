@@ -1,4 +1,4 @@
-import { chromeArgs, chromeSpawn, guardChromeTree, killChromeTree } from "../../scripts/browser/chrome-args.ts";
+import { chromeArgs, chromeSpawn, guardChromeTree, isNavigationRace, killChromeTree } from "../../scripts/browser/chrome-args.ts";
 import { assertFocusFit } from "./focusLayout.browser";
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -31,7 +31,8 @@ describe.skipIf(!chromePath || process.env.START_CUES_BROWSER !== "1")("Start cu
   };
   const waitFor = async (expression: string) => {
     for (let n = 0; n < 100; n++) {
-      if (await evaluate(`Promise.resolve(${expression}).then(Boolean)`)) return;
+      try { if (await evaluate(`Promise.resolve(${expression}).then(Boolean)`)) return; }
+      catch (error) { if (!isNavigationRace(error)) throw error; }
       await delay(50);
     }
     throw new Error(`Dashboard did not reach: ${expression}; ${JSON.stringify(errors)}; ${await evaluate("(location.href + document.documentElement.outerHTML.slice(0, 1200))")}`);
