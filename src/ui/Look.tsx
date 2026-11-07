@@ -50,9 +50,11 @@ export function InkFilters() {
   return (
     <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: "absolute" }}>
       {[2, 7, 11].map((seed, i) => (
-        <filter key={seed} id={`ink-${i}`} x="-12%" y="-12%" width="124%" height="124%">
+        <filter key={seed} id={`ink-${i}`} x="-20%" y="-40%" width="140%" height="180%" colorInterpolationFilters="sRGB">
           <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves={2} seed={seed} result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale={2.4} />
+          {/* Opaque noise: where its alpha dipped, the un-premultiplied values jumped and the line showed notches. */}
+          <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" result="flat" />
+          <feDisplacementMap in="SourceGraphic" in2="flat" scale={2.4} xChannelSelector="R" yChannelSelector="G" />
         </filter>
       ))}
     </svg>

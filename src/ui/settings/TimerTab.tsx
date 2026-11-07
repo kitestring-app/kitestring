@@ -117,10 +117,10 @@ export function TimerTab() {
           {MODES.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
         <p className="help" style={{ marginTop: 10 }}>{mode.help}</p>
-        <Toggle title="Hard mode" help="Running blocks cannot be paused, skipped or reset. Ending early takes a 10-second hold and a reason." checked={t.hardMode} onChange={hardMode => set({ hardMode })} />
+        <Toggle title="Hard mode" help="Running blocks can’t be paused, skipped or reset. To end early, hold for 10 seconds and note what came up." checked={t.hardMode} onChange={hardMode => set({ hardMode })} />
         {v.hardModePendingOff && <p role="status" className="help">Hard mode turns off after this block</p>}
         {(t.mode === "pomodoro" || t.mode === "animedoro") && (
-          <Toggle title="Use Task ETA mode" help="The focus length follows the estimate of your current task." checked={t.taskEta} onChange={(v) => set({ taskEta: v })} />
+          <Toggle title="Match focus to the task estimate" help="Each focus block lasts as long as your current task’s estimate." checked={t.taskEta} onChange={(v) => set({ taskEta: v })} />
         )}
         <div className="field-stack">
           <label htmlFor="review-parked">Review parked thoughts</label>
@@ -128,7 +128,7 @@ export function TimerTab() {
             <option value="never">Never automatically</option><option value="block">End of block</option><option value="session">End of session</option>
           </select>
         </div>
-        <h3 style={{ marginTop: 14 }}>Timer lengths</h3>
+        <h3 style={{ marginTop: 24 }}>Timer lengths</h3>
         {(t.mode === "pomodoro" || t.mode === "animedoro") && (
           <div className="row" role="group" aria-label="Pomodoro presets" style={{ flexWrap: "wrap" }}>
             {PRESETS.map((p) => (

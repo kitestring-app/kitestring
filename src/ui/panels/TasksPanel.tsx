@@ -428,7 +428,7 @@ export function TasksPanel({ onClose }: { onClose: () => void }) {
       </li>)}</ul> : <div className="tasks-empty"><button className="task-placeholder" onClick={() => focusRow(insertTaskAfter())}><span className="task-placeholder-check" aria-hidden="true" /><span>Type your priority</span><Icon.plus /></button><p className="tasks-empty-hint">One clear next thing beats a long list.</p></div>}
     </div>
     <footer className="tasks-footer">
-      <div className="tasks-footer-actions"><button ref={addRef} className="tasks-add" onClick={() => focusRow(insertTaskAfter())}><Icon.plus />Add task</button>{done > 0 && <button className="tasks-clear" onClick={() => { clearDone(); addRef.current?.focus(); }}>Clear completed</button>}</div>
+      <div className="tasks-footer-actions"><button ref={addRef} className="tasks-add" hidden={!tops.length} onClick={() => focusRow(insertTaskAfter())}><Icon.plus />Add task</button>{done > 0 && <button className="tasks-clear" onClick={() => { clearDone(); addRef.current?.focus(); }}>Clear completed</button>}</div>
       <TaskSummary all={all} />
     </footer>
     <Confetti burst={burst} />

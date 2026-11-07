@@ -330,14 +330,11 @@ function MixerControls({
           {playing ? <Icon.pause /> : <Icon.play />}
           {playing ? "Pause all" : "Play mix"}
         </button>
-        <span className="muted small">
-          {layers.length} {layers.length === 1 ? "layer" : "layers"}
-          {layers.length
-            ? playing
-              ? " playing"
-              : " paused"
-            : " · select sounds below"}
-        </span>
+        {layers.length > 0 && (
+          <span className="muted small">
+            {layers.length} {layers.length === 1 ? "layer" : "layers"} {playing ? "playing" : "paused"}
+          </span>
+        )}
         <label className="sounds-master small">
           Master {muted && <span role="status">Muted</span>} <output>{Math.round(clampVolume(master) * 100)}%</output>
           <input
@@ -354,17 +351,18 @@ function MixerControls({
             }}
           />
         </label>
+        <button className="iconbtn sounds-mute" aria-pressed={muted} aria-label={muted ? "Unmute audio" : "Mute audio"} title={muted ? "Unmute audio" : "Mute audio"} onClick={() => localPreferencesUpdate({ muted: !muted })}>
+          {muted ? <Icon.muted /> : <Icon.volume />}
+        </button>
       </div>
-      <div className="sounds-wrap sounds-mixes">
-        <button className="btn small" aria-pressed={muted} onClick={() => localPreferencesUpdate({ muted: !muted })}>{muted ? "Unmute audio" : "Mute audio"}</button>
-        <button
+      {(layers.length > 0 || mixes.length > 0) && <div className="sounds-wrap sounds-mixes">
+        {layers.length > 0 && <button
           className="btn small"
-          disabled={!layers.length}
           onClick={() => setSaving(!saving)}
         >
           Save mix
-        </button>
-        <label className="sounds-mix-select small">
+        </button>}
+        {mixes.length > 0 && <label className="sounds-mix-select small">
           <span className="sr-only">Saved mixes</span>
           <select
             className="input"
@@ -386,7 +384,7 @@ function MixerControls({
               </option>
             ))}
           </select>
-        </label>
+        </label>}
         {selected && (
           <>
             <button
@@ -414,7 +412,7 @@ function MixerControls({
             </button>
           </>
         )}
-      </div>
+      </div>}
       {saving && (
         <form
           className="sounds-wrap sounds-save"

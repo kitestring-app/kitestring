@@ -67,7 +67,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
   const filled = v.state.segment === "focus" ? v.state.round : v.state.segment === "long" ? n : v.state.round;
 
   return (
-    <NextAction closeOutVisible={closeOutVisible}>{(pin, closeOut) => <section ref={fit} className={`center focus-center size-${size}`} aria-label="Focus timer">
+    <NextAction closeOutVisible={closeOutVisible}>{(pin, closeOut, editPin) => <section ref={fit} className={`center focus-center size-${size}`} aria-label="Focus timer">
       <h1 className={`headline ${task?.title ? "task" : "prompt"}`}>
         {task?.title ? (
           <>
@@ -75,7 +75,8 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
             {task.title}
           </>
         ) : (
-          "What do you want to focus on?"
+          // The question is also where you answer it: clicking opens the pinned next action.
+          <button type="button" className="headline-ask" onClick={editPin}>What do you want to focus on?</button>
         )}
       </h1>
       {segs.length > 1 && (

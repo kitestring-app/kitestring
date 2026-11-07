@@ -9,6 +9,8 @@
      --surface-sunk inputs, tiles, rows inside a panel
    ========================================================================= */
 /* Nunito, SIL Open Font License 1.1 (public/fonts/Nunito-OFL.txt). Bundled; Chromium has no ui-rounded. */
+@font-face { font-family: "Newsreader App"; src: url("/fonts/newsreader-latin.woff2") format("woff2"); font-weight: 200 800; font-style: normal; font-display: swap; }
+@font-face { font-family: "Newsreader App"; src: url("/fonts/newsreader-latin-italic.woff2") format("woff2"); font-weight: 200 800; font-style: italic; font-display: swap; }
 @font-face { font-family: "Nunito App"; src: url("/fonts/nunito-latin.woff2") format("woff2"); font-weight: 200 1000; font-display: swap; }
 :root {
   /* Stacking order, lowest first. Popovers always clear the Mac drag strip. */
@@ -27,7 +29,7 @@
   --highlight: inset 0 1px 0 rgb(255 255 255 / 18%);
   --shadow: var(--highlight), 0 10px 30px -14px rgb(0 0 0 / 55%);
   --shadow-lg: var(--highlight), 0 30px 80px -30px rgb(0 0 0 / 80%);
-  --accent: #7c5cff; --accent-fg: #ffffff; --accent-soft: rgb(124 92 255 / 22%); --accent-ink: #b9a8ff;
+  --accent: #7052f7; --accent-fg: #ffffff; --accent-soft: rgb(112 82 247 / 22%); --accent-ink: #b9a8ff;
   --sel: #6446d6; --sel-fg: #ffffff; --ring: var(--accent-ink);
   --tile: rgb(255 255 255 / 6%); --tile-border: rgb(235 239 255 / 12%); --tile-on: var(--sel); --tile-on-fg: var(--sel-fg); --tile-icon: #c9c7d6;
   --track: rgb(255 255 255 / 18%); --progress: #ffffff;
@@ -115,8 +117,8 @@
   --good: #377761; --warn: #9a6a1c; --danger: #a0402f; --danger-bg: #f8e4df; --danger-fg: #6e2618;
   --scrim: none;
   --radius: 24px; --r-ctl: 16px; --r-seg: 999px;
-  --display: "Iowan Old Style", "New York", ui-serif, Georgia, serif;
-  --timer-font: "Iowan Old Style", "New York", ui-serif, Georgia, serif;
+  --display: "Newsreader App", "Iowan Old Style", "New York", ui-serif, Georgia, serif;
+  --timer-font: "Newsreader App", "Iowan Old Style", "New York", ui-serif, Georgia, serif;
   --timer-weight: 400; --timer-track: -0.02em; --headline-weight: 500;
   color-scheme: light;
 }
@@ -125,7 +127,7 @@
 :root[data-look="sunrise"] {
   --state-focus: #ff8a3d; --state-break: #3f9c72; --state-long: #5b7fd6; --state-ink: #2a2014;
   --bg: #fff4e4;
-  --on-bg: #2a2014; --on-bg-dim: #6b5a44; --on-bg-faint: #7c6850; --on-bg-shadow: none; --dot-shadow: 0;
+  --on-bg: #2a2014; --on-bg-dim: #5a4a36; --on-bg-faint: #6b5a44; --on-bg-shadow: none; --dot-shadow: 0;
   --fg: #2a2014; --fg-dim: #6b5a44; --fg-faint: #6f5d46;
   --surface: #ffffff; --surface-hover: #fff6ea;
   --surface-strong: #ffffff; --surface-sunk: #ffe9d2; --surface-solid: #ffffff;
@@ -195,8 +197,8 @@ html.theme-light:is(:not([data-look]), [data-look="classic"]) {
 }
 /* A forced scheme that disagrees with the wallpaper veils it, so the timer, quote and footer follow the scheme
    along with the chrome. The wallpaper still shows through, softened. */
-html.theme-forced.theme-light.wallpaper-light { --scrim: linear-gradient(rgb(247 247 252 / 90%), rgb(247 247 252 / 93%)); }
-html.theme-forced:not(.theme-light):not(.wallpaper-light) { --scrim: linear-gradient(rgb(19 18 30 / 90%), rgb(19 18 30 / 93%)); }
+html.theme-forced.theme-light.wallpaper-light { --scrim: linear-gradient(rgb(247 247 252 / 78%), rgb(247 247 252 / 84%)); }
+html.theme-forced:not(.theme-light):not(.wallpaper-light) { --scrim: linear-gradient(rgb(19 18 30 / 76%), rgb(19 18 30 / 82%)); }
 
 /* ---------- base ---------- */
 * { box-sizing: border-box; }
@@ -423,11 +425,15 @@ input[type="checkbox"]:not(.switch), input[type="radio"] { accent-color: var(--a
 /* Popovers are placed in viewport coordinates; they keep position: fixed, which already anchors the ink outline. */
 :root[data-look="sketch"] .panel { position: fixed; }
 :root[data-look="sketch"] :is(.seg, .iconbtn, .btn, .choice, .panel, .card, .sound-tile, .sounds-station, .radio-station, .transition-content, .tasks-popover, .ambient-timer, .tiny-chip)::before {
-  content: ""; position: absolute; inset: 0; border: 2.4px solid var(--ink); border-radius: inherit; filter: url(#ink-0); pointer-events: none;
+  content: ""; position: absolute; inset: -1px; border: 2.2px solid var(--ink); border-radius: inherit; pointer-events: none; z-index: 1;
 }
 :root[data-look="sketch"] :is(.sound-tile, .sounds-station, .radio-station, .choice)::before { border-width: 1.6px; }
 :root[data-look="sketch"] .btn.primary::before { border-color: var(--ink); }
 @media (hover: hover) { :root[data-look="sketch"]:not(.reduce-motion) :is(.iconbtn, .btn, .sound-tile, .choice):hover::before { animation: ink-boil 0.5s steps(1) infinite; } }
+/* At rest the ink is a clean line drawn slightly off-true (the displacement filter left 1px notches at this size);
+   the wobble filter only "boils" on hover. */
+:root[data-look="sketch"] :is(.btn, .iconbtn, .tiny-chip, .choice, .sound-tile)::before { border-radius: calc(var(--r, 12px) + 3px) calc(var(--r, 12px) - 2px) calc(var(--r, 12px) + 2px) calc(var(--r, 12px) - 3px) / calc(var(--r, 12px) - 2px) calc(var(--r, 12px) + 3px) calc(var(--r, 12px) - 3px) calc(var(--r, 12px) + 2px); }
+:root[data-look="sketch"] :is(.btn, .tiny-chip)::before { --r: 999px; border-radius: 999px 980px 999px 960px / 999px 960px 999px 980px; }
 @keyframes ink-boil { 0% { filter: url(#ink-0); } 33% { filter: url(#ink-1); } 66% { filter: url(#ink-2); } }
 :root[data-look="sketch"] .headline { background: linear-gradient(transparent 68%, rgb(242 182 60 / 55%) 68%) no-repeat 0 0 / 100% 100%; padding: 0 6px; }
 :root[data-look="sketch"] .progress-line { border: 1.5px solid var(--ink); height: 10px; }
@@ -474,8 +480,8 @@ html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="
 html:not(.theme-light)[data-look="glass"] :is(.panel, .card, .quote, .seg, .credits, .ambient-timer, .tasks-popover, .drawer) { text-shadow: 0 1px 2px rgb(0 0 0 / 28%); }
 html:not(.theme-light)[data-look="glass"] .sound-tile.active { text-shadow: none; }
 html.theme-light[data-look="glass"] { --tile: rgb(255 255 255 / 55%); --tile-border: rgb(255 255 255 / 70%); --tile-on: #15191d; --tile-on-fg: #ffffff; --tile-icon: #15191d; }
-/* Selected chips and pills use the same solid fill as selected tiles. */
-:is(.sounds-panel .btn, .stats-pills button, .choice, .theme-categories button)[aria-pressed="true"] { background: var(--tile-on); color: var(--tile-on-fg); border-color: transparent; }
+/* Two selection styles only: single-choice pills and chips take this solid fill; cards and tiles take a tint with an accent ring (.choice, .sound-tile). */
+:is(.sounds-panel .btn, .stats-pills button, .theme-categories button)[aria-pressed="true"] { background: var(--tile-on); color: var(--tile-on-fg); border-color: transparent; }
 :root[data-look="sketch"] :is(.iconbtn, .sound-tile, .btn) svg { filter: url(#ink-1); }
 :root[data-look="sketch"] :is(.seg, .iconbtn, .btn, .choice, .panel, .card, .sound-tile, .sounds-station, .radio-station, .transition-content, .tasks-popover, .ambient-timer, .tiny-chip)::before { border-width: 2px; }
 
@@ -552,8 +558,23 @@ input[type="radio"] { accent-color: var(--accent); }
 :root[data-look="sketch"] :is(.tiny-chip .btn, .controls .iconbtn:not(.primary))::before { display: none; }
 :root[data-look="sketch"] .tiny-chip .btn { border-color: transparent; }
 /* Round 4. Mode tabs keep a 32px target; the start chip reads as a quiet text action under Play. */
-.focus-center .tabs button { min-height: 32px; padding-inline: 4px; }
+@media (min-height: 701px) { .focus-center .tabs button { min-height: 32px; padding-inline: 4px; } }
 .focus-center .tiny-chip .btn { background: transparent; border-color: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--on-bg-dim); text-shadow: var(--on-bg-shadow); }
 @media (hover: hover) { .focus-center .tiny-chip .btn:hover:not(:disabled) { background: var(--surface); border-color: var(--border); color: var(--on-bg); text-shadow: none; } }
 .focus-center .tiny-chip .tiny-menu-toggle { box-shadow: inset 1px 0 0 color-mix(in srgb, var(--on-bg) 22%, transparent); }
-.controls .iconbtn.primary { margin-inline: 6px; }
+@media (min-width: 700px) and (min-height: 701px) { .controls .iconbtn.primary { margin-inline: 6px; } }
+
+/* ---------- round 5 polish ---------- */
+/* The focus question opens the pinned next action, so it reads as an invitation, not a dead label. */
+.headline-ask { display: block; width: 100%; line-height: inherit; font: inherit; color: inherit; letter-spacing: inherit; white-space: inherit; text-wrap: inherit; text-align: inherit; overflow: hidden; text-overflow: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline dotted transparent; text-decoration-thickness: 2px; text-underline-offset: 8px; transition: text-decoration-color 0.15s; }
+@media (hover: hover) { .headline-ask:hover { text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); } }
+.headline-ask:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; border-radius: 6px; }
+/* Settings rhythm: one section heading (15/650), one quiet label above it, 10px from heading to its control. */
+.card h3 { margin: 0 0 10px; font-size: 15px; font-weight: 650; }
+.card h3 + .help { margin-top: -4px; }
+.card-kicker { text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 500; color: var(--fg-dim); }
+.field-stack > label { font-size: 13px; font-weight: 500; color: var(--fg-dim); }
+/* An off switch still shows its track edge at 3:1 or more against the card. */
+.switch:not(:checked) { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--fg) 42%, transparent); }
+/* On touch screens the question keeps a 44px target; the margins absorb it so the timer does not move. */
+@media (pointer: coarse) { .headline:has(> .headline-ask) { margin-top: -11px; margin-bottom: 7px; } }

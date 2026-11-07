@@ -273,3 +273,8 @@
 .sounds-panel .panel-body { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--fg) 30%, transparent) transparent; }
 /* A wide panel sits over the timer: keep it opaque enough that the digits never smear through. */
 .sounds-panel { background: color-mix(in srgb, var(--surface-solid) 94%, transparent); }
+/* Round 5: one toolbar row (play, master, mute), space under the filters, and a soft cue where the grid continues. */
+.sounds-toolbar .sounds-mute { flex: none; align-self: flex-end; }
+.sounds-categories { margin-bottom: 14px; }
+.sounds-panel .panel-body::after { content: ""; position: sticky; bottom: 0; display: block; height: 28px; margin-top: -28px; background: linear-gradient(transparent, color-mix(in srgb, var(--surface-solid) 94%, transparent)); pointer-events: none; }
+html.theme-light:not([data-look="glass"]) .sounds-panel .sound-tile:not(.active) { border-color: rgb(26 23 38 / 16%); }

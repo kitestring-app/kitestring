@@ -184,5 +184,6 @@ macOS iconutil). The builder reads only tracked masters in `brand/`.
 | Asset | Source | License |
 |---|---|---|
 | `public/fonts/nunito-latin.woff2` (Nunito, Latin subset, all weights) | [googlefonts/nunito](https://github.com/googlefonts/nunito) via google/fonts | SIL Open Font License 1.1, full text in `public/fonts/Nunito-OFL.txt` |
+| `public/fonts/newsreader-latin.woff2`, `public/fonts/newsreader-latin-italic.woff2` (Newsreader, Latin subset, variable weight; the Companion look) | [productiontype/Newsreader](https://github.com/productiontype/Newsreader) via `@fontsource-variable/newsreader` 5.3.0 | SIL Open Font License 1.1, full text in `public/fonts/Newsreader-OFL.txt` |
 | `src/ui/glyphs.data.ts` (line icons) | [Lucide](https://lucide.dev), `lucide-static` 0.460.0 | ISC License. Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT); all other copyright (c) for Lucide are held by Lucide Contributors 2022. |
 | Look backdrops, wallpaper effects, rain droplet tile | Original artwork drawn in CSS and inline SVG for this project | Same as the project |

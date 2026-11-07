@@ -89,3 +89,5 @@
 .tasks-allowance summary { cursor: pointer; padding: 6px 0; }
 .tasks-allowance label { display: grid; gap: 6px; margin-bottom: 8px; }
 .tasks-allowance .input { min-width: 0; width: 100%; }
+/* Empty list: the placeholder row is the one way to add, so the footer steps aside. */
+.tasks-footer:has(.tasks-add[hidden]):not(:has(.tasks-clear)) { display: none; }
