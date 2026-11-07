@@ -1,4 +1,4 @@
-import { chromeArgs } from "../../scripts/browser/chrome-args.ts";
+import { chromeArgs, chromeSpawn, guardChromeTree, killChromeTree } from "../../scripts/browser/chrome-args.ts";
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -51,9 +51,10 @@ describe.skipIf(!chromePath || process.env.CATALOG_BROWSER !== "1")("sound and t
     const probe = await fetch(origin);
     expect(probe.headers.get("content-type")).toContain("text/html");
     profile = mkdtempSync(join(tmpdir(), "pomodoro-catalog-test-"));
-    browser = spawn(chromePath!, chromeArgs(profile), { stdio: "ignore" });
+    browser = guardChromeTree(spawn(chromePath!, chromeArgs(profile), { ...chromeSpawn, stdio: "ignore" }));
     const portFile = join(profile, "DevToolsActivePort");
-    for (let n = 0; n < 150 && !existsSync(portFile); n++) await delay(50);
+    // A cold CI runner can take over 7.5 s to start the first Chrome.
+    for (let n = 0; n < 300 && !existsSync(portFile); n++) await delay(50);
     const port = readFileSync(portFile, "utf8").split("\n")[0];
     const pages = await fetch(`http://127.0.0.1:${port}/json/list`).then(r => r.json()) as { type: string; url: string; webSocketDebuggerUrl: string }[];
     socket = new WebSocket(pages.find(page => page.type === "page" && page.url === "about:blank")!.webSocketDebuggerUrl);
@@ -75,18 +76,18 @@ describe.skipIf(!chromePath || process.env.CATALOG_BROWSER !== "1")("sound and t
     const navigation = await send("Page.navigate", { url: origin });
     if (navigation.errorText) throw new Error(`Test navigation failed: ${navigation.errorText}; ${JSON.stringify(errors)}`);
     await waitFor("document.querySelector('[data-tip]')");
-  }, 20000);
+  }, 30000);
 
   afterAll(async () => {
     socket?.close();
     for (const request of pending.values()) clearTimeout(request.timer);
     if (browser && browser.exitCode === null) {
       const exited = new Promise<void>(resolve => browser.once("exit", () => resolve()));
-      browser.kill("SIGKILL");
+      killChromeTree(browser);
       await exited;
     }
     await server?.close();
-    if (profile) rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    if (profile) rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   });
 
   it("renders every procedural voice and decodes each new recording without clipping or a loop-boundary spike", async () => {
