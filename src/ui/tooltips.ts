@@ -57,7 +57,9 @@ export function installTooltips(doc: Document = document): () => void {
     tip.style.maxWidth = `${Math.max(0, width - 16)}px`;
     tip.style.maxHeight = `${Math.max(0, height - 16)}px`;
     const rect = anchor.getBoundingClientRect();
-    const position = tooltipPosition({ left: rect.left - offsetLeft, right: rect.right - offsetLeft, top: rect.top - offsetTop, bottom: rect.bottom - offsetTop }, tip.offsetWidth, tip.offsetHeight, { width, height });
+    // offsetWidth rounds; a fractional tip width could overrun the edge margin by under a pixel.
+    const size = tip.getBoundingClientRect();
+    const position = tooltipPosition({ left: rect.left - offsetLeft, right: rect.right - offsetLeft, top: rect.top - offsetTop, bottom: rect.bottom - offsetTop }, Math.ceil(size.width), Math.ceil(size.height), { width, height });
     tip.style.left = `${position.left + (viewport?.offsetLeft ?? 0)}px`;
     tip.style.top = `${position.top + (viewport?.offsetTop ?? 0)}px`;
   };
