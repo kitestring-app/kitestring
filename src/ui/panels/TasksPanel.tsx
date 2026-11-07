@@ -1,6 +1,6 @@
 import { validAllowance } from "../../lib/taskAllowance";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
+import type { CSSProperties, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode, RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useStore } from "../../lib/store";
 import {
@@ -81,17 +81,22 @@ function TaskPopover({ anchor, label, onClose, children }: {
   anchor: RefObject<HTMLButtonElement | null>; label: string; onClose: () => void | false; children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const [position, setPosition] = useState<CSSProperties>({ left: 0, top: 0 });
   useLayoutEffect(() => {
     const button = anchor.current, popup = ref.current;
     if (!button || !popup) return;
+    // Open below the anchor when it fits, otherwise on the roomier side. The far edge is pinned to the anchor and
+    // the height capped to that side's room, so content that grows later (an opened <details>) scrolls inside the
+    // popover instead of running off screen before the next placement pass.
     const place = () => {
       const box = button.getBoundingClientRect();
       const { width, height } = popup.getBoundingClientRect();
-      setPosition({
-        left: Math.max(8, Math.min(box.right - width, window.innerWidth - width - 8)),
-        top: box.bottom + height + 8 < window.innerHeight ? box.bottom + 6 : Math.max(8, box.top - height - 6),
-      });
+      const room = { below: window.innerHeight - box.bottom - 14, above: box.top - 14 };
+      const below = height <= room.below || room.below >= room.above;
+      const left = Math.max(8, Math.min(box.right - width, window.innerWidth - width - 8));
+      setPosition(below
+        ? { left, top: box.bottom + 6, maxHeight: Math.max(120, room.below) }
+        : { left, bottom: window.innerHeight - box.top + 6, maxHeight: Math.max(120, room.above) });
     };
     place();
     const resize = new ResizeObserver(place);
@@ -317,9 +322,9 @@ function TaskSummary({ all }: { all: Task[] }) {
   const nextDay = finish.toDateString() !== date.toDateString();
   const done = all.filter((t) => t.done).length;
   return <div className="tasks-summary">
-    {config.display !== "hidden" && <><div className="tasks-summary-line"><span><strong>{remaining < 60 ? `${remaining} min` : `${Math.floor(remaining / 60)}h${remaining % 60 ? ` ${remaining % 60}m` : ""}`}</strong> remaining</span>
+    {config.display !== "hidden" && all.some((t) => !t.done) && <><div className="tasks-summary-line"><span><strong>{remaining < 60 ? `${remaining} min` : `${Math.floor(remaining / 60)}h${remaining % 60 ? ` ${remaining % 60}m` : ""}`}</strong> remaining</span>
       <span>Done by {nextDay ? `${finish.toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ` : ""}{finish.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true })}</span></div>
-    <p className="tasks-estimate-note">Estimate uses task ETAs, current focus progress and {Math.ceil(estimate.breakMinutes)} min of scheduled breaks between sessions. Assumes continuous work.</p></>}
+    <p className="tasks-estimate-note">From your estimates, current focus progress and {Math.ceil(estimate.breakMinutes)} min of breaks.</p></>}
     {all.length > 0 && <div className="tasks-progress" role="progressbar" aria-label="Task progress" aria-valuemin={0} aria-valuemax={all.length} aria-valuenow={done}><span style={{ width: `${done / all.length * 100}%` }} /></div>}
   </div>;
 }
@@ -413,17 +418,17 @@ export function TasksPanel({ onClose }: { onClose: () => void }) {
   }}>
     <div className="panel-head">
       <span className="badge"><Icon.tasks /></span><h2>Tasks</h2>
-      <span className="tasks-count" aria-label={`${done} of ${all.length} tasks completed`} aria-live="polite">{done}/{all.length}</span>
+      {all.length > 0 && <span className="tasks-count" aria-label={`${done} of ${all.length} tasks completed`} aria-live="polite">{done}/{all.length}</span>}
       <button className="iconbtn tasks-close" onClick={onClose} aria-label="Close tasks · Escape"><Icon.close /></button>
     </div>
     <div className="panel-body tasks-body">
       {tops.length ? <ul className="tasks-list">{tops.map((task) => <li className="task-group" key={task.id}>
         <ul className="tasks-list"><TaskRow onDrag={drag} dragTarget={dragTarget === task.id} task={task} all={all} isCurrent={active?.id === task.id} collapsed={collapsed.has(task.id)} onCollapse={() => setCollapsed((prev) => { const next = new Set(prev); if (next.has(task.id)) next.delete(task.id); else next.add(task.id); return next; })} onCreate={focusRow} onToggle={toggle} onDelete={remove} onNavigate={(id, dir) => { const i = visible.findIndex((t) => t.id === id); focusRow(visible[i + dir]?.id); }} /></ul>
         <ul id={`task-children-${task.id}`} className="tasks-list tasks-children" hidden={collapsed.has(task.id)}>{openFirst(childrenOf(all, task.id)).map((child) => <TaskRow onDrag={drag} dragTarget={dragTarget === child.id} key={child.id} task={child} all={all} isCurrent={active?.id === child.id} collapsed={false} onCollapse={() => {}} onCreate={focusRow} onToggle={toggle} onDelete={remove} onNavigate={(id, dir) => { const i = visible.findIndex((t) => t.id === id); focusRow(visible[i + dir]?.id); }} />)}</ul>
-      </li>)}</ul> : <div className="tasks-empty">{[0, 1, 2].map((n) => <button key={n} className="task-placeholder" onClick={() => focusRow(insertTaskAfter())}><span className="task-placeholder-check" aria-hidden="true" /><span>Type your priority</span><Icon.plus /></button>)}</div>}
+      </li>)}</ul> : <div className="tasks-empty"><button className="task-placeholder" onClick={() => focusRow(insertTaskAfter())}><span className="task-placeholder-check" aria-hidden="true" /><span>Type your priority</span><Icon.plus /></button><p className="tasks-empty-hint">One clear next thing beats a long list.</p></div>}
     </div>
     <footer className="tasks-footer">
-      <div className="tasks-footer-actions"><button ref={addRef} className="tasks-add" onClick={() => focusRow(insertTaskAfter())}><Icon.plus />Add task</button>{done > 0 && <button className="tasks-clear" onClick={() => { clearDone(); addRef.current?.focus(); }}>Clear completed</button>}</div>
+      <div className="tasks-footer-actions"><button ref={addRef} className="tasks-add" hidden={!tops.length} onClick={() => focusRow(insertTaskAfter())}><Icon.plus />Add task</button>{done > 0 && <button className="tasks-clear" onClick={() => { clearDone(); addRef.current?.focus(); }}>Clear completed</button>}</div>
       <TaskSummary all={all} />
     </footer>
     <Confetti burst={burst} />

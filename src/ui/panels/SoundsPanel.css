@@ -23,7 +23,6 @@
 }
 .sounds-panel .ptabs button[aria-pressed="true"] {
   color: var(--fg);
-  box-shadow: 0 2px var(--accent);
 }
 .sounds-wrap,
 .sounds-toolbar {
@@ -78,7 +77,7 @@
   max-width: 300px;
 }
 .sounds-panel select {
-  background: var(--surface-sunk);
+  background-color: var(--surface-sunk);
 }
 .sounds-save {
   align-items: flex-end;
@@ -100,8 +99,8 @@
 }
 .sounds-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
-  align-items: start;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  align-items: stretch;
   gap: 10px;
 }
 .sound-tile {
@@ -118,13 +117,14 @@
 /* The volume caption sets its own dim colour; on a selected tile it follows the tile's ink instead. */
 .sounds-panel .sound-tile.active label { color: var(--tile-on-fg); }
 .sound-toggle {
+  position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 14px 6px 12px;
-  min-height: 92px;
+  padding: 12px 8px 10px;
+  min-height: 84px;
   justify-content: center;
   color: inherit;
 }
@@ -132,8 +132,12 @@
 .sound-toggle b {
   font-size: 13px;
   font-weight: 650;
+  line-height: 1.2;
+  text-wrap: balance;
 }
-.sound-note { font-size: 11px; color: var(--fg-dim); }
+/* Binaural marker: a small headphone glyph in the tile corner, said once. */
+.sound-note { position: absolute; top: 7px; right: 8px; display: grid; place-items: center; color: var(--fg-faint); }
+.sound-note svg { width: 13px; height: 13px; }
 .sound-tile.active .sound-note { color: inherit; opacity: 0.75; }
 .sound-emoji { display: grid; place-items: center; color: var(--tile-icon); }
 .sound-emoji svg { width: 24px; height: 24px; }
@@ -261,3 +265,18 @@
 
 /* The main action waits quietly instead of looking broken. */
 .sounds-panel .btn.primary:disabled { opacity: 1; background: var(--surface-sunk); color: var(--fg-dim); border-color: var(--line); }
+/* Round 3: one 36px row for the mix controls, a readable binaural mark, and a fade where the grid scrolls on. */
+.sounds-mixes :is(.btn, .input) { min-height: 36px; }
+.sounds-mixes select.input { padding-block: 0; }
+.sound-note { color: var(--fg-dim); }
+.sound-note svg { width: 14px; height: 14px; }
+.sounds-panel .panel-body { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--fg) 30%, transparent) transparent; }
+/* A wide panel sits over the timer: keep it opaque enough that the digits never smear through. */
+.sounds-panel { background: color-mix(in srgb, var(--surface-solid) 94%, transparent); }
+/* Round 5: one toolbar row (play, master, mute), space under the filters, and a soft cue where the grid continues. */
+.sounds-toolbar .sounds-mute { flex: none; align-self: flex-end; }
+.sounds-categories { margin-bottom: 14px; }
+html.theme-light:not([data-look="glass"]) .sounds-panel .sound-tile:not(.active) { border-color: rgb(26 23 38 / 16%); }
+
+/* Nothing picked yet: a plain hint where Play will appear, not a disabled button. */
+.sounds-hint { margin: 0; min-height: 36px; display: flex; align-items: center; font-size: 14px; color: var(--fg-dim); }

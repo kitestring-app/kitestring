@@ -176,7 +176,7 @@ export function SoundsPanel({
         </nav>
         {tab === "Sounds" && (
           <p className="muted small sounds-guide">
-            Try sound or silence. Keep what works for this task. Binaural tiles need headphones.{" "}
+            Layer a few sounds, or keep silence. Tiles with a headphone mark need headphones.{" "}
             <a href="/research.html" target="_blank" rel="noopener">Why these sounds</a>
           </p>
         )}
@@ -322,22 +322,15 @@ function MixerControls({
   return (
     <>
       <div className="sounds-toolbar">
-        <button
-          className="btn primary"
-          disabled={!layers.length}
-          onClick={playing ? onPause : onPlay}
-        >
+        {layers.length ? <button className="btn primary" onClick={playing ? onPause : onPlay}>
           {playing ? <Icon.pause /> : <Icon.play />}
           {playing ? "Pause all" : "Play mix"}
-        </button>
-        <span className="muted small">
-          {layers.length} {layers.length === 1 ? "layer" : "layers"}
-          {layers.length
-            ? playing
-              ? " playing"
-              : " paused"
-            : " · select sounds below"}
-        </span>
+        </button> : <p className="sounds-hint">Tap a sound below to start a mix.</p>}
+        {layers.length > 0 && (
+          <span className="muted small">
+            {layers.length} {layers.length === 1 ? "layer" : "layers"} {playing ? "playing" : "paused"}
+          </span>
+        )}
         <label className="sounds-master small">
           Master {muted && <span role="status">Muted</span>} <output>{Math.round(clampVolume(master) * 100)}%</output>
           <input
@@ -354,17 +347,18 @@ function MixerControls({
             }}
           />
         </label>
+        <button className="iconbtn sounds-mute" aria-pressed={muted} aria-label={muted ? "Unmute audio" : "Mute audio"} title={muted ? "Unmute audio" : "Mute audio"} onClick={() => localPreferencesUpdate({ muted: !muted })}>
+          {muted ? <Icon.muted /> : <Icon.volume />}
+        </button>
       </div>
-      <div className="sounds-wrap sounds-mixes">
-        <button className="btn small" aria-pressed={muted} onClick={() => localPreferencesUpdate({ muted: !muted })}>{muted ? "Unmute audio" : "Mute audio"}</button>
-        <button
+      {(layers.length > 0 || mixes.length > 0) && <div className="sounds-wrap sounds-mixes">
+        {layers.length > 0 && <button
           className="btn small"
-          disabled={!layers.length}
           onClick={() => setSaving(!saving)}
         >
           Save mix
-        </button>
-        <label className="sounds-mix-select small">
+        </button>}
+        {mixes.length > 0 && <label className="sounds-mix-select small">
           <span className="sr-only">Saved mixes</span>
           <select
             className="input"
@@ -386,7 +380,7 @@ function MixerControls({
               </option>
             ))}
           </select>
-        </label>
+        </label>}
         {selected && (
           <>
             <button
@@ -414,7 +408,7 @@ function MixerControls({
             </button>
           </>
         )}
-      </div>
+      </div>}
       {saving && (
         <form
           className="sounds-wrap sounds-save"
@@ -482,10 +476,6 @@ function MixerControls({
           </button>
         ))}
       </div>
-      <p className="muted small">
-        Layer sounds to make your own space. Binaural tones: use headphones. The
-        16 Hz pulse modulates only the 200 Hz–1 kHz band.
-      </p>
       <div className="sounds-grid">
         {SOUNDS.filter(
           (s) => category === "All" || s.category === category,
@@ -502,7 +492,7 @@ function MixerControls({
                   <Glyph name={s.glyph} size={26} />
                 </span>
                 <b>{s.name}</b>
-                {s.beat ? <span className="sound-note">Headphones</span> : null}
+                {s.beat ? <span className="sound-note" title="Binaural: use headphones"><Glyph name="headphones" size={13} /><span className="sr-only">Headphones</span></span> : null}
               </button>
               {layer && (
                 <label className="sound-volume small">

@@ -195,7 +195,7 @@ try {
             await c.waitFor("document.querySelector('.stopped-card')");
             await ev("document.querySelector('.stopped-card [aria-label=Close]').click()");
             await c.waitFor("!document.querySelector('.recovery-card')");
-            await click('[aria-label="Floating timer"]'); assert.equal(await ev('window.__floatRequested'),true);
+            await click('[aria-label="More controls"]'); await click('[aria-label="Floating timer"]'); assert.equal(await ev('window.__floatRequested'),true);
             await click('.topbar .seg button:first-child'); await c.waitFor("document.querySelector('[aria-label=Clock]')");
             await click('.topbar .seg button:nth-child(2)'); await c.waitFor("document.querySelector('.focus-center')");
           }

@@ -20,7 +20,7 @@ it("records partial focus and task completions by local day and Monday week, wit
 it("renders neutral empty records, with no score, streak or graded calendar", async () => {
   await stats.ready; stats.set({ chunks: [], tasksDone: [] });
   const html = renderToStaticMarkup(<StatsTab />);
-  expect(html).toContain("No records in this period.");
+  expect(html).toContain("No records yet.");
   expect(html).toContain("Time focused"); expect(html).toContain("Actions finished");
   expect(html).not.toMatch(/score|streak|stats-level|good|bad|story starts|first point/i);
 });

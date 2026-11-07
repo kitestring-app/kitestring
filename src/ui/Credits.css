@@ -8,19 +8,19 @@
   align-items: center;
   gap: 4px 14px;
   font-size: 12px;
-  color: var(--fg-faint);
+  /* Drawn straight over the wallpaper, so it takes wallpaper ink, not chrome ink (they differ when a scheme is forced). */
+  color: var(--on-bg-faint);
   text-align: right;
 }
-.credits a { color: var(--fg-dim); text-decoration: none; border-radius: 4px; }
-.credits a:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+.credits a { color: var(--on-bg-dim); text-decoration: none; border-radius: 4px; }
+.credits a:hover { color: var(--on-bg); text-decoration: underline; text-underline-offset: 3px; }
 .credits a:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-.credits-heart { color: #e8798f; display: inline-flex; vertical-align: -1px; }
+.credits-heart { color: inherit; opacity: 0.8; display: inline-flex; vertical-align: -1px; }
 .credits-links { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; }
-.credits-links a + a::before { content: "·"; margin-right: 12px; color: var(--fg-faint); }
+.credits-links a + a::before { content: "·"; margin-right: 12px; color: var(--on-bg-faint); }
 
 @media (max-width: 560px) {
   .credits-links { display: none; }
-  .credits { font-size: 11px; }
 }
 
 @media (max-width: 560px) {

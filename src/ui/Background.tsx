@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { dbGet } from "../lib/db";
 import { useStore } from "../lib/store";
-import { settings, type LookId, type ThemeRef, type WallpaperFx } from "../state/settings";
+import { settings, type LookId, type Scheme, type ThemeRef, type WallpaperFx } from "../state/settings";
 import { findTheme, THEMES } from "../data/themes";
 import { useBackgroundMotion } from "./BackgroundMotion";
-import { LookBackdrop, PAPER_LOOKS, WallpaperEffect } from "./Look";
+import { LookBackdrop, PAPER_LOOKS, syncThemeColor, WallpaperEffect } from "./Look";
 
 /** Custom uploads are stored as Blobs in IndexedDB under `custom-bg:<id>`. */
 function useCustomUrl(ref: ThemeRef) {
@@ -90,25 +90,62 @@ export function wallpaperIsLight(ref: ThemeRef, fx: WallpaperFx, strength: numbe
   return contrast(rgbOf(DARK_INK)!, mix(base, 1, 0.08)) >= contrast(rgbOf(LIGHT_INK)!, mix(base, 0, darkScrim));
 }
 
+/**
+ * Which scheme the chrome uses. Auto follows the wallpaper; System follows the OS; Light and Dark force one.
+ * Paper looks carry their own light palette, so a stored choice never applies to them.
+ * Returns the scheme that ends up in force and whether it overrides what the wallpaper asked for.
+ */
+export function resolveScheme(scheme: Scheme, wallpaperLight: boolean, systemDark: boolean, paper: boolean): { light: boolean; forced: boolean } {
+  if (paper || scheme === "auto") return { light: wallpaperLight, forced: false };
+  const light = scheme === "system" ? !systemDark : scheme === "light";
+  return { light, forced: light !== wallpaperLight };
+}
+
+const DARK_QUERY = "(prefers-color-scheme: dark)";
+/** True while the OS prefers dark. Electron maps this to nativeTheme, so the Mac app follows System Settings. */
+export function useSystemDark(enabled: boolean): boolean {
+  const [dark, setDark] = useState(() => enabled && typeof matchMedia === "function" && matchMedia(DARK_QUERY).matches);
+  useEffect(() => {
+    if (!enabled || typeof matchMedia !== "function") return;
+    const mq = matchMedia(DARK_QUERY);
+    const update = () => setDark(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [enabled]);
+  return enabled && dark;
+}
+
 export function Background() {
   useBackgroundMotion();
   const s = useStore(settings);
   const ref = s.themes[s.dash];
   const url = useCustomUrl(ref);
   const { style, cls } = themeStyle(ref, url, s.extras.disableAnimated);
-  const { look, fx, fxStrength, lookBackdrop } = s.appearance;
+  const { look, fx, fxStrength, lookBackdrop, scheme } = s.appearance;
   const paper = PAPER_LOOKS.includes(look);
   const builtin = paper && lookBackdrop;
   const photo = paper && !lookBackdrop && isPhotoTheme(ref);
   // Pick ink from the backdrop actually drawn, including wallpaper overrides.
   const darkInk = wallpaperIsLight(ref, fx, fxStrength, look, lookBackdrop);
-  const light = !builtin && darkInk, paperDimmed = paper && !darkInk;
+  const systemDark = useSystemDark(scheme === "system" && !paper);
+  const { light, forced } = resolveScheme(scheme, !builtin && darkInk, systemDark, paper);
+  const paperDimmed = paper && !darkInk;
   useEffect(() => {
-    document.documentElement.classList.toggle("paper-wallpaper", paper && !lookBackdrop);
-    document.documentElement.classList.toggle("paper-photo", photo);
-    document.documentElement.classList.toggle("theme-light", light);
-    document.documentElement.classList.toggle("paper-dimmed", paperDimmed);
-  }, [light, paperDimmed, paper, lookBackdrop, photo]);
+    const root = document.documentElement;
+    root.classList.toggle("paper-wallpaper", paper && !lookBackdrop);
+    root.classList.toggle("paper-photo", photo);
+    // wallpaper-light: ink drawn straight over the wallpaper. theme-light: the chrome's scheme. A forced scheme lays a
+    // veil over the wallpaper (see .theme-forced in index.css), so the ink over it follows the scheme too and the
+    // whole page agrees instead of only the chrome flipping.
+    root.classList.toggle("wallpaper-light", forced ? light : !builtin && darkInk);
+    root.classList.toggle("theme-light", light);
+    root.classList.toggle("theme-forced", forced);
+    root.classList.toggle("paper-dimmed", paperDimmed);
+    // The Mac title bar and the browser UI follow the scheme in force. useLook syncs again when data-look changes,
+    // because this child effect runs before the App-level effect that sets data-look.
+    syncThemeColor();
+  }, [light, forced, paperDimmed, paper, lookBackdrop, photo, look, builtin, darkInk]);
   return (
     <>
       {builtin ? <LookBackdrop look={look} /> : <div key={`${ref.kind}:${ref.id}`} className={`bg ${cls}`} style={style} />}

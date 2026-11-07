@@ -141,9 +141,9 @@ describe.skipIf(!chromePath || process.env.TOOLTIP_BROWSER !== "1")("tooltips in
   it("delays hover, shows keyboard focus immediately, updates labels and dismisses on Escape/blur", async () => {
     await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
     await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
-    await evaluate(`document.querySelector('[aria-label="Reset this session · R"]').focus()`);
+    await evaluate(`document.querySelector('[aria-label="More controls"]').focus()`);
     expect(await evaluate(`document.querySelector('.control-tooltip').hidden`)).toBe(false);
-    expect(await evaluate(`document.querySelector('.control-tooltip').textContent`)).toBe("Reset this session · R");
+    expect(await evaluate(`document.querySelector('.control-tooltip').textContent`)).toBe("More controls");
     await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
     expect(await evaluate(`document.querySelector('.control-tooltip').hidden`)).toBe(true);
     await evaluate(`document.activeElement.blur()`);

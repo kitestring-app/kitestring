@@ -31,29 +31,32 @@ export function StatsTab() {
   const days = useMemo(() => focusRecordDays(data, clock), [data, clock]);
   const records = useMemo(() => focusRecords(days, view.from, clock, weekly).reverse(), [days, view.from, clock, weekly]);
   const hasData = records.some(record => record.focusMs > 0 || record.tasks > 0);
+  // Range and grouping choices only mean something once there is any history at all.
+  const hasHistory = data.chunks.length > 0 || data.tasksDone.length > 0;
   return (
     <section className="focus-stats" aria-labelledby="focus-stats-title" onKeyDown={e => {
       if (e.key === " " && (e.target as HTMLElement).closest("button, summary")) e.stopPropagation();
     }}>
       <h1 id="focus-stats-title">Focus records</h1>
-      <p className="stats-lede">Time focused includes partial sessions. Actions finished counts recorded task and subtask completions.</p>
+      <p className="stats-lede">{hasHistory ? "Time focused includes partial sessions. Actions finished counts recorded task and subtask completions." : "Your focus time and finished actions, day by day."}</p>
       <div className="stats-pills" role="group" aria-label="Stats view">
         <button type="button" aria-pressed={page === "overview"} onClick={() => setPage("overview")}>Overview</button>
         <button type="button" aria-pressed={page === "log"} onClick={() => setPage("log")}>Log</button>
       </div>
       {page === "log" ? <SessionLog /> : <>
-        <div className="stats-pills stats-ranges" role="group" aria-label="Stats range">
-          {RANGES.map(r => <button type="button" key={r.id} aria-pressed={range === r.id} onClick={() => setRange(r.id)}>{r.label}</button>)}
-        </div>
-        <div className="stats-pills" role="group" aria-label="Record grouping">
-          <button type="button" aria-pressed={!weekly} onClick={() => setWeekly(false)}>Daily</button>
-          <button type="button" aria-pressed={weekly} onClick={() => setWeekly(true)}>Weekly</button>
-        </div>
-        {!hasData && <p className="stats-empty" role="status">No records in this period.</p>}
+        {hasHistory && <div className="stats-controls">
+          <div className="stats-pills stats-ranges" role="group" aria-label="Stats range">
+            {RANGES.map(r => <button type="button" key={r.id} aria-pressed={range === r.id} onClick={() => setRange(r.id)}>{r.label}</button>)}
+          </div>
+          {range !== "today" && <div className="stats-pills" role="group" aria-label="Record grouping">
+            <button type="button" aria-pressed={!weekly} onClick={() => setWeekly(false)}>Daily</button>
+            <button type="button" aria-pressed={weekly} onClick={() => setWeekly(true)}>Weekly</button>
+          </div>}
+        </div>}
         <table className="stats-records">
           <caption>{weekly ? "Weekly records (Monday to Sunday, within the selected period)" : "Daily records"}</caption>
           <thead><tr><th scope="col">{weekly ? "Week" : "Day"}</th><th scope="col">Time focused</th><th scope="col">Actions finished</th></tr></thead>
-          <tbody>{records.map(record => <tr key={record.start}>
+          <tbody>{!hasData ? <tr className="stats-records-empty"><td colSpan={3} role="status">{hasHistory ? "No records in this period." : "No records yet. Start a block and it shows up here."}</td></tr> : records.map(record => <tr key={record.start}>
             <th scope="row">{dateLabel(record.start)}{record.end !== record.start && <> to {dateLabel(record.end)}</>}</th>
             <td>{formatStatsDuration(record.focusMs)}</td><td>{record.tasks.toLocaleString()}</td>
           </tr>)}</tbody>

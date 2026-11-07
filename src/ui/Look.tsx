@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useStore } from "../lib/store";
-import { LOOKS, WALLPAPER_FX, settings, settingsUpdate, type LookId, type Settings, type WallpaperFx } from "../state/settings";
+import { LOOKS, SCHEMES, WALLPAPER_FX, calmFoundationReady, settings, settingsUpdate, type LookId, type Scheme, type Settings, type WallpaperFx } from "../state/settings";
 import "./Look.css";
 import { installFullscreenTransition } from "./fullscreenTransition";
 
@@ -8,15 +8,18 @@ import { installFullscreenTransition } from "./fullscreenTransition";
 export const PAPER_LOOKS: readonly LookId[] = ["sketch", "companion", "sunrise"];
 
 /** Puts the current look on <html data-look> so every token in index.css follows it. */
+/** Point <meta theme-color> (the Mac title bar and browser UI) at the --bg now in force. Call after any change to data-look or the scheme classes. */
+export function syncThemeColor() {
+  if (typeof document === "undefined") return;
+  const colour = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+  if (colour) document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colour);
+}
+
 export function useLook() {
   const look = useStore(settings, (s) => s.appearance.look);
   useEffect(() => {
     const root = typeof document === "undefined" ? null : document.documentElement;
-    if (root?.dataset) {
-      root.dataset.look = look;
-      const colour = getComputedStyle(root).getPropertyValue("--bg").trim();
-      document.querySelector('meta[name="theme-color"]')?.setAttribute("content", colour);
-    }
+    if (root?.dataset) { root.dataset.look = look; syncThemeColor(); }
   }, [look]);
   useEffect(() => {
     const subscribe = typeof window === "undefined" ? undefined : window.desktop?.onFullScreenTransition;
@@ -25,10 +28,13 @@ export function useLook() {
   useEffect(() => {
     // Development only: ?look=sketch&fx=frost&fxs=0.6 lets screenshot tooling review every look. Stripped from builds.
     if (!import.meta.env.DEV || typeof location === "undefined") return;
+    // Wait until a fresh profile has been set up like a real new install (Calm reminders), then apply the overrides.
+    void calmFoundationReady.then(() => {
     const q = new URLSearchParams(location.search);
     const patch: Partial<Settings["appearance"]> = {};
-    const l = q.get("look"), f = q.get("fx"), st = Number(q.get("fxs"));
+    const l = q.get("look"), f = q.get("fx"), st = Number(q.get("fxs")), sc = q.get("scheme");
     if (l && (LOOKS as readonly string[]).includes(l)) patch.look = l as LookId;
+    if (sc && (SCHEMES as readonly string[]).includes(sc)) patch.scheme = sc as Scheme;
     if (f && (WALLPAPER_FX as readonly string[]).includes(f)) patch.fx = f as WallpaperFx;
     if (Number.isFinite(st) && q.has("fxs")) patch.fxStrength = st;
     if (Object.keys(patch).length) settingsUpdate("appearance", patch);
@@ -37,6 +43,7 @@ export function useLook() {
       const ref = { kind: "library" as const, id: theme };
       settingsUpdate("themes", { home: ref, focus: ref, ambient: ref });
     }
+    });
   }, []);
   return look;
 }
@@ -46,9 +53,11 @@ export function InkFilters() {
   return (
     <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: "absolute" }}>
       {[2, 7, 11].map((seed, i) => (
-        <filter key={seed} id={`ink-${i}`} x="-12%" y="-12%" width="124%" height="124%">
+        <filter key={seed} id={`ink-${i}`} x="-20%" y="-40%" width="140%" height="180%" colorInterpolationFilters="sRGB">
           <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves={2} seed={seed} result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale={3.2} />
+          {/* Opaque noise: where its alpha dipped, the un-premultiplied values jumped and the line showed notches. */}
+          <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" result="flat" />
+          <feDisplacementMap in="SourceGraphic" in2="flat" scale={2.4} xChannelSelector="R" yChannelSelector="G" />
         </filter>
       ))}
     </svg>
@@ -62,7 +71,7 @@ export function LookBackdrop({ look }: { look: LookId }) {
     return (
       <svg className="look-bg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="1200" height="800" fill="#f9f2e9" />
-        <circle cx="1050" cy="140" r="250" fill="#f2e3d4" />
+        <circle cx="1130" cy="330" r="210" fill="#f2e3d4" />
         <path d="M0 690 C220 640 380 720 600 680 S980 640 1200 690 V800 H0Z" fill="#ece0d0" />
         <path d="M0 735 C260 705 420 765 700 735 S1020 705 1200 740 V800 H0Z" fill="#dfe9e0" />
       </svg>
@@ -73,12 +82,12 @@ export function LookBackdrop({ look }: { look: LookId }) {
       <svg className="look-bg look-bg-sunrise" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <rect width="1200" height="800" fill="#fff4e4" />
         <g className="sun">
-          <circle cx="600" cy="880" r="470" fill="#ffe1b8" />
-          <circle cx="600" cy="880" r="340" fill="#ffc887" />
-          <circle cx="600" cy="880" r="215" fill="#ffa25e" />
+          <circle cx="600" cy="990" r="350" fill="#ffeacf" />
+          <circle cx="600" cy="990" r="255" fill="#ffdcb4" />
+          <circle cx="600" cy="990" r="165" fill="#ffc998" />
         </g>
-        <circle cx="150" cy="150" r="74" fill="#ffe9c9" />
-        <circle cx="1080" cy="250" r="46" fill="#ffe9c9" />
+        <circle cx="150" cy="150" r="74" fill="#ffe9c9" opacity="0.6" />
+        <circle cx="1080" cy="250" r="46" fill="#ffe9c9" opacity="0.6" />
       </svg>
     );
   }

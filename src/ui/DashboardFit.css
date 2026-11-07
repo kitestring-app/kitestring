@@ -33,3 +33,5 @@
   :root:not([data-desktop="true"]) .focus-center .focus-card-slot { max-height: none; }
   :root:not([data-desktop="true"]) .focus-center .focus-card-body { max-height: 30dvh; }
 }
+/* Leaving a next step on a short screen: the mode tabs and session dots step aside so the card's buttons have room. */
+@media (max-height: 620px) { .focus-center:has(.recovery-card .next-action) :is(.tabs, .tallies, .start-support) { display: none; } }

@@ -75,17 +75,20 @@ it("keeps the legacy alertSound current and preserves None through an older-clie
   expect(sanitizeSettings({ timer: legacy }).timer).toMatchObject({ focusDoneSound: "none", breakOverSound: "none", alertSound: "none" });
 });
 
-it("2: Strong is hidden at defaults, available for Your setup, and explains the reset", async () => {
+it("2: Calm and Strong share one switch, the current preset is pressed, and Your setup explains the reset", async () => {
   await settings.ready; vi.stubGlobal("window", {});
   settings.set(DEFAULT_SETTINGS);
   presetState.set(state => ({ ...state, mode: "Strong", baseline: STRONG_PATCH }));
-  expect(elements(TimerTab()).some(el => el.type === "button" && el.props.children === "Strong")).toBe(false);
+  const pressed = (tree: ReturnType<typeof TimerTab>, name: string) => (elements(tree).find(el => el.type === "button" && el.props.children === name)?.props as Record<string, unknown> | undefined)?.["aria-pressed"];
+  expect(pressed(TimerTab(), "Strong")).toBe(true);
+  expect(pressed(TimerTab(), "Calm")).toBe(false);
   settings.set({ ...DEFAULT_SETTINGS, timer: { ...DEFAULT_SETTINGS.timer, speak: false } });
   presetState.set(state => ({ ...state, mode: "Your setup", baseline: { ...STRONG_PATCH, speak: false } }));
   const tree = TimerTab();
-  expect(elements(tree).some(el => el.type === "h3" && el.props.children === "Your setup")).toBe(true);
-  expect(elements(tree).some(el => el.type === "button" && el.props.children === "Strong")).toBe(true);
-  expect(elements(tree).some(el => typeof el.props.children === "string" && el.props.children.includes("Resets reminders to defaults"))).toBe(true);
+  expect(elements(tree).some(el => el.type === "h3" && el.props.children === "Reminders")).toBe(true);
+  expect(elements(tree).some(el => el.type === "b" && el.props.children === "Your setup")).toBe(true);
+  expect(pressed(tree, "Strong")).toBe(false);
+  expect(elements(tree).some(el => ([] as unknown[]).concat(el.props.children).some(c => typeof c === "string" && c.includes("Pick Calm or Strong to reset it")))).toBe(true);
 });
 
 it("keeps parking review timing in Timer Settings with all three device-only choices", async () => {

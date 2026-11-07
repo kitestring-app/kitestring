@@ -44,7 +44,7 @@ it("leaves Sketchbook task popovers fixed to the viewport", () => {
 it("lets reduced transparency beat every look's glass tokens", () => {
   const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
   const block = css.slice(css.indexOf("@media (prefers-reduced-transparency: reduce) {\n  :root"));
-  expect(block).toMatch(/^@media \(prefers-reduced-transparency: reduce\) \{\n  :root, :root:root\[data-look\] \{ --surface: var\(--surface-solid\)/);
+  expect(block).toMatch(/^@media \(prefers-reduced-transparency: reduce\) \{\n  :root:root:not\(\[data-look\]\), :root:root\[data-look\] \{ --surface: var\(--surface-solid\)/);
 });
 
 it("shows the reminder's keyboard controls while one has focus", () => {
