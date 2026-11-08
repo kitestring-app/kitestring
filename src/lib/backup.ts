@@ -15,6 +15,7 @@ import { isNotesValue, migrateNotes, notesInterruptionPreference } from "../stat
 import { DEFAULT_SETTINGS, sanitizeSettings, settings } from "../state/settings";
 import { captureTimerRestore, hardModeLocked } from "../state/timer";
 import { validStopOutcomes } from '../state/stopOutcomes';
+import { isIdleNudge } from "../state/idleNudge";
 // Backup format + strict validation. Nothing from a file reaches storage until the whole file passes.
 
 export const BACKUP_FORMAT = "kitestring-backup";
@@ -38,6 +39,7 @@ export const STORE_CLASS = {
   intent: { class: "content", section: "focus" },
   devicePreferences: { class: "device", section: "device" },
   floatingGlass: { class: "device", section: "device" },
+  idleNudge: { class: "device", section: "device" },
   windowEvents: { class: "device", section: "device" },
   menuBarText: { class: "device", section: "device" },
   customBgs: { class: "content", section: "images" },
@@ -103,6 +105,7 @@ const checks: Record<BackupKey, (v: unknown) => string | null> = {
   stopOutcomes: v => validStopOutcomes(v) ? null : 'stop labels',
   devicePreferences: value => isObj(value) && Object.values(value).every(v => typeof v === "boolean") ? null : "device preferences",
   floatingGlass: value => isObj(value) && isNum(value.opacity, 0, 1) ? null : "floating timer opacity",
+  idleNudge: value => isIdleNudge(value) ? null : "idle reminder",
   windowEvents: value => isObj(value) && ["nothing", "minimise", "floating"].includes(value.onStart as string) &&
     ["nothing", "restore", "full"].includes(value.onEnd as string) ? null : "window on start and end",
   menuBarText: value => isObj(value) && ["task", "breakTime", "seconds"].every(key => typeof value[key] === "boolean") && isNum(value.maxLength, 8, 40) ? null : "menu bar text",

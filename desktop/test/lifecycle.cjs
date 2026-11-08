@@ -974,6 +974,18 @@ test('native Timer menu and tray carry input origin through main-process dispatc
   ipc.emit('desktop:timer-result', event(), window.sentArgs[0].id, { ok: true });
 });
 
+test('idle nudge IPC is trusted-only and never raises the window or shows banners', () => {
+  const count = nativeNotifications.length, bannerCount = bannerWindows.length;
+  const focusCalls = app.focusCalls ?? 0;
+  assert.equal(ipc.invoke('desktop:nudge', { sender: window.webContents, senderFrame: { url: window.url } }, 'Start'), false);
+  assert.equal(nativeNotifications.length, count);
+  assert.equal(ipc.invoke('desktop:nudge', event(), 'Start a block'), true);
+  assert.equal(nativeNotifications.length, count + 1);
+  assert.equal(nativeNotifications.at(-1).options.body, 'Start a block');
+  assert.equal(bannerWindows.length, bannerCount);
+  assert.equal(app.focusCalls ?? 0, focusCalls);
+});
+
 test('fullscreen snapshot is restricted to the trusted main frame', () => {
   assert.equal(ipc.invoke('desktop:get-fullscreen', { sender: window.webContents, senderFrame: { url: window.url } }), null);
   assert.equal(ipc.invoke('desktop:get-fullscreen', { sender: {}, senderFrame: window.webContents.mainFrame }), null);
@@ -1012,3 +1024,4 @@ test('a renderer exit during Quit does not recreate the window', () => {
   assert.equal(previous.isDestroyed(), true);
   assert.equal(window, previous);
 });
+

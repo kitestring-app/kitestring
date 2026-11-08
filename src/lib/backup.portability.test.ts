@@ -269,6 +269,24 @@ it.each([1, 2])("N5: plain recall notes round-trip in Focus v%s with existing cl
   expect(JSON.parse(await b.createBackup({ sections: [] })).data).not.toHaveProperty("notes");
 });
 
+it("the idle reminder travels only in the device section, validated, and never syncs", async () => {
+  const b = await import("./backup"); const s = await import("../state/settings"); const n = await import("../state/idleNudge");
+  await s.calmFoundationReady; await n.idleNudge.ready;
+  const mine = { ...n.DEFAULT_IDLE_NUDGE, enabled: true, every: 45, from: "08:00", to: "12:00", message: "Open the draft" };
+  n.idleNudge.set(mine);
+  expect(b.STORE_CLASS.idleNudge).toEqual({ class: "device", section: "device" });
+  expect((await import("./sync")).SYNC_KEYS).not.toContain("idleNudge");
+  expect(b.parseBackup(await b.createBackup({ sections: ["settings"] })).data).not.toHaveProperty("idleNudge");
+  const parsed = b.parseBackup(await b.createBackup({ sections: ["device"] }));
+  expect(parsed.data.idleNudge).toEqual(mine);
+  n.idleNudge.set(n.DEFAULT_IDLE_NUDGE);
+  await b.restoreBackup(parsed, metadata, ["device"]);
+  expect(n.idleNudge.get()).toEqual(mine);
+  const wrap = (idleNudge: unknown) => JSON.stringify({ format: b.BACKUP_FORMAT, version: 2, sections: ["settings", "device"], data: { settings: {}, idleNudge } });
+  expect(() => b.parseBackup(wrap({ ...mine, every: 2 }))).toThrow(/idle reminder/);
+  expect(() => b.parseBackup(wrap({ ...mine, from: "9am" }))).toThrow(/idle reminder/);
+});
+
 it("carries the menu bar text options in the device section only", async () => {
   const b = await import("./backup"); const s = await import("../state/settings"); await s.calmFoundationReady;
   const { menuBarText, DEFAULT_MENU_BAR_TEXT } = await import("../state/menuBar");

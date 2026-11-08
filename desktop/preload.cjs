@@ -67,6 +67,7 @@ contextBridge.exposeInMainWorld('desktop', Object.freeze(mini ? {
   cancelSpeech: () => ipcRenderer.send('desktop:cancel-speech'),
   notificationStatus: () => ipcRenderer.invoke('desktop:notification-status'),
   testReminder: (text) => ipcRenderer.invoke('desktop:test-reminder', typeof text === 'string' ? text : undefined),
+  nudge: (text) => typeof text === 'string' && text.trim() ? ipcRenderer.invoke('desktop:nudge', text.slice(0, 200)) : Promise.resolve(false),
   preventSleep: (on) => { if (typeof on === 'boolean') ipcRenderer.send('desktop:prevent-sleep', on); },
   onTimerRequest: (callback) => subscribe('desktop:timer-request', ({ id, command, origin }) => {
     if (!validTimerCommand(command) || (origin !== undefined && !['accelerator', 'pointer'].includes(origin))) return;

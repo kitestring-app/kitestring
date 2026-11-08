@@ -33,7 +33,7 @@ test('main bridge is frozen and routes the supported native methods', async () =
   const { bridge, sent, invoked } = loadBridge();
   assert.deepEqual(Object.keys(bridge).sort(), [
     'armAlarm', 'attention', 'cancelSpeech', 'cloud', 'consumeSuspension', 'consumeSuspensionAt', 'disarmAlarm', 'floatTimer',
-    'getSecureDns', 'notificationStatus', 'onAudioAction', 'onAudioRequest', 'onFloatTimer', 'onFloatingPreferences', 'onFlush', 'onFullScreenTransition', 'onLifecycle', 'onMenuCommand', 'onParked', 'onTimerAction', 'onTimerRequest', 'parkingStatus', 'preventSleep', 'publishAudioState', 'publishTimerState', 'release',
+    'getSecureDns', 'notificationStatus', 'nudge', 'onAudioAction', 'onAudioRequest', 'onFloatTimer', 'onFloatingPreferences', 'onFlush', 'onFullScreenTransition', 'onLifecycle', 'onMenuCommand', 'onParked', 'onTimerAction', 'onTimerRequest', 'parkingStatus', 'preventSleep', 'publishAudioState', 'publishTimerState', 'release',
     'platform', 'getFullScreen', 'onFullScreenChange', 'setFloatingPreferences', 'setSecureDns', 'setStatus', 'speak', 'testReminder', 'toggleFullScreen', 'windowEvent',
   ].sort());
   assert.equal(Object.isFrozen(bridge), true);
@@ -66,10 +66,13 @@ test('main bridge is frozen and routes the supported native methods', async () =
   await bridge.armAlarm(alarm);
   await bridge.speak(speech);
   await bridge.notificationStatus();
+  assert.equal(await bridge.nudge(42), false);
+  assert.equal(await bridge.nudge('   '), false);
+  await bridge.nudge('y'.repeat(300));
   assert.deepEqual(invoked, [
     ['desktop:float-timer', true], ['desktop:float-timer', false],
     ['desktop:arm-alarm', alarm], ['desktop:speak', speech],
-    ['desktop:notification-status'],
+    ['desktop:notification-status'], ['desktop:nudge', 'y'.repeat(200)],
   ]);
 });
 
