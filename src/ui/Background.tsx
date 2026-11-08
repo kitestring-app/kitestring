@@ -67,6 +67,8 @@ const contrast = (a: Rgb, b: Rgb) => { const [x, y] = [lumOf(a), lumOf(b)].sort(
 const PAPER: Partial<Record<LookId, { paper: string; ink: string }>> = {
   sketch: { paper: "#faf5ea", ink: "#33302b" }, companion: { paper: "#f9f2e9", ink: "#35201a" }, sunrise: { paper: "#fff4e4", ink: "#2a2014" },
 };
+/** The night paper each paper look draws under html.paper-dark (see Look.css). */
+const NIGHT_PAPER: Partial<Record<LookId, string>> = { sketch: "#1f1d1a", companion: "#1e1714", sunrise: "#24180f" };
 const LIGHT_INK = "#f4f2fb", DARK_INK = "#1a1726", PAPER_LIGHT_INK = "#fbf7ef";
 
 /**
@@ -76,9 +78,10 @@ const LIGHT_INK = "#f4f2fb", DARK_INK = "#1a1726", PAPER_LIGHT_INK = "#fbf7ef";
  * Fog window and vignette leave the centre clear, so they change nothing. Photos have no measured
  * brightness, so without frost or dim they go by their light tag.
  */
-export function wallpaperIsLight(ref: ThemeRef, fx: WallpaperFx, strength: number, look: LookId = "classic", lookBackdrop = true): boolean {
+export function wallpaperIsLight(ref: ThemeRef, fx: WallpaperFx, strength: number, look: LookId = "classic", lookBackdrop = true, nightPaper = false): boolean {
   const k = Math.min(1, Math.max(0, strength));
-  const paper = lookBackdrop ? PAPER[look] : undefined;
+  const day = lookBackdrop ? PAPER[look] : undefined;
+  const paper = day && nightPaper && NIGHT_PAPER[look] ? { ...day, paper: NIGHT_PAPER[look]! } : day;
   const tints = fx === "frost" || fx === "dim";
   if (!paper && ref.kind !== "color" && !tints) return isLightTheme(ref);
   let base: Rgb = paper ? rgbOf(paper.paper)! : ref.kind === "color" ? (rgbOf(ref.id) ?? [0, 0, 0]) : isLightTheme(ref) ? [0.85, 0.85, 0.85] : [0.2, 0.2, 0.2];
@@ -88,6 +91,14 @@ export function wallpaperIsLight(ref: ThemeRef, fx: WallpaperFx, strength: numbe
   // Dark ink brings the light scrim (8% white at the centre); light ink keeps the look's dark one.
   const darkScrim = !lookBackdrop && PAPER_LOOKS.includes(look) && isPhotoTheme(ref) ? 0.7 : look === "glass" ? 0.04 : 0.12;
   return contrast(rgbOf(DARK_INK)!, mix(base, 1, 0.08)) >= contrast(rgbOf(LIGHT_INK)!, mix(base, 0, darkScrim));
+}
+
+/**
+ * Paper looks draw their own paper, so Auto keeps the light paper they were designed on. Dark, or System while
+ * the OS is dark, turns them to night paper (html.paper-dark).
+ */
+export function paperIsDark(scheme: Scheme, systemDark: boolean): boolean {
+  return scheme === "dark" || (scheme === "system" && systemDark);
 }
 
 /**
@@ -126,9 +137,10 @@ export function Background() {
   const paper = PAPER_LOOKS.includes(look);
   const builtin = paper && lookBackdrop;
   const photo = paper && !lookBackdrop && isPhotoTheme(ref);
+  const systemDark = useSystemDark(scheme === "system");
+  const nightPaper = paper && paperIsDark(scheme, systemDark);
   // Pick ink from the backdrop actually drawn, including wallpaper overrides.
-  const darkInk = wallpaperIsLight(ref, fx, fxStrength, look, lookBackdrop);
-  const systemDark = useSystemDark(scheme === "system" && !paper);
+  const darkInk = wallpaperIsLight(ref, fx, fxStrength, look, lookBackdrop, nightPaper);
   const { light, forced } = resolveScheme(scheme, !builtin && darkInk, systemDark, paper);
   const paperDimmed = paper && !darkInk;
   useEffect(() => {
@@ -142,10 +154,11 @@ export function Background() {
     root.classList.toggle("theme-light", light);
     root.classList.toggle("theme-forced", forced);
     root.classList.toggle("paper-dimmed", paperDimmed);
+    root.classList.toggle("paper-dark", nightPaper);
     // The Mac title bar and the browser UI follow the scheme in force. useLook syncs again when data-look changes,
     // because this child effect runs before the App-level effect that sets data-look.
     syncThemeColor();
-  }, [light, forced, paperDimmed, paper, lookBackdrop, photo, look, builtin, darkInk]);
+  }, [light, forced, paperDimmed, nightPaper, paper, lookBackdrop, photo, look, builtin, darkInk]);
   return (
     <>
       {builtin ? <LookBackdrop look={look} /> : <div key={`${ref.kind}:${ref.id}`} className={`bg ${cls}`} style={style} />}

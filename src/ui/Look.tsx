@@ -4,7 +4,7 @@ import { LOOKS, SCHEMES, WALLPAPER_FX, calmFoundationReady, settings, settingsUp
 import "./Look.css";
 import { installFullscreenTransition } from "./fullscreenTransition";
 
-/** Looks drawn on paper bring their own backdrop instead of the photo wallpaper. */
+/** Looks drawn on paper bring their own backdrop instead of the photo wallpaper. Light paper by default; html.paper-dark turns it to night paper. */
 export const PAPER_LOOKS: readonly LookId[] = ["sketch", "companion", "sunrise"];
 
 /** Puts the current look on <html data-look> so every token in index.css follows it. */
@@ -69,25 +69,25 @@ export function LookBackdrop({ look }: { look: LookId }) {
   if (look === "sketch") return <div className="look-bg look-bg-sketch" aria-hidden="true" />;
   if (look === "companion") {
     return (
-      <svg className="look-bg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="1200" height="800" fill="#f9f2e9" />
-        <circle cx="1130" cy="330" r="210" fill="#f2e3d4" />
-        <path d="M0 690 C220 640 380 720 600 680 S980 640 1200 690 V800 H0Z" fill="#ece0d0" />
-        <path d="M0 735 C260 705 420 765 700 735 S1020 705 1200 740 V800 H0Z" fill="#dfe9e0" />
+      <svg className="look-bg look-bg-companion" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <rect className="pb-paper" width="1200" height="800" fill="#f9f2e9" />
+        <circle className="pb-sun" cx="1130" cy="330" r="210" fill="#f2e3d4" />
+        <path d="M0 690 C220 640 380 720 600 680 S980 640 1200 690 V800 H0Z" className="pb-hill" fill="#ece0d0" />
+        <path d="M0 735 C260 705 420 765 700 735 S1020 705 1200 740 V800 H0Z" className="pb-meadow" fill="#dfe9e0" />
       </svg>
     );
   }
   if (look === "sunrise") {
     return (
       <svg className="look-bg look-bg-sunrise" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="1200" height="800" fill="#fff4e4" />
+        <rect className="pb-paper" width="1200" height="800" fill="#fff4e4" />
         <g className="sun">
-          <circle cx="600" cy="990" r="350" fill="#ffeacf" />
-          <circle cx="600" cy="990" r="255" fill="#ffdcb4" />
-          <circle cx="600" cy="990" r="165" fill="#ffc998" />
+          <circle className="pb-ring1" cx="600" cy="990" r="350" fill="#ffeacf" />
+          <circle className="pb-ring2" cx="600" cy="990" r="255" fill="#ffdcb4" />
+          <circle className="pb-ring3" cx="600" cy="990" r="165" fill="#ffc998" />
         </g>
-        <circle cx="150" cy="150" r="74" fill="#ffe9c9" opacity="0.6" />
-        <circle cx="1080" cy="250" r="46" fill="#ffe9c9" opacity="0.6" />
+        <circle className="pb-cloud" cx="150" cy="150" r="74" fill="#ffe9c9" opacity="0.6" />
+        <circle className="pb-cloud" cx="1080" cy="250" r="46" fill="#ffe9c9" opacity="0.6" />
       </svg>
     );
   }
