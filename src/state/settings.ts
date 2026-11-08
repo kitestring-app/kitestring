@@ -1,5 +1,6 @@
 import { commitStoreEntries, createStore, flushAll, mergeDefaults, storeSource, storeRevision, storeReadFailed } from "../lib/store";
 import { dbGet, dbKeys, storageMode } from "../lib/db";
+import { cleanAlertText } from "../audio/alertText";
 
 export type TimerMode = "pomodoro" | "countdown" | "stopwatch" | "animedoro" | "5217";
 export type TimerStyle = "default" | "flip" | "bar" | "gauge" | "dots" | "pie";
@@ -39,6 +40,9 @@ export interface Settings {
     tickVolume: number;
     alertVolume: number; // 0..1
     notify: boolean;
+    /** Custom notification and spoken text when focus ends / a break ends. "" uses the default. */
+    focusDoneText: string;
+    breakOverText: string;
     takeover: boolean;
     speak: boolean;
     bringToFront: boolean;
@@ -124,6 +128,8 @@ export const DEFAULT_SETTINGS: Settings = {
     tickVolume: 0.25,
     alertVolume: 0.85,
     notify: true,
+    focusDoneText: "",
+    breakOverText: "",
     takeover: true,
     speak: true,
     bringToFront: true,
@@ -205,6 +211,8 @@ export function sanitizeSettings(stored: unknown): Settings {
       alertVolume: clamp(t.alertVolume, 0, 1, d.timer.alertVolume),
       takeover: typeof t.takeover === "boolean" ? t.takeover : d.timer.takeover,
       speak: typeof t.speak === "boolean" ? t.speak : d.timer.speak,
+      focusDoneText: cleanAlertText(t.focusDoneText),
+      breakOverText: cleanAlertText(t.breakOverText),
       bringToFront: typeof t.bringToFront === "boolean" ? t.bringToFront : d.timer.bringToFront,
       tally: oneOf(t.tally, ["dots", "tomato", "check", "star", "tree", "tokyo", "stem"] as const, d.timer.tally),
       quickPicks: {

@@ -224,3 +224,13 @@ it.each(["pomodoro", "countdown"] as const)("Hidden %s arms generic native speec
   settings.set({ ...settings.get(), timer: { ...settings.get().timer, display: "elapsed" } });
   expect(armAlarm.mock.calls.at(-1)![0].announcement).toBeDefined();
 });
+it("sends custom reminder text with the native alarm only when it is set", async () => {
+  const { timerActions, settings } = await setup();
+  timerActions.start();
+  expect(armAlarm.mock.calls.at(-1)![0]).not.toHaveProperty("text");
+  settings.set({ ...settings.get(), timer: { ...settings.get().timer, focusDoneText: "Stretch.", breakOverText: "Back to it." } });
+  expect(armAlarm).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "focus-done", text: "Stretch." }));
+  timerActions.goTo("short");
+  timerActions.start();
+  expect(armAlarm).toHaveBeenLastCalledWith(expect.objectContaining({ kind: "break-over", text: "Back to it." }));
+});
