@@ -18,10 +18,10 @@ function alertFile(sound, kind) {
 
 // Custom reminder text is passed to /usr/bin/say and the notifier as one argument. The renderer
 // cleans it (src/audio/alertText.ts); this re-checks it: one trimmed line, no control characters,
-// no leading dash (read as an option), at most 140 characters. undefined means the default text.
+// no leading dash (read as an option), at most 140 characters (code points, like the renderer). undefined means the default text.
 const CONTROL = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
 function validAlertText(text) {
-  return text === undefined || (typeof text === 'string' && text.length > 0 && text.length <= 140 &&
+  return text === undefined || (typeof text === 'string' && text.length > 0 && Array.from(text).length <= 140 &&
     text === text.trim() && !text.startsWith('-') && !CONTROL.test(text));
 }
 

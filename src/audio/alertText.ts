@@ -18,7 +18,8 @@ export const SPOKEN_REMINDER: Record<AlertKind, string> = {
 export function cleanAlertText(raw: unknown): string {
   if (typeof raw !== "string") return "";
   const flat = raw.replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, " ").replace(/\s+/g, " ").trim();
-  return flat.replace(/^[-\s]+/, "").slice(0, ALERT_TEXT_MAX).trim();
+  // Count code points, not UTF-16 units, so an emoji at the limit is never cut in half.
+  return Array.from(flat.replace(/^[-\s]+/, "")).slice(0, ALERT_TEXT_MAX).join("").trim();
 }
 
 interface CustomText { focusDoneText: string; breakOverText: string }

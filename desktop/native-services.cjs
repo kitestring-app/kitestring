@@ -125,8 +125,9 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
   }
   function releasePower() { if (power !== null) powerSaveBlocker.stop(power); power = null; }
   /** Settings > Alerts test: the real notification and attention path, without sound or a timer. */
-  function testReminder(kind = 'focus-done') {
-    notify(kind, true);
+  function testReminder(kind = 'focus-done', text) {
+    // Shows the owner's custom text when it is valid; anything else falls back to the default body.
+    notify(kind, true, text !== undefined && validAlertText(text) ? text : undefined);
     return notificationStatus();
   }
   return {

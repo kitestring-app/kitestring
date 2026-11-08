@@ -70,9 +70,9 @@ export async function disarmCompanion(): Promise<void> {
   }
 }
 
-export async function testCompanion(kind: AlertKind, volume: number, alertSound: AlertSound = "signature"): Promise<boolean> {
+export async function testCompanion(kind: AlertKind, volume: number, alertSound: AlertSound = "signature", text?: string): Promise<boolean> {
   if (typeof window !== "undefined" && window.desktop?.armAlarm) return false;
   if (!(await companionAvailable())) return false;
-  const r = await fetch("/api/test", { method: "POST", headers: HEADERS, body: JSON.stringify({ kind, volume, alertSound }) }).catch(() => null);
+  const r = await fetch("/api/test", { method: "POST", headers: HEADERS, body: JSON.stringify({ kind, volume, alertSound, ...(text ? { text } : {}) }) }).catch(() => null);
   return !!r?.ok;
 }

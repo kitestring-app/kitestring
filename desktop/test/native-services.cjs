@@ -587,3 +587,12 @@ test('custom reminder text survives a restart and rejects unsafe values', () => 
   }
   assert.equal(h.services.snapshot().pending.text, 'Stand up.');
 });
+
+test('testReminder shows valid custom text and ignores anything else', () => {
+  const h = harness();
+  h.services.testReminder('focus-done', 'Stretch now.');
+  h.services.testReminder('focus-done', '-o /tmp/x');
+  h.services.testReminder('focus-done', 42);
+  h.services.testReminder('focus-done', '🎉'.repeat(140));
+  assert.deepEqual(h.notifications.map((n) => n.options.body), ['Stretch now.', 'Time for a break.', 'Time for a break.', '🎉'.repeat(140)]);
+});

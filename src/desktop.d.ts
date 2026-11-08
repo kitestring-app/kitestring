@@ -76,7 +76,7 @@ declare global {
       speak?: (input: { kind: DesktopAlarm["kind"]; announcement?: DesktopAnnouncement }) => Promise<boolean>;
       cancelSpeech?: () => void;
       notificationStatus?: () => Promise<{ supported: boolean; failed: boolean }>;
-      testReminder?: () => Promise<{ supported: boolean; failed: boolean; displays: number } | null>;
+      testReminder?: (text?: string) => Promise<{ supported: boolean; failed: boolean; displays: number } | null>;
       preventSleep?: (on: boolean) => void;
       onTimerAction?: (callback: (action: DesktopTimerAction) => void) => () => void;
       onFlush?: (callback: () => Promise<void>) => () => void;

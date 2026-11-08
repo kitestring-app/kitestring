@@ -165,7 +165,7 @@ const server = createServer(async (req, res) => {
     }
     if (url.pathname === "/api/test" && req.method === "POST") {
       const a = await readBody(req).catch(() => null);
-      const test = { at: Date.now(), kind: a?.kind, volume: a?.volume, alertSound: a?.alertSound, speak: false };
+      const test = { at: Date.now(), kind: a?.kind, volume: a?.volume, alertSound: a?.alertSound, speak: false, ...(a?.text !== undefined ? { text: a.text } : {}) };
       if (!valid(test)) return json(res, 400, { ok: false });
       ring(test);
       return json(res, 200, { ok: true });

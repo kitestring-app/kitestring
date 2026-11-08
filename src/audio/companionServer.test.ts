@@ -110,11 +110,15 @@ describe("native spoken line", () => {
   });
   it("stores posted custom text with the pending alarm", async () => {
     vi.useFakeTimers();
-    const { post, writes } = alarmFunctions();
+    const { post, writes, execFile } = alarmFunctions();
     const alarm = { at: Date.now() + 60_000, kind: "focus-done", volume: 0.4, speak: true, alertSound: "wood", text: "Stand up." };
     expect((await post("/api/alarm", alarm)).status).toBe(200);
     expect(JSON.parse(writes.mock.calls.at(-1)![1])).toEqual(alarm);
     expect((await post("/api/alarm", { ...alarm, text: "-o /tmp/x" })).status).toBe(400);
+    execFile.mockClear();
+    expect((await post("/api/test", { kind: "break-over", volume: 0.4, alertSound: "wood", text: "Back to it." })).status).toBe(200);
+    expect(execFile.mock.calls[0][1]).toEqual(expect.arrayContaining(["-message", "Back to it."]));
+    expect((await post("/api/test", { kind: "break-over", volume: 0.4, alertSound: "wood", text: "-x" })).status).toBe(400);
   });
   it("does not speak when disabled and supports speech with no chime", () => {
     const { ring, execFile } = alarmFunctions();

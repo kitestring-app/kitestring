@@ -13,6 +13,11 @@ describe("custom reminder text", () => {
     expect(cleanAlertText("a b\u0000c")).toBe("a b c");
     expect(cleanAlertText("x".repeat(200))).toHaveLength(ALERT_TEXT_MAX);
     for (const raw of [undefined, null, 3, {}, "   ", "\n"]) expect(cleanAlertText(raw)).toBe("");
+    // Emoji count as one character and are never cut into a lone surrogate.
+    const emoji = cleanAlertText("x".repeat(139) + "☕🎉🎉");
+    expect(Array.from(emoji)).toHaveLength(ALERT_TEXT_MAX);
+    expect(emoji.endsWith("☕")).toBe(true);
+    expect(validAlertText(cleanAlertText("🎉".repeat(200)))).toBe(true);
   });
   it("produces only text the native side accepts", () => {
     for (const raw of ["  Stand up,\n\tdrink water.", "-o /tmp/out", "a b", "x".repeat(200), "Zurück an die Arbeit ☕", " - " + "y ".repeat(90)]) {
