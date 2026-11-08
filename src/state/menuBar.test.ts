@@ -15,7 +15,7 @@ it("defaults keep the original menu bar text", () => {
 
 it("shows the task name during focus only, clipped to the chosen length", () => {
   expect(trayStatus({ ...base, prefs: on })).toBe("04:32 · Write the intro");
-  expect(trayStatus({ ...base, prefs: { ...on, maxLength: 8 } })).toBe("04:32 · Write t…");
+  expect(trayStatus({ ...base, prefs: { ...on, maxLength: 12 } })).toBe("04:32 · Write the i…");
   expect(trayStatus({ ...base, prefs: on, running: false })).toBe("04:32 · Write the intro (paused)");
   expect(trayStatus({ ...base, prefs: on, showNumbers: false })).toBe("Write the intro");
   expect(trayStatus({ ...base, prefs: on, segment: "long" })).toBe("Break 04:32");
@@ -43,7 +43,7 @@ it("formats whole minutes and clips names safely", () => {
 it("sanitizes stored preferences", () => {
   expect(sanitizeMenuBarText(null)).toEqual(DEFAULT_MENU_BAR_TEXT);
   expect(sanitizeMenuBarText({ task: "yes", maxLength: 500, breakTime: false, seconds: 1 })).toEqual({ ...DEFAULT_MENU_BAR_TEXT, maxLength: 40, breakTime: false });
-  expect(sanitizeMenuBarText({ maxLength: 2 }).maxLength).toBe(8);
+  expect(sanitizeMenuBarText({ maxLength: 2 }).maxLength).toBe(12);
   expect(sanitizeMenuBarText({ maxLength: "x" }).maxLength).toBe(24);
 });
 
@@ -57,4 +57,12 @@ it("keeps the whole title within the native limit, even for emoji-heavy names", 
   const plain = trayStatus({ ...base, running: false, name: "x".repeat(40), prefs: { ...on, maxLength: 40 } });
   expect(plain).toBe(`04:32 · ${"x".repeat(40)} (paused)`);
   expect(clipName("🪁🪁🪁", 10, 1)).toBe("");
+});
+
+it("hidden time keeps its status and shows the task name in place of Focus when opted in", () => {
+  expect(trayStatus({ ...base, hiddenTime: true, prefs: on })).toBe("Write the intro · Running");
+  expect(trayStatus({ ...base, hiddenTime: true, running: false, elapsed: 0, prefs: on })).toBe("Write the intro · Paused");
+  expect(trayStatus({ ...base, hiddenTime: true, segment: "short", hiddenStatus: "Short break · Running", prefs: on })).toBe("Short break · Running");
+  expect(trayStatus({ ...base, hiddenTime: true, name: "", prefs: on })).toBe("Focus · Running");
+  expect(trayStatus({ ...base, hiddenTime: true, name: "🪁".repeat(40), prefs: { ...on, maxLength: 40 } }).length).toBeLessThanOrEqual(NATIVE_STATUS_LIMIT);
 });

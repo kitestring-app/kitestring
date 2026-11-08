@@ -19,7 +19,7 @@ export function sanitizeMenuBarText(stored: unknown): MenuBarText {
   const length = Number(raw.maxLength);
   return {
     task: bool(raw.task, d.task),
-    maxLength: Number.isFinite(length) ? Math.min(40, Math.max(8, Math.round(length))) : d.maxLength,
+    maxLength: Number.isFinite(length) ? Math.min(40, Math.max(12, Math.round(length))) : d.maxLength,
     breakTime: bool(raw.breakTime, d.breakTime),
     seconds: bool(raw.seconds, d.seconds),
   };
@@ -62,10 +62,14 @@ export interface TrayInput {
 
 /** The menu bar title. Idle stays empty so only the icon shows. */
 export function trayStatus(v: TrayInput): string {
-  if (v.hiddenTime) return v.hiddenStatus;
+  const focus = v.segment === "focus";
+  if (v.hiddenTime) {
+    // Hidden time keeps its "· Running/Paused" status; the task name stands in for "Focus".
+    const name = focus && v.prefs.task ? clipName(v.name, v.prefs.maxLength, NATIVE_STATUS_LIMIT - " · Running".length) : "";
+    return name ? `${name} · ${v.running ? "Running" : "Paused"}` : v.hiddenStatus;
+  }
   const started = v.running || v.elapsed > 0;
   if (!started) return "";
-  const focus = v.segment === "focus";
   const time = !v.showNumbers || (!focus && !v.prefs.breakTime) ? "" :
     v.prefs.seconds ? v.display : minutesOnly(v.countUp ? v.elapsed : v.remaining, v.countUp);
   const paused = v.running ? "" : " (paused)";
