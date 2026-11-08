@@ -27,8 +27,13 @@ function createFloatingControls({ floating, tray, notify, stateFile, setMenuBarV
     showMenuBar: typeof saved?.showMenuBar === 'boolean' ? saved.showMenuBar : true };
   let pendingShowMenuBar = null;
   let ready = false, status = 'Kitestring';
+  // True while the open floating timer exists only because a focus block started
+  // (Settings > Extras > Window when focus starts). It is never saved as the setting.
+  let openedForFocus = false, focusWindowLost = () => {};
   const refreshTray = () => { tray()?.setTitle(state.menuBarTime ? status : ''); tray()?.setToolTip(status); };
   function apply(next, publish) {
+    // A person's own floating-timer change owns the window from here on.
+    if (publish && next.floatingTimer !== state.floatingTimer) openedForFocus = false;
     const changed = preferenceKeys.some(key => next[key] !== state[key]);
     state = { ...next };
     floating.setOnTop(state.floatingOnTop);
@@ -40,9 +45,11 @@ function createFloatingControls({ floating, tray, notify, stateFile, setMenuBarV
     }
     setMenuBarVisible(state.showMenuBar);
     refreshTray();
-    if (publish && changed) notify({ ...state });
+    if (publish && changed) notify(savedState());
     return open;
   }
+  // What the renderer saves: a floating timer opened for focus is never saved as on.
+  const savedState = () => ({ ...state, floatingTimer: openedForFocus ? false : state.floatingTimer });
   return {
     restoreMenuBar() { setMenuBarVisible(state.showMenuBar); },
     sync(value) {
@@ -50,9 +57,12 @@ function createFloatingControls({ floating, tray, notify, stateFile, setMenuBarV
       const pending = pendingShowMenuBar;
       pendingShowMenuBar = null;
       ready = true;
-      apply(pending === null ? value : { ...value, showMenuBar: pending }, false);
+      if (value.floatingTimer) openedForFocus = false;
+      // A saved "off" must not close the floating timer a running focus block opened.
+      const next = openedForFocus ? { ...value, floatingTimer: true } : value;
+      apply(pending === null ? next : { ...next, showMenuBar: pending }, false);
       // Preserve an app-menu action made before the renderer subscribed.
-      if (pending !== null) notify({ ...state });
+      if (pending !== null) notify(savedState());
       return true;
     },
     appMenuItem() {
@@ -64,7 +74,25 @@ function createFloatingControls({ floating, tray, notify, stateFile, setMenuBarV
         } };
     },
     change(patch) { return apply({ ...state, ...patch }, true); },
-    opened(open) { if (state.floatingTimer !== open) { state = { ...state, floatingTimer: open }; notify({ ...state }); } },
+    opened(open) {
+      // The floating timer opened for focus failed to load or crashed: the caller brings the dashboard back.
+      if (!open && openedForFocus) { openedForFocus = false; focusWindowLost(); }
+      if (state.floatingTimer !== open) { state = { ...state, floatingTimer: open }; notify(savedState()); }
+    },
+    // Window actions on focus start/end: open or close without rewriting the saved setting.
+    openForFocus() {
+      if (state.floatingTimer) return true;
+      const open = apply({ ...state, floatingTimer: true }, false);
+      openedForFocus = open;
+      return open;
+    },
+    onFocusWindowLost(callback) { focusWindowLost = typeof callback === 'function' ? callback : () => {}; },
+    closeForFocus() {
+      if (!openedForFocus) return false;
+      openedForFocus = false;
+      apply({ ...state, floatingTimer: false }, false);
+      return true;
+    },
     setStatus(value) { status = value; refreshTray(); },
     refreshTray,
     snapshot: () => ({ ...state }),

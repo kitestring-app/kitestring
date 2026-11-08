@@ -40,6 +40,7 @@ export const STORE_CLASS = {
   devicePreferences: { class: "device", section: "device" },
   floatingGlass: { class: "device", section: "device" },
   idleNudge: { class: "device", section: "device" },
+  windowEvents: { class: "device", section: "device" },
   menuBarText: { class: "device", section: "device" },
   customBgs: { class: "content", section: "images" },
   deviceCalmPreset: { class: "internal", section: null },
@@ -105,6 +106,8 @@ const checks: Record<BackupKey, (v: unknown) => string | null> = {
   devicePreferences: value => isObj(value) && Object.values(value).every(v => typeof v === "boolean") ? null : "device preferences",
   floatingGlass: value => isObj(value) && isNum(value.opacity, 0, 1) ? null : "floating timer opacity",
   idleNudge: value => isIdleNudge(value) ? null : "idle reminder",
+  windowEvents: value => isObj(value) && ["nothing", "minimise", "floating"].includes(value.onStart as string) &&
+    ["nothing", "restore", "full"].includes(value.onEnd as string) ? null : "window on start and end",
   menuBarText: value => isObj(value) && ["task", "breakTime", "seconds"].every(key => typeof value[key] === "boolean") && isNum(value.maxLength, 8, 40) ? null : "menu bar text",
   intent: value => parseIntentDocument(value) ? null : "next action",
   settings: (v) => (isObj(v) ? null : "settings"), // shape and ranges are enforced by sanitizeSettings on load

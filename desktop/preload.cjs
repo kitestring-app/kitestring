@@ -60,6 +60,7 @@ contextBridge.exposeInMainWorld('desktop', Object.freeze(mini ? {
   release() { ipcRenderer.send('desktop:release'); },
   floatTimer,
   onFloatTimer: (callback) => subscribe('desktop:floating-state', callback),
+  windowEvent: (action) => { if (['minimise', 'floating', 'restore', 'full'].includes(action)) ipcRenderer.send('desktop:window-event', action); },
   armAlarm: (alarm) => ipcRenderer.invoke('desktop:arm-alarm', alarm),
   disarmAlarm: () => ipcRenderer.send('desktop:disarm-alarm'),
   speak: (input) => ipcRenderer.invoke('desktop:speak', input),
