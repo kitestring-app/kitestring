@@ -12,7 +12,7 @@ import { canWriteClockStore, clearStoredProfile, registerClockAction, requestClo
 import { playTimerTick, cancelAllChimes, cancelChime, cancelEnd, releaseChime, scheduleChime, scheduleEnd } from "../audio/core";
 import { ALERT_TEXT, type AlertKind } from "../audio/alertSynth";
 import { armCompanionWithSpeech, companionAvailable, companionKnownUp, disarmCompanion } from "../audio/companion";
-import { calmFoundationReady, localPreferences, quietTimer, settings } from "./settings";
+import { calmFoundationReady, localPreferences, quietTimer, QUICK_PICK_MAX_MINUTES, settings } from "./settings";
 import { boundaryAlert, repeatBoundarySound } from "../audio/boundaryAlert";
 import { createTickScheduler } from "../audio/ticking";
 import { recordHardInterruption, requestInterruption } from "./parked";
@@ -1032,6 +1032,27 @@ export function startTinyBlock(expectedSegId: string, minutes: number): boolean 
   return true;
 }
 
+export type QuickPickKind = "focus" | "break";
+/** A one-off block from a quick pick: like a tiny start, but for focus or a break and without tiny-start progress.
+ *  Only from an untouched idle block and only a length still on the list; stale clicks cannot replace a run.
+ *  Like tiny start, it may begin an idle block while Hard mode is on, and that block is then locked. Saved lengths stay put. */
+export function startQuickPick(expectedSegId: string, kind: QuickPickKind, minutes: number): boolean {
+  const s = timer.get();
+  const picks = T().quickPicks;
+  if (!canWriteClockStore("timer") || !picks.enabled || hardModeLocked(s) || s.segId !== expectedSegId || s.startedAt !== null || s.elapsedBefore > 0 ||
+    s.boundary || s.reentry || recoveryOffer() || !Number.isInteger(minutes) || minutes < 1 || minutes > QUICK_PICK_MAX_MINUTES ||
+    !(kind === "focus" ? picks.focus : picks.breaks).includes(minutes)) return false;
+  const want = kind === "focus" ? "focus" : E.quickBreakSegment(T().mode, s.segment);
+  if (!want) return false;
+  // Switching segment from an idle block has no time to credit; advance keeps the round and the pinned context.
+  const next = s.segment === want ? s : E.advance(s, { ...T(), autoRun: "off" }, Date.now(), false, want);
+  purposefulAction();
+  timer.set({ ...next, tinyStart: undefined, frozen: true, frozenTotal: minutes * 60_000, context: captureContext(next.context) });
+  timerActions.start();
+  if (shouldStartChime(next, T(), localPreferences.get().muted)) playStartChime(T().startChimeSound, T().alertVolume);
+  return true;
+}
+
 export type ParkingRecoveryAnswer = "keep" | "task" | "drop" | "defer" | "close";
 
 /** Review buttons share the recovery identity guards, including a newly started session. */
@@ -1057,6 +1078,7 @@ type SharedTimerRequest =
   | { kind: "review-control"; expected: RecoveryCommand; reviewId: string | null; choice: "open" | ReviewBoundary }
   | { kind: "recovery"; expected: RecoveryCommand; action: RecoveryAnswer; override?: number }
   | { kind: "tiny"; expected: RecoveryCommand; minutes: number }
+  | { kind: "quick"; expected: RecoveryCommand; segment: QuickPickKind; minutes: number }
   | { kind: "parking"; expected: RecoveryCommand; itemId: string; choice: ParkingRecoveryAnswer }
   | { kind: "undo"; token: string };
 interface SharedTimerResult { ok: boolean; undoToken?: string; refusal?: TimerRefusal; keptTimer?: boolean }
@@ -1112,6 +1134,11 @@ async function executeSharedTimerRequest(request: SharedTimerRequest): Promise<S
     const actual = recoveryCommand();
     if (Object.keys(actual).some(key => actual[key as keyof RecoveryCommand] !== request.expected[key as keyof RecoveryCommand])) return { ok: false };
     return { ok: startTinyBlock(request.expected.expectedSegId, request.minutes) };
+  }
+  if (request.kind === "quick") {
+    const actual = recoveryCommand();
+    if (Object.keys(actual).some(key => actual[key as keyof RecoveryCommand] !== request.expected[key as keyof RecoveryCommand])) return { ok: false };
+    return { ok: (request.segment === "focus" || request.segment === "break") && startQuickPick(request.expected.expectedSegId, request.segment, request.minutes) };
   }
   if (request.kind === "undo") {
     const undo = reviewUndos.get(request.token);
@@ -1170,6 +1197,9 @@ export async function requestRecovery(expected: RecoveryCommand, action: Recover
 }
 export async function requestTinyBlock(expected: RecoveryCommand, minutes: number) {
   return (await sharedTimerRequest({ kind: "tiny", expected, minutes })).ok;
+}
+export async function requestQuickPick(expected: RecoveryCommand, segment: QuickPickKind, minutes: number) {
+  return (await sharedTimerRequest({ kind: "quick", expected, segment, minutes })).ok;
 }
 export async function requestParkingRecovery(expected: RecoveryCommand, itemId: string, choice: ParkingRecoveryAnswer) {
   const result = await sharedTimerRequest({ kind: "parking", expected, itemId, choice });

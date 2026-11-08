@@ -43,6 +43,8 @@ export interface Settings {
     speak: boolean;
     bringToFront: boolean;
     tally: TallyId;
+    /** Opt-in one-tap lengths on the focus screen. Picking one runs a single block at that length; saved lengths stay put. */
+    quickPicks: QuickPicks;
   };
   clock: {
     format: "12" | "24";
@@ -78,6 +80,16 @@ export interface Settings {
 /** Hiding Stats temporarily treats a Stats default as Recently opened without rewriting it. */
 export function effectiveDefaultTab(extras: Pick<Settings["extras"], "hideStats" | "defaultTab">): SettingsTab | "recent" {
   return extras.hideStats && extras.defaultTab === "stats" ? "recent" : extras.defaultTab;
+}
+
+export interface QuickPicks { enabled: boolean; focus: number[]; breaks: number[] }
+export const QUICK_PICK_MAX = 5;
+export const QUICK_PICK_MAX_MINUTES = 600;
+/** Whole minutes 1 to 600, no repeats, shortest first, at most five. Anything else falls back. */
+export function sanitizeQuickPickList(value: unknown, fallback: number[]): number[] {
+  if (!Array.isArray(value)) return [...fallback];
+  const clean = value.filter((n): n is number => typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= QUICK_PICK_MAX_MINUTES);
+  return [...new Set(clean)].sort((a, b) => a - b).slice(0, QUICK_PICK_MAX);
 }
 
 export const LOOKS = ["classic", "glass", "sketch", "companion", "sunrise"] as const;
@@ -116,6 +128,7 @@ export const DEFAULT_SETTINGS: Settings = {
     speak: true,
     bringToFront: true,
     tally: "dots",
+    quickPicks: { enabled: false, focus: [15, 25, 50], breaks: [5, 10, 15] },
   },
   clock: { showStreak: false, format: "12", seconds: false, flip: false, size: "regular", font: "look", greetings: true, dynamicGreetings: true },
   themes: {
@@ -194,6 +207,11 @@ export function sanitizeSettings(stored: unknown): Settings {
       speak: typeof t.speak === "boolean" ? t.speak : d.timer.speak,
       bringToFront: typeof t.bringToFront === "boolean" ? t.bringToFront : d.timer.bringToFront,
       tally: oneOf(t.tally, ["dots", "tomato", "check", "star", "tree", "tokyo", "stem"] as const, d.timer.tally),
+      quickPicks: {
+        enabled: typeof t.quickPicks.enabled === "boolean" ? t.quickPicks.enabled : false,
+        focus: sanitizeQuickPickList(t.quickPicks.focus, d.timer.quickPicks.focus),
+        breaks: sanitizeQuickPickList(t.quickPicks.breaks, d.timer.quickPicks.breaks),
+      },
     },
     clock: {
       ...s.clock,
