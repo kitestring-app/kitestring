@@ -25,6 +25,8 @@ declare global {
     attention?: boolean;
     announcement?: DesktopAnnouncement;
     genericSpeech?: boolean;
+    /** Custom notification body and spoken reminder for this boundary (one line, max 140 characters). */
+    text?: string;
   }
   interface CloudReply { status: number; retryAfter?: string | null; data: { ok: boolean; email?: string; error?: string; entries?: { key: string; value: unknown; updatedAt: number }[] } }
   interface Window {
@@ -74,7 +76,7 @@ declare global {
       speak?: (input: { kind: DesktopAlarm["kind"]; announcement?: DesktopAnnouncement }) => Promise<boolean>;
       cancelSpeech?: () => void;
       notificationStatus?: () => Promise<{ supported: boolean; failed: boolean }>;
-      testReminder?: () => Promise<{ supported: boolean; failed: boolean; displays: number } | null>;
+      testReminder?: (text?: string) => Promise<{ supported: boolean; failed: boolean; displays: number } | null>;
       /** Idle reminder to start a block: a silent native notification that opens the app when clicked. */
       nudge?: (text: string) => Promise<boolean>;
       preventSleep?: (on: boolean) => void;

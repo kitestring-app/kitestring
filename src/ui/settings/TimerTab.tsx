@@ -4,6 +4,7 @@ import { useTimerView } from "../../state/timer";
 import { useStore } from "../../lib/store";
 import { applySupportPreset, localPreferences, presetState, QUICK_PICK_MAX, QUICK_PICK_MAX_MINUTES, quietTimer, sanitizeQuickPickList, supportPresetLabel, settings, settingsUpdate, type QuickPicks, type Settings, type TimerMode, type TimerStyle, type TallyId } from "../../state/settings";
 import { previewChime, type AlertSound } from "../../audio/core";
+import { ALERT_TEXT_MAX, SPOKEN_REMINDER, cleanAlertText, customAlertText } from "../../audio/alertText";
 import { FlipPalettePicker } from "../timer/FlipPalettePicker";
 import { FACES } from "../timer/faces";
 import { Choices, Toggle } from "./SettingsDrawer";
@@ -32,7 +33,7 @@ function CompanionStatus({ volume, alertSound }: { volume: number; alertSound: A
       {up ? (
         <>
           macOS alerts are on: notifications and sound fire even if Chrome is closed.{" "}
-          <button className="btn small" onClick={() => void testCompanion("break-over", volume, alertSound).then((ok) => setMsg(ok ? "Sent a test alert." : "Test failed."))}>Test macOS alert</button>{" "}
+          <button className="btn small" onClick={() => void testCompanion("break-over", volume, alertSound, customAlertText(t, "break-over") || undefined).then((ok) => setMsg(ok ? "Sent a test alert." : "Test failed."))}>Test macOS alert</button>{" "}
           {msg}
         </>
       ) : (
@@ -263,6 +264,13 @@ export function TimerTab() {
         <Toggle title="Full-screen break/focus reminder" help="Keep the next step on screen until you choose it." checked={t.takeover} onChange={(v) => set({ takeover: v })} />
         <Toggle title="Say it out loud" help="Speak a short reminder after the alert sound." checked={t.speak} onChange={(v) => set({ speak: v })} />
         <Toggle title="Bring the app to the front (Mac app)" help="Bring the reminder forward when a segment ends." checked={t.bringToFront} onChange={(v) => set({ bringToFront: v })} />
+        <div className="field-grid" aria-disabled={!t.notify && !t.speak}>
+          <label htmlFor="focus-done-text">Focus done text</label>
+          <input id="focus-done-text" className="input" maxLength={ALERT_TEXT_MAX} placeholder={SPOKEN_REMINDER["focus-done"]} value={t.focusDoneText} onChange={e => set({ focusDoneText: e.target.value })} onBlur={e => set({ focusDoneText: cleanAlertText(e.target.value) })} aria-describedby="alert-text-help" />
+          <label htmlFor="break-over-text">Break over text</label>
+          <input id="break-over-text" className="input" maxLength={ALERT_TEXT_MAX} placeholder={SPOKEN_REMINDER["break-over"]} value={t.breakOverText} onChange={e => set({ breakOverText: e.target.value })} onBlur={e => set({ breakOverText: cleanAlertText(e.target.value) })} aria-describedby="alert-text-help" />
+        </div>
+        <p id="alert-text-help" className="help">Your own words for the notification and the spoken reminder. Leave blank for the default.</p>
       </div>
 
       <IdleNudgeCard />
@@ -317,7 +325,7 @@ function ReminderTest() {
     <div className="opt reminder-test">
       <span><b>Test reminders</b><span>{msg || "Shows the notification now and the banner on each other display for 6 seconds."}</span></span>
       <button type="button" className="btn small" onClick={async () => {
-        const r = await window.desktop?.testReminder?.();
+        const r = await window.desktop?.testReminder?.(customAlertText(settings.get().timer, "focus-done") || undefined);
         if (!r) return setMsg("The test could not run.");
         if (!r.supported) return setMsg("macOS reports notifications are unavailable for this app. Allow them in System Settings > Notifications > Kitestring.");
         setMsg(r.displays > 1 ? `Sent. Look for the notification, and a banner on your other ${r.displays - 1 === 1 ? "display" : `${r.displays - 1} displays`}. Not seeing the notification? Allow it in System Settings > Notifications > Kitestring.` : "Sent. Look for the notification. Banners appear on other displays when one is connected.");

@@ -65,7 +65,7 @@ contextBridge.exposeInMainWorld('desktop', Object.freeze(mini ? {
   speak: (input) => ipcRenderer.invoke('desktop:speak', input),
   cancelSpeech: () => ipcRenderer.send('desktop:cancel-speech'),
   notificationStatus: () => ipcRenderer.invoke('desktop:notification-status'),
-  testReminder: () => ipcRenderer.invoke('desktop:test-reminder'),
+  testReminder: (text) => ipcRenderer.invoke('desktop:test-reminder', typeof text === 'string' ? text : undefined),
   nudge: (text) => typeof text === 'string' && text.trim() ? ipcRenderer.invoke('desktop:nudge', text.slice(0, 200)) : Promise.resolve(false),
   preventSleep: (on) => { if (typeof on === 'boolean') ipcRenderer.send('desktop:prevent-sleep', on); },
   onTimerRequest: (callback) => subscribe('desktop:timer-request', ({ id, command, origin }) => {

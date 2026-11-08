@@ -21,7 +21,7 @@ vi.mock("../../audio/core", () => ({ previewChime: vi.fn() }));
 vi.mock("../../audio/companion", () => ({ companionAvailable: vi.fn(), testCompanion: vi.fn().mockResolvedValue(true) }));
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
 
-type Props = { children?: ReactNode; "aria-label"?: string; onClick?: () => void };
+type Props = { children?: ReactNode; "aria-label"?: string; onClick?: () => void; id?: string; placeholder?: string; maxLength?: number; onChange?: (e: unknown) => void; onBlur?: (e: unknown) => void };
 function elements(node: ReactNode): ReactElement<Props>[] {
   return Children.toArray(node).flatMap(child => isValidElement<Props>(child) ? [child, ...elements(child.props.children)] : []);
 }
@@ -34,7 +34,17 @@ it.each(ALERT_SOUNDS)("the macOS test button uses the current %s selection", asy
   const tree = (status.type as (props: unknown) => ReactNode)(status.props);
   const button = elements(tree).find(el => el.type === "button" && el.props.children === "Test macOS alert")!;
   button.props.onClick!();
-  expect(testCompanion).toHaveBeenCalledWith("break-over", 0.35, alertSound);
+  expect(testCompanion).toHaveBeenCalledWith("break-over", 0.35, alertSound, undefined);
+});
+
+it("the macOS test button sends the custom break over text", async () => {
+  await settings.ready;
+  settings.set({ ...DEFAULT_SETTINGS, timer: { ...DEFAULT_SETTINGS.timer, alertVolume: 0.35, breakOverText: "Back to it." } });
+  vi.stubGlobal("window", {});
+  const status = elements(TimerTab()).find(el => typeof el.type === "function" && el.type.name === "CompanionStatus")!;
+  const tree = (status.type as (props: unknown) => ReactNode)(status.props);
+  elements(tree).find(el => el.type === "button" && el.props.children === "Test macOS alert")!.props.onClick!();
+  expect(testCompanion).toHaveBeenLastCalledWith("break-over", 0.35, "signature", "Back to it.");
 });
 
 it("the two signature previews keep their phase and volume", async () => {
@@ -111,4 +121,23 @@ it("start preview rechecks mute even when an older button handler is retained", 
   button.props.onClick!(); expect(playStartChime).not.toHaveBeenCalled();
   localPreferences.set(s => ({ ...s, muted: false }));
   button.props.onClick!(); expect(playStartChime).toHaveBeenCalledWith("bubble", DEFAULT_SETTINGS.timer.alertVolume);
+});
+
+it("edits the focus done and break over reminder text", async () => {
+  await settings.ready;
+  settings.set(DEFAULT_SETTINGS);
+  const inputs = elements(TimerTab()).filter(el => el.type === "input");
+  const focus = inputs.find(el => el.props.id === "focus-done-text")!, rest = inputs.find(el => el.props.id === "break-over-text")!;
+  expect(focus.props.placeholder).toBe("Focus session done. Time for a break.");
+  expect(rest.props.placeholder).toBe("Break is over. Time to focus.");
+  expect(focus.props.maxLength).toBe(140);
+  focus.props.onChange!({ target: { value: "Stretch." } });
+  rest.props.onChange!({ target: { value: "Back to it." } });
+  expect(settings.get().timer.focusDoneText).toBe("Stretch.");
+  expect(settings.get().timer.breakOverText).toBe("Back to it.");
+  // Leaving the field shows the text that will actually be used.
+  focus.props.onBlur!({ target: { value: "  -- Stretch,\n now  " } });
+  rest.props.onBlur!({ target: { value: "-" } });
+  expect(settings.get().timer.focusDoneText).toBe("Stretch, now");
+  expect(settings.get().timer.breakOverText).toBe("");
 });

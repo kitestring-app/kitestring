@@ -586,3 +586,40 @@ test('idle nudge reports false when macOS notifications are unsupported', () => 
   assert.equal(h.services.nudge('Start'), false);
   assert.equal(h.notifications.length, 0);
 });
+
+test('custom reminder text replaces the notification body and the spoken line', () => {
+  for (const [kind, text] of [['focus-done', 'Stretch and refill your water.'], ['break-over', 'Back to the draft.']]) {
+    const h = harness();
+    fire(h, { kind, text });
+    assert.equal(h.notifications[0].options.body, text);
+    assert.equal(h.services.snapshot().pending, null);
+    sounds(h)[0].done(null);
+    assert.deepEqual(speech(h).map((p) => p.args), [[text]]);
+  }
+  // A timed auto-run announcement still wins for speech; the notification keeps the custom text.
+  const auto = harness();
+  fire(auto, { text: 'Stretch.', announcement: { phase: 'break', minutes: 5 } });
+  assert.equal(auto.notifications[0].options.body, 'Stretch.');
+  sounds(auto)[0].done(null);
+  assert.deepEqual(speech(auto)[0].args, ['Break started. 5 minutes.']);
+});
+
+test('custom reminder text survives a restart and rejects unsafe values', () => {
+  const h = harness();
+  const valid = alarm(h, { text: 'Stand up.' });
+  assert.equal(h.services.arm(valid), true);
+  assert.equal(h.services.snapshot().pending.text, 'Stand up.');
+  for (const text of ['', ' padded', 'line\nbreak', '-o /tmp/x', 'x'.repeat(141), 1, null, {}, 'tab\there', 'sep x']) {
+    assert.equal(h.services.arm({ ...valid, text }), false, `reject ${JSON.stringify(text)}`);
+  }
+  assert.equal(h.services.snapshot().pending.text, 'Stand up.');
+});
+
+test('testReminder shows valid custom text and ignores anything else', () => {
+  const h = harness();
+  h.services.testReminder('focus-done', 'Stretch now.');
+  h.services.testReminder('focus-done', '-o /tmp/x');
+  h.services.testReminder('focus-done', 42);
+  h.services.testReminder('focus-done', '🎉'.repeat(140));
+  assert.deepEqual(h.notifications.map((n) => n.options.body), ['Stretch now.', 'Time for a break.', 'Time for a break.', '🎉'.repeat(140)]);
+});
