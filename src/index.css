@@ -149,6 +149,64 @@
   color-scheme: light;
 }
 
+/* Paper looks at night: chosen by Dark, or by System when the OS is dark (html.paper-dark). Same personality,
+   same accents, on dark paper. Auto keeps the light paper, because the paper is the wallpaper. */
+html.paper-dark[data-look="sketch"] {
+  --state-focus: #f2b63c; --state-break: #7cc28f; --state-long: #93abeb; --state-ink: #23201c;
+  --bg: #1f1d1a;
+  --on-bg: #f3ecdd; --on-bg-dim: #cfc6b4; --on-bg-faint: #bdb3a0; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #f3ecdd; --fg-dim: #cdc4b2; --fg-faint: #bcb29e;
+  --surface: #2a2723; --surface-hover: #35312b;
+  --surface-strong: #2a2723; --surface-sunk: #24211d; --surface-solid: #2a2723;
+  --canvas: #1f1d1a;
+  --line: rgb(243 236 221 / 14%);
+  --shadow-lg: 3px 4px 0 rgb(0 0 0 / 35%);
+  --accent: #f2b63c; --accent-fg: #23201c; --accent-soft: rgb(242 182 60 / 22%); --accent-ink: #f5c96a;
+  --sel: #f2b63c; --sel-fg: #23201c; --ring: #93abeb;
+  --tile: #2a2723; --tile-on: #f2b63c; --tile-on-fg: #23201c; --tile-icon: #f3ecdd;
+  --track: #3d3830; --progress: #f2b63c;
+  --good: #8fd1a3; --warn: #f0c86a; --danger: #f0937c; --danger-bg: #3a221c; --danger-fg: #ffd6cb;
+  --ink: #e9e1cf; --paper-dot: rgb(243 236 221 / 7%); --highlighter: rgb(242 182 60 / 32%);
+  color-scheme: dark;
+}
+html.paper-dark[data-look="companion"] {
+  --state-focus: #e2827a; --state-break: #6fbf9f; --state-long: #98acd9; --state-ink: #1e1714;
+  --bg: #1e1714;
+  --on-bg: #f4e9df; --on-bg-dim: #d2c1b5; --on-bg-faint: #c3b0a3; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #f4e9df; --fg-dim: #d0bfb3; --fg-faint: #c1aea1;
+  --surface: #2a211d; --surface-hover: #352a25;
+  --surface-strong: #2a211d; --surface-sunk: #241c19; --surface-solid: #2a211d;
+  --canvas: #221a17;
+  --border: #3e312b; --line: #382c27;
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 6%);
+  --shadow: var(--highlight), 0 8px 22px -16px rgb(0 0 0 / 60%);
+  --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(0 0 0 / 70%);
+  --accent: #e2827a; --accent-fg: #1e1714; --accent-soft: rgb(226 130 122 / 16%); --accent-ink: #eea39b;
+  --sel: #f4e9df; --sel-fg: #1e1714; --ring: #6fbf9f;
+  --tile: #332824; --tile-on: #6fbf9f; --tile-on-fg: #1e1714; --tile-icon: #d0bfb3;
+  --track: #3e312b; --progress: #e2827a;
+  --good: #6fbf9f; --warn: #e8bd6e; --danger: #ee8f7d; --danger-bg: #3b211b; --danger-fg: #ffd5cb;
+  color-scheme: dark;
+}
+html.paper-dark[data-look="sunrise"] {
+  --state-focus: #ff9a52; --state-break: #6cc79c; --state-long: #97adf0; --state-ink: #24180f;
+  --bg: #24180f;
+  --on-bg: #fff1e0; --on-bg-dim: #e2cdb3; --on-bg-faint: #d1b99c; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #fff1e0; --fg-dim: #dfc9ae; --fg-faint: #cfb698;
+  --surface: #33241a; --surface-hover: #3e2d20;
+  --surface-strong: #33241a; --surface-sunk: #2b1e15; --surface-solid: #33241a;
+  --canvas: #2a1d13;
+  --line: #45321f;
+  --shadow: 0 4px 0 #170f09; --shadow-lg: 0 8px 0 #170f09;
+  --accent: #ff9a52; --accent-fg: #24180f; --accent-soft: rgb(255 154 82 / 18%); --accent-ink: #ffb27a;
+  --sel: #ff9a52; --sel-fg: #24180f; --ring: #ffb27a;
+  --sunrise-ledge: #170f09;
+  --tile: #3a2a1d; --tile-on: #ff9a52; --tile-on-fg: #24180f; --tile-icon: #ffb27a;
+  --track: #4a3522; --progress: #ff9a52;
+  --good: #7fd3a8; --warn: #f2c46e; --danger: #f49379; --danger-bg: #3d2117; --danger-fg: #ffd6c9;
+  color-scheme: dark;
+}
+
 /* Glass over a light wallpaper: light frost and dark ink, like macOS vibrancy. */
 html.theme-light[data-look="glass"] {
   --surface: rgb(255 255 255 / 64%); --surface-hover: rgb(255 255 255 / 76%);
@@ -330,7 +388,7 @@ input, textarea, select { font: inherit; color: inherit; }
 select.input { -webkit-appearance: none; appearance: none; padding-right: 38px; cursor: pointer; background-image: var(--chevron); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; }
 :root { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7d6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 :root[data-look="glass"] { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e8ebee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
-:root.theme-light, :root[data-look="sketch"], :root[data-look="companion"], :root[data-look="sunrise"] { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a4760' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+:root.theme-light, :root:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"]) { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a4760' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 select.input option { color: CanvasText; background: Canvas; }
 .input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .switch { appearance: none; width: 46px; height: 26px; border-radius: 99px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); position: relative; cursor: pointer; flex: none; transition: background 0.2s; margin: 0; }
@@ -435,7 +493,7 @@ input[type="checkbox"]:not(.switch), input[type="radio"] { accent-color: var(--a
 :root[data-look="sketch"] :is(.btn, .iconbtn, .tiny-chip, .choice, .sound-tile)::before { border-radius: calc(var(--r, 12px) + 3px) calc(var(--r, 12px) - 2px) calc(var(--r, 12px) + 2px) calc(var(--r, 12px) - 3px) / calc(var(--r, 12px) - 2px) calc(var(--r, 12px) + 3px) calc(var(--r, 12px) - 3px) calc(var(--r, 12px) + 2px); }
 :root[data-look="sketch"] :is(.btn, .tiny-chip)::before { --r: 999px; border-radius: 999px 980px 999px 960px / 999px 960px 999px 980px; }
 @keyframes ink-boil { 0% { filter: url(#ink-0); } 33% { filter: url(#ink-1); } 66% { filter: url(#ink-2); } }
-:root[data-look="sketch"] .headline { background: linear-gradient(transparent 68%, rgb(242 182 60 / 55%) 68%) no-repeat 0 0 / 100% 100%; padding: 0 6px; }
+:root[data-look="sketch"] .headline { background: linear-gradient(transparent 68%, var(--highlighter, rgb(242 182 60 / 55%)) 68%) no-repeat 0 0 / 100% 100%; padding: 0 6px; }
 :root[data-look="sketch"] .progress-line { border: 1.5px solid var(--ink); height: 10px; }
 :root[data-look="sketch"] .seg button[aria-pressed="true"] { font-weight: 700; }
 :root[data-look="sketch"] .panel .panel-head { position: relative; }
@@ -443,7 +501,7 @@ input[type="checkbox"]:not(.switch), input[type="radio"] { accent-color: var(--a
 :root[data-look="sketch"] .panel .panel-head::after { content: ""; position: absolute; top: -9px; left: 50%; width: 76px; height: 18px; margin-left: -38px; background: rgb(242 182 60 / 50%); transform: rotate(-3deg); pointer-events: none; }
 
 /* ---------- Sunrise: chunky flat shadows, bouncy presses ---------- */
-:root[data-look="sunrise"] :is(.iconbtn, .btn, .seg):active:not(:disabled) { box-shadow: 0 1px 0 #f3d9b6; }
+:root[data-look="sunrise"] :is(.iconbtn, .btn, .seg):active:not(:disabled) { box-shadow: 0 1px 0 var(--sunrise-ledge, #f3d9b6); }
 
 /* Paper looks under a strong Dim: the paper turns dark, so wallpaper text switches to light ink. */
 html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"]) {
@@ -463,9 +521,9 @@ html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="
 /* Sketchbook: selected things use the marigold fill; the ink outline is the only border. */
 :root[data-look="sketch"] :is(.btn, .choice, .sound-tile, .sounds-station, .radio-station)[aria-pressed="true"], :root[data-look="sketch"] .sound-tile.active { border-color: transparent; box-shadow: none; }
 /* Sketchbook: the paper and its dots continue behind Settings. */
-:root[data-look="sketch"] .drawer main { background-image: radial-gradient(circle, rgb(51 48 43 / 7%) 0.9px, transparent 1px); background-size: 18px 18px; }
+:root[data-look="sketch"] .drawer main { background-image: radial-gradient(circle, var(--paper-dot, rgb(51 48 43 / 7%)) 0.9px, transparent 1px); background-size: 18px 18px; }
 /* Sunrise: buttons inside white panels keep a visible fill and a small flat shadow. */
-:root[data-look="sunrise"] :is(.panel, .ambient-timer, .drawer, .card) :is(.iconbtn, .btn:not(.primary)) { box-shadow: 0 2px 0 #f3d9b6; }
+:root[data-look="sunrise"] :is(.panel, .ambient-timer, .drawer, .card) :is(.iconbtn, .btn:not(.primary)) { box-shadow: 0 2px 0 var(--sunrise-ledge, #f3d9b6); }
 /* The pinned next action label, readable over any wallpaper. */
 .next-action-label { color: var(--on-bg-dim); text-shadow: var(--on-bg-shadow); }
 /* A calm footer: only the credit line on the dashboards; support links live in Settings > About. */
@@ -609,6 +667,9 @@ html[data-look="glass"] .sounds-panel { background: var(--surface-strong, var(--
 /* Native controls (number steppers, scrollbars) follow the chrome scheme. */
 html:not(.theme-light) { color-scheme: dark; }
 html.theme-light { color-scheme: light; }
+/* Paper looks carry their own scheme: light paper unless paper-dark. */
+html:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"]) { color-scheme: light; }
+html.paper-dark:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"]) { color-scheme: dark; }
 /* More is a real control: a quiet chip, not a stray glyph. */
 .controls .iconbtn.controls-more-toggle { width: 44px; height: 44px; align-self: center; background: var(--surface); border-color: var(--border); color: var(--on-bg); }
 .controls.idle::before { width: 44px; }
