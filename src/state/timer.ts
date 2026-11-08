@@ -356,7 +356,11 @@ function checkEndWarning() {
   if (t.alertVolume > 0 && !localPreferences.get().muted) playStartChime(t.startChimeSound, t.alertVolume);
   if (t.speak) {
     clearTimeout(warningSpeech);
-    warningSpeech = setTimeout(() => speakEndWarning(t.warnBefore), 900); // After the chime's first notes.
+    // After the chime's first notes, and only if the same block is still running toward the same deadline.
+    warningSpeech = setTimeout(() => {
+      const current = timer.get();
+      if (current.segId === due.segId && endWarningAt(current, totalMs(current), T()) === due.at) speakEndWarning(T().warnBefore);
+    }, 900);
   }
 }
 function speakEndWarning(minutes: number) {

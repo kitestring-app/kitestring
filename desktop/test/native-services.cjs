@@ -576,3 +576,11 @@ test('the heads-up before a focus block ends is speak-only, with a fixed line', 
   assert.equal(h.services.arm(alarm(h, { announcement: { phase: 'warning', minutes: 2 } })), false);
   assert.equal(speech(h).length, 0);
 });
+
+test('switching to Hidden time during a spoken heads-up keeps it a heads-up, without the number', () => {
+  const h = harness();
+  assert.equal(h.services.speak({ kind: 'focus-done', announcement: { phase: 'warning', minutes: 2 } }), true);
+  assert.deepEqual(speech(h)[0].args, ['Two minutes left.']);
+  h.services.arm(alarm(h, { genericSpeech: true }));
+  assert.deepEqual(speech(h).at(-1).args, ['Focus is nearly done.']);
+});

@@ -111,7 +111,9 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
     if (pending && pending.at <= now()) check();
     // The shared display policy also applies to the boundary already waiting behind its chime.
     if (input.genericSpeech && activeAnnouncement?.announcement) {
-      delete activeAnnouncement.announcement;
+      // A heads-up keeps its phase and only loses its number; anything else falls back to the generic reminder.
+      if (activeAnnouncement.announcement.phase === 'warning') delete activeAnnouncement.announcement.minutes;
+      else delete activeAnnouncement.announcement;
       if (speech) speak(activeAnnouncement);
     }
     if (`${input.kind}:${input.at}` === lastFired) return true;

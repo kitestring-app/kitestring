@@ -106,3 +106,13 @@ it("arms the audio clock for the cue, so a throttled background tab still hears 
   await vi.advanceTimersByTimeAsync(2_000);
   expect(q.chime).toHaveBeenCalledTimes(1);
 });
+
+it.each(["pause", "off"] as const)("drops the spoken line if the block changes during the chime (%s)", async change => {
+  const q = await setup(false);
+  q.timerActions.start();
+  await vi.advanceTimersByTimeAsync(8 * MIN + 250);
+  expect(q.chime).toHaveBeenCalledTimes(1);
+  if (change === "pause") q.timerActions.pause(); else q.s.settingsUpdate("timer", { warnBefore: 0 });
+  await vi.advanceTimersByTimeAsync(2_000);
+  expect(q.speech.speak).not.toHaveBeenCalled();
+});
