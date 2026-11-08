@@ -123,6 +123,16 @@ export const hotkeyStatus = {
 };
 function setStatus(next: GlobalHotkeyStatus | null) { lastStatus = next; statusListeners.forEach(fn => fn(next)); }
 
+// While a shortcut is being recorded, nothing is registered, so pressing an
+// existing combination can't run its action in the main process.
+let paused = false;
+const pauseListeners = new Set<() => void>();
+export function pauseGlobalHotkeys(on: boolean) {
+  if (paused === on) return;
+  paused = on;
+  pauseListeners.forEach(fn => fn());
+}
+
 /** Sends saved shortcuts to the Mac app now and on every change. No-op on the web. */
 export async function connectGlobalHotkeys() {
   const bridge = typeof window === "undefined" ? undefined : window.desktop;
@@ -131,14 +141,17 @@ export async function connectGlobalHotkeys() {
   let previous = "";
   let serial = 0;
   const sync = () => {
-    const value = globalHotkeys.get();
-    const key = JSON.stringify(value);
+    const value = paused ? DEFAULT_GLOBAL_HOTKEYS : globalHotkeys.get();
+    const key = JSON.stringify([paused, value]);
     if (key === previous) return;
     previous = key;
     const id = ++serial;
-    void bridge.setGlobalHotkeys!({ ...value }).then(status => { if (id === serial) setStatus(status); }, () => { if (id === serial) setStatus(null); });
+    const report = !paused; // keep the last real status on screen while recording
+    void bridge.setGlobalHotkeys!({ ...value }).then(status => { if (id === serial && report) setStatus(status); }, () => { if (id === serial && report) setStatus(null); });
   };
-  const off = globalHotkeys.subscribe(sync);
+  const offStore = globalHotkeys.subscribe(sync);
+  pauseListeners.add(sync);
+  const off = () => { offStore(); pauseListeners.delete(sync); };
   // Another app may have released a shortcut it held; try again when Kitestring comes forward.
   const retry = () => { if (lastStatus && HOTKEY_ACTIONS.some(action => lastStatus![action] === "taken")) { previous = ""; sync(); } };
   window.addEventListener?.("focus", retry);

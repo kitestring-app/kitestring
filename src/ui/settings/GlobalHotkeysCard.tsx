@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "../../lib/store";
-import { formatHotkey, globalHotkeys, HOTKEY_ACTIONS, HOTKEY_LABELS, hotkeyStatus, recordHotkey, type GlobalHotkeyStatus, type HotkeyAction } from "../../state/globalHotkeys";
+import { formatHotkey, globalHotkeys, HOTKEY_ACTIONS, HOTKEY_LABELS, hotkeyStatus, pauseGlobalHotkeys, recordHotkey, type GlobalHotkeyStatus, type HotkeyAction } from "../../state/globalHotkeys";
 import "./GlobalHotkeysCard.css";
 
 const STATUS_TEXT: Record<Exclude<GlobalHotkeyStatus[HotkeyAction], "off" | "ok">, string> = {
@@ -21,6 +21,7 @@ export function GlobalHotkeysCard() {
 
   useEffect(() => {
     if (!recording) return;
+    pauseGlobalHotkeys(true);
     // Window capture runs before the settings dialog and the dashboard shortcuts.
     const onKey = (event: KeyboardEvent) => {
       event.preventDefault();
@@ -35,7 +36,7 @@ export function GlobalHotkeysCard() {
     const swallow = (event: KeyboardEvent) => { event.preventDefault(); event.stopImmediatePropagation(); };
     window.addEventListener("keydown", onKey, true);
     window.addEventListener("keyup", swallow, true);
-    return () => { window.removeEventListener("keydown", onKey, true); window.removeEventListener("keyup", swallow, true); };
+    return () => { pauseGlobalHotkeys(false); window.removeEventListener("keydown", onKey, true); window.removeEventListener("keyup", swallow, true); };
   }, [recording, saved]);
 
   const stopRecording = () => { setRecording(null); setHint(null); };

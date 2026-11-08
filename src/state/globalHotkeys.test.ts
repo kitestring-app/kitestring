@@ -115,3 +115,26 @@ it("does nothing on the web or in the mini timer", async () => {
   }
   expect(h.hotkeyStatus.get()).toBeNull();
 });
+
+it("unregisters every shortcut while one is being recorded, then restores them", async () => {
+  const h = await load();
+  const calls: unknown[] = [];
+  const setGlobalHotkeys = vi.fn(async (value: Record<string, string | null>) => {
+    calls.push(value);
+    return { showApp: "off", toggle: "off", stop: value.stop ? "ok" : "off", skip: "off" } as const;
+  });
+  vi.stubGlobal("window", { desktop: { setGlobalHotkeys } });
+  h.globalHotkeys.set(current => ({ ...current, stop: "Control+Alt+S" }));
+  const off = await h.connectGlobalHotkeys();
+  await vi.waitFor(() => expect(h.hotkeyStatus.get()?.stop).toBe("ok"));
+  h.pauseGlobalHotkeys(true);
+  h.pauseGlobalHotkeys(true); // repeat is a no-op
+  await vi.waitFor(() => expect(calls).toHaveLength(2));
+  expect(calls[1]).toEqual({ showApp: null, toggle: null, stop: null, skip: null });
+  await Promise.resolve();
+  expect(h.hotkeyStatus.get()?.stop).toBe("ok"); // the paused "off" answer isn't shown
+  h.pauseGlobalHotkeys(false);
+  await vi.waitFor(() => expect(calls).toHaveLength(3));
+  expect(calls[2]).toEqual({ showApp: null, toggle: null, stop: "Control+Alt+S", skip: null });
+  off();
+});
