@@ -26,10 +26,17 @@ export function sanitizeMenuBarText(stored: unknown): MenuBarText {
 }
 export const menuBarText = createStore<MenuBarText>("menuBarText", DEFAULT_MENU_BAR_TEXT, sanitizeMenuBarText);
 
-/** One line, at most `max` characters (counted by code point so emoji are never split). */
-export function clipName(text: string, max: number): string {
+/** The native bridge keeps at most this many UTF-16 code units of the title. */
+export const NATIVE_STATUS_LIMIT = 64;
+
+/** One line, at most `max` characters (counted by code point so emoji are never split) and `units` UTF-16 code units. */
+export function clipName(text: string, max: number, units = Infinity): string {
   const chars = Array.from(text.replace(/\s+/g, " ").trim());
-  return chars.length <= max ? chars.join("") : `${chars.slice(0, max - 1).join("").trimEnd()}…`;
+  const fits = (list: string[]) => list.length <= max && list.join("").length <= units;
+  if (fits(chars)) return chars.join("");
+  let keep = Math.min(chars.length, max - 1);
+  while (keep > 0 && chars.slice(0, keep).join("").trimEnd().length + 1 > units) keep--;
+  return keep > 0 ? `${chars.slice(0, keep).join("").trimEnd()}…` : "";
 }
 
 /** Whole minutes for a menu bar that only needs to change once a minute. */
@@ -61,8 +68,10 @@ export function trayStatus(v: TrayInput): string {
   const focus = v.segment === "focus";
   const time = !v.showNumbers || (!focus && !v.prefs.breakTime) ? "" :
     v.prefs.seconds ? v.display : minutesOnly(v.countUp ? v.elapsed : v.remaining, v.countUp);
-  const name = focus && v.prefs.task ? clipName(v.name, v.prefs.maxLength) : "";
   const paused = v.running ? "" : " (paused)";
+  // Budget the name against the whole native title so the time and "(paused)" are never cut.
+  const room = NATIVE_STATUS_LIMIT - (time ? `${time} · ` : "").length - paused.length;
+  const name = focus && v.prefs.task ? clipName(v.name, v.prefs.maxLength, room) : "";
   // A task name already says this is focus time, so it replaces the "Focus" word.
   if (name) return `${time ? `${time} · ` : ""}${name}${paused}`;
   return `${focus ? "Focus" : "Break"}${time ? ` ${time}` : ""}${paused}`;

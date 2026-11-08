@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { DEFAULT_MENU_BAR_TEXT, clipName, minutesOnly, sanitizeMenuBarText, trayStatus, type TrayInput } from "./menuBar";
+import { DEFAULT_MENU_BAR_TEXT, NATIVE_STATUS_LIMIT, clipName, minutesOnly, sanitizeMenuBarText, trayStatus, type TrayInput } from "./menuBar";
 
 const base: TrayInput = { segment: "focus", running: true, elapsed: 28_000, remaining: 272_000, countUp: false, display: "04:32",
   hiddenTime: false, hiddenStatus: "Focus · Running", showNumbers: true, name: "Write the intro", prefs: DEFAULT_MENU_BAR_TEXT };
@@ -45,4 +45,16 @@ it("sanitizes stored preferences", () => {
   expect(sanitizeMenuBarText({ task: "yes", maxLength: 500, breakTime: false, seconds: 1 })).toEqual({ ...DEFAULT_MENU_BAR_TEXT, maxLength: 40, breakTime: false });
   expect(sanitizeMenuBarText({ maxLength: 2 }).maxLength).toBe(8);
   expect(sanitizeMenuBarText({ maxLength: "x" }).maxLength).toBe(24);
+});
+
+it("keeps the whole title within the native limit, even for emoji-heavy names", () => {
+  const emoji = "🪁".repeat(40);
+  const title = trayStatus({ ...base, running: false, name: emoji, prefs: { ...on, maxLength: 40 } });
+  expect(title.length).toBeLessThanOrEqual(NATIVE_STATUS_LIMIT);
+  expect(title.startsWith("04:32 · 🪁")).toBe(true);
+  expect(title.endsWith("… (paused)")).toBe(true);
+  expect(title).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/); // no split surrogate pair
+  const plain = trayStatus({ ...base, running: false, name: "x".repeat(40), prefs: { ...on, maxLength: 40 } });
+  expect(plain).toBe(`04:32 · ${"x".repeat(40)} (paused)`);
+  expect(clipName("🪁🪁🪁", 10, 1)).toBe("");
 });
