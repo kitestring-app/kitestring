@@ -10,6 +10,7 @@ import { MiniTimer } from "./ui/MiniTimer";
 import { startTicker, timerActions, runTimerCommand, prepareTimerDeparture } from "./state/timer";
 import { flushReadyStores } from "./lib/store";
 import { startSync } from "./lib/sync";
+import { startIdleNudge } from "./state/idleNudgeRunner";
 
 document.documentElement.dataset.desktop = String(!!window.desktop);
 
@@ -21,6 +22,7 @@ else {
   window.desktop?.onTimerRequest?.(runTimerCommand);
   window.desktop?.onTimerAction?.((action) => timerActions[action]());
   window.desktop?.onFlush?.(async () => { await prepareTimerDeparture(); await flushReadyStores(); });
+  startIdleNudge();
 }
 if (!mini) void Promise.all([localPreferencesReady, calmFoundationReady]).then(startSync); // hosted version only: syncs to your account through Cloudflare Access + D1
 

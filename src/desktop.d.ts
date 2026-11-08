@@ -78,6 +78,8 @@ declare global {
       cancelSpeech?: () => void;
       notificationStatus?: () => Promise<{ supported: boolean; failed: boolean }>;
       testReminder?: (text?: string) => Promise<{ supported: boolean; failed: boolean; displays: number } | null>;
+      /** Idle reminder to start a block: a silent native notification that opens the app when clicked. */
+      nudge?: (text: string) => Promise<boolean>;
       preventSleep?: (on: boolean) => void;
       onTimerAction?: (callback: (action: DesktopTimerAction) => void) => () => void;
       onFlush?: (callback: () => Promise<void>) => () => void;

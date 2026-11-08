@@ -405,6 +405,7 @@ if (!app.requestSingleInstanceLock()) {
     ipcMain.on('desktop:cancel-speech', (event) => { if (trustedSender(event)) native.cancelSpeech(); });
     ipcMain.handle('desktop:speak', (event, input) => trustedSender(event) ? native.speak(input) : false);
     ipcMain.handle('desktop:notification-status', (event) => trustedSender(event) ? native.notificationStatus() : null);
+    ipcMain.handle('desktop:nudge', (event, text) => trustedSender(event) ? native.nudge(text) : false);
     ipcMain.on('desktop:prevent-sleep', (event, enabled) => { if (trustedSender(event) && typeof enabled === 'boolean') native.preventSleep(enabled); });
     ipcMain.handle('desktop:float-timer', (event, enabled) => {
       if (typeof enabled !== 'boolean' || !(trustedSender(event) || (enabled === false && floating.trusted(event)))) return false;

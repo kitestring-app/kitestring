@@ -49,6 +49,19 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
     current.on('action', (_event, index) => { if (index === 0 && notification === current) { disarm(); onStopSound(); } });
     try { current.show(); } catch { failed = true; }
   }
+  /** Idle reminder to start: silent, no actions, no sound or alarm state. Clicking opens the app. */
+  function nudge(text) {
+    if (typeof text !== 'string' || !notificationStatus().supported) return false;
+    const body = text.replace(/\s+/g, ' ').trim().slice(0, 200);
+    if (!body) return false;
+    const current = new Notification({ title: 'Kitestring', body, silent: true, actions: [] });
+    delivered.push(current); if (delivered.length > 12) delivered.shift();
+    current.on('failed', () => { failed = true; });
+    current.on('show', () => { failed = false; });
+    current.on('click', showWindow);
+    try { current.show(); } catch { failed = true; return false; }
+    return true;
+  }
   function speak(input) {
     const line = announcement(input);
     if (!line) return false;
@@ -131,7 +144,7 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
     return notificationStatus();
   }
   return {
-    testReminder,
+    testReminder, nudge,
     arm, disarm, check, suspend, resume, cancelSpeech, speak, notificationStatus,
     restore() { disarm(); },
     preventSleep(enabled) { if (enabled === true && power === null) power = powerSaveBlocker.start('prevent-display-sleep'); else if (enabled === false) releasePower(); },
