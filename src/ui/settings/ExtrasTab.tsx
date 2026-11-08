@@ -40,7 +40,7 @@ export function ExtrasTab() {
             { id: "nothing", label: "Do nothing" }, { id: "restore", label: "Restore window" }, { id: "full", label: "Switch to full window" },
           ]} />
         </div>
-        <p className="help">Restore brings the dashboard back without taking the keyboard. Switch to full window also closes the floating timer.</p>
+        <p className="help">Restore brings the dashboard back without taking the keyboard. Switch to full window also closes a floating timer that focus opened; one you turned on yourself stays, and your Floating timer setting never changes.</p>
       </div>}
       {window.desktop?.getSecureDns && window.desktop?.setSecureDns && <SecureDnsSettings />}
       <div className="card">

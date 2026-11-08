@@ -79,3 +79,19 @@ it("the web app has no window bridge and starts normally", async () => {
   t.timerActions.start();
   expect(t.timer.get().startedAt).not.toBeNull();
 });
+
+it("Continue on the finished-block card starts focus and sends the start action; Break and Stop do not", async () => {
+  for (const [answer, expected] of [["continue", [["minimise"]]], ["break", []], ["stop", []]] as const) {
+    vi.resetModules(); windowEvent.mockReset(); vi.useRealTimers();
+    vi.stubGlobal("indexedDB", new IDBFactory());
+    const t = await load("minimise", "nothing");
+    vi.useFakeTimers();
+    t.timerActions.start();
+    vi.setSystemTime(Date.now() + t.totalMs()!);
+    t.timerActions.complete(t.timer.get().segId);
+    expect(t.timer.get().boundary).toBeDefined();
+    windowEvent.mockReset();
+    expect(t.answerRecovery(t.recoveryCommand(), answer)).toBe(true);
+    expect(windowEvent.mock.calls).toEqual(expected);
+  }
+});

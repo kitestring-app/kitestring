@@ -20,6 +20,13 @@ function createWindowEvents({ mainWindow, floatingControls, fullscreen, showWork
     win.moveTop();
     return true;
   }
+  // If the floating timer it opened never loads, or is closed, nothing would show the time: restore.
+  let watching = false;
+  function watchFloating() {
+    if (watching) return;
+    watching = true;
+    floatingControls().onFocusWindowLost(() => { const win = usable(); if (win) restore(win); });
+  }
   return {
     run(action) {
       if (!validWindowEvent(action)) return false;
@@ -27,9 +34,13 @@ function createWindowEvents({ mainWindow, floatingControls, fullscreen, showWork
       if (!win) return false;
       switch (action) {
         case 'minimise': return minimise(win);
-        case 'floating': floatingControls().change({ floatingTimer: true }); minimise(win); return true;
+        // Never leave the person with no visible timer: minimise only once the floating timer is open.
+        case 'floating':
+          watchFloating();
+          return floatingControls().openForFocus() ? (minimise(win), true) : false;
         case 'restore': return restore(win);
-        case 'full': floatingControls().change({ floatingTimer: false }); return restore(win);
+        // Closes only a floating timer that focus start opened; one the person turned on stays.
+        case 'full': floatingControls().closeForFocus(); return restore(win);
       }
       return false;
     },

@@ -998,6 +998,7 @@ export function answerRecovery(expected: RecoveryCommand, action: RecoveryAnswer
       reentry: undefined };
     timer.set(next);
     if (action === "stop") captureStoppedAttempt(s, next, now);
+    if (action === "continue") windowOnFocusStart();
     void timerActions.stopSound();
     return true;
   }
