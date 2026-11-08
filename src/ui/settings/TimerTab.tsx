@@ -2,7 +2,7 @@ import { playStartChime } from "../../audio/startChime";
 import { chooseReviewBoundary, parkingReview, type ReviewBoundary } from "../../state/parkingReview";
 import { useTimerView } from "../../state/timer";
 import { useStore } from "../../lib/store";
-import { applySupportPreset, localPreferences, presetState, quietTimer, supportPresetLabel, settings, settingsUpdate, type Settings, type TimerMode, type TimerStyle, type TallyId } from "../../state/settings";
+import { applySupportPreset, localPreferences, presetState, QUICK_PICK_MAX, QUICK_PICK_MAX_MINUTES, quietTimer, sanitizeQuickPickList, supportPresetLabel, settings, settingsUpdate, type QuickPicks, type Settings, type TimerMode, type TimerStyle, type TallyId } from "../../state/settings";
 import { previewChime, type AlertSound } from "../../audio/core";
 import { FlipPalettePicker } from "../timer/FlipPalettePicker";
 import { FACES } from "../timer/faces";
@@ -40,6 +40,27 @@ function CompanionStatus({ volume, alertSound }: { volume: number; alertSound: A
       )}
     </p>
   );
+}
+
+/** One editable list of quick-pick lengths: remove a chip, or add a length until the list holds five. */
+function QuickPickList({ kind, label, list, onChange }: { kind: keyof Omit<QuickPicks, "enabled">; label: string; list: number[]; onChange: (next: number[]) => void }) {
+  const [draft, setDraft] = useState("");
+  const minutes = Number(draft);
+  const valid = Number.isInteger(minutes) && minutes >= 1 && minutes <= QUICK_PICK_MAX_MINUTES && !list.includes(minutes);
+  const full = list.length >= QUICK_PICK_MAX;
+  const add = () => { if (valid && !full) { onChange(sanitizeQuickPickList([...list, minutes], list)); setDraft(""); } };
+  return <div className="length-field">
+    <span className="length-label" id={`quick-${kind}-label`}>{label}</span>
+    <div className="quick-picks" role="group" aria-labelledby={`quick-${kind}-label`}>
+      {list.map(n => <button key={n} type="button" aria-label={`Remove ${n} minutes`} title="Remove" onClick={() => onChange(list.filter(m => m !== n))}>{n} ×</button>)}
+      {list.length === 0 && <span className="help">None</span>}
+    </div>
+    {!full && <span className="num-field">
+      <input type="number" min={1} max={QUICK_PICK_MAX_MINUTES} step={1} placeholder="min" aria-label={`Add a ${label.toLowerCase()} length in minutes`} value={draft}
+        onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === "Enter") add(); }} />
+      <button type="button" className="btn small" disabled={!valid} onClick={add}>Add</button>
+    </span>}
+  </div>;
 }
 
 const MODES: { id: TimerMode; label: string; help: string }[] = [
@@ -167,6 +188,12 @@ export function TimerTab() {
           )}
         </div>
         {t.mode === "countdown" && <Toggle title="Repeat countdown" help="Start a fresh countdown automatically when this one finishes. No breaks." checked={t.countdownRepeat} onChange={(countdownRepeat) => set({ countdownRepeat })} />}
+        <Toggle title="Quick-pick lengths" help={`One tap on the focus screen starts a single block at that length. Your saved lengths don’t change. Up to ${QUICK_PICK_MAX} focus and ${QUICK_PICK_MAX} break lengths.`}
+          checked={t.quickPicks.enabled} onChange={enabled => set({ quickPicks: { ...t.quickPicks, enabled } })} />
+        {t.quickPicks.enabled && <div className="length-grid" style={{ marginBottom: 16 }}>
+          <QuickPickList kind="focus" label="Focus" list={t.quickPicks.focus} onChange={focus => set({ quickPicks: { ...t.quickPicks, focus } })} />
+          <QuickPickList kind="breaks" label="Break" list={t.quickPicks.breaks} onChange={breaks => set({ quickPicks: { ...t.quickPicks, breaks } })} />
+        </div>}
         <h3>Auto-run</h3>
         <Choices<Settings["timer"]["autoRun"]>
           value={t.autoRun}

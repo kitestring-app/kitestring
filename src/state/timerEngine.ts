@@ -78,6 +78,22 @@ export function nextSegment(mode: TimerMode, segment: Segment, round: number, lo
   }
 }
 
+/** The break a quick pick starts in this mode, or null when the mode has no breaks (Countdown, Stopwatch).
+ *  Animedoro's only break is Watch time; 52/17 has one rest; Pomodoro keeps an idle long break long. */
+export function quickBreakSegment(mode: TimerMode, current: Segment): Segment | null {
+  switch (mode) {
+    case "countdown":
+    case "stopwatch":
+      return null;
+    case "animedoro":
+      return "long";
+    case "5217":
+      return "short";
+    case "pomodoro":
+      return current === "long" ? "long" : "short";
+  }
+}
+
 /** Does finishing this segment stop the timer regardless of auto-start? */
 export function endsSession(mode: TimerMode, segment: Segment): boolean {
   return (mode === "countdown" || mode === "stopwatch") && segment === "focus";

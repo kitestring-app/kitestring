@@ -56,7 +56,12 @@ const alternateStrings: Record<string, string> = {
   "appearance.look": "companion", "appearance.fx": "grain", "appearance.scheme": "dark", "appearance.reminderGlass": "clear",
   "dash": "home", "lastTab": "about",
 };
+// Number lists are leaves too: each needs a valid replacement list.
+const alternateLists: Record<string, number[]> = {
+  "timer.quickPicks.focus": [20, 40, 60, 90, 120], "timer.quickPicks.breaks": [3, 7, 20],
+};
 function changedLeaves(value: unknown, path = ""): unknown {
+  if (Array.isArray(value) && alternateLists[path]) return alternateLists[path];
   if (typeof value === "boolean") return !value;
   if (typeof value === "number") return value <= 1 ? (value === 0 ? 0.1 : value / 2) : value + 1;
   if (typeof value === "string") return alternateStrings[path] ?? "Portable setup";
