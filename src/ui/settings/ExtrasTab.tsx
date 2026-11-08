@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "../../lib/store";
 import { effectiveDefaultTab, floatingGlass, localPreferences, localPreferencesUpdate, settings, settingsUpdate, windowEvents, type Settings, type SettingsTab, type WindowEndAction, type WindowStartAction } from "../../state/settings";
 import { Choices, Toggle } from "./SettingsDrawer";
+import { GlobalHotkeysCard } from "./GlobalHotkeysCard";
 import { MENU_BAR_LENGTHS, menuBarText } from "../../state/menuBar";
 
 export function ExtrasTab() {
@@ -20,6 +21,7 @@ export function ExtrasTab() {
       <h1>Extras</h1>
       <p className="lede">Fine-tune how the dashboard behaves.</p>
       {parking !== null && <div className="card"><h3>Park a thought · ⌥⌘P</h3><p className="help" role={parking ? undefined : "status"}>{parking ? "The global shortcut is ready. Park a thought from any app without interrupting your timer." : "Couldn’t register ⌥⌘P. Another app may be using it. You can still use P in the dashboard or the Park a thought button."}</p></div>}
+      {window.desktop?.setGlobalHotkeys && !window.desktop.mini && <GlobalHotkeysCard />}
       {window.desktop?.floatTimer && <div className="card">
         <h3>Floating timer & menu bar</h3>
         <Toggle title="Floating timer" help="Keep a small timer on every desktop." checked={local.floatingTimer} onChange={v => localPreferencesUpdate({ floatingTimer: v })} />
