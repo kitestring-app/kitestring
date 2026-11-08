@@ -18,6 +18,8 @@ vi.mock("../state/settings", () => ({
   },
 }));
 vi.mock("./MiniTimer", () => ({ MiniTimer: () => null }));
+const live = vi.hoisted(() => ({ open: null as boolean | null }));
+vi.mock("./floatingDesktop", () => ({ floatingWindowOpen: () => live.open }));
 vi.mock("./icons", () => ({ Icon: {} }));
 
 function floatingWindow() {
@@ -210,4 +212,15 @@ it("mirrors app reduced motion into an open Document PiP root and cleans up", as
   expect(floating.document.documentElement.classList.toggle).toHaveBeenLastCalledWith("reduce-motion", false);
   (floating.addEventListener.mock.calls[0][1] as () => void)();
   expect(look.subs.size).toBe(0);
+});
+
+it("closes a floating timer that focus opened, even though the saved setting is off", async () => {
+  const floatTimer = vi.fn(async (open: boolean) => open);
+  vi.stubGlobal("window", { desktop: { floatTimer, setFloatingPreferences: vi.fn() } });
+  const { openPip } = await import("./pip");
+  preferences.floatingTimer = false; live.open = true;
+  await openPip();
+  expect(floatTimer).toHaveBeenLastCalledWith(false);
+  expect(preferences.floatingTimer).toBe(false);
+  live.open = null;
 });

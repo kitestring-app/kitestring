@@ -1,6 +1,7 @@
 import { createRoot, type Root } from "react-dom/client";
 import { localPreferences, localPreferencesReady, localPreferencesUpdate, settings } from "../state/settings";
 import { MiniTimer } from "./MiniTimer";
+import { floatingWindowOpen } from "./floatingDesktop";
 
 declare global {
   interface Window {
@@ -24,7 +25,8 @@ export async function openPip(): Promise<string | null> {
     try {
       if (window.desktop.setFloatingPreferences) {
         await localPreferencesReady;
-        nativeOpen = localPreferences.get().floatingTimer;
+        // The live window wins: a floating timer opened for focus is open but not saved as on.
+        nativeOpen = floatingWindowOpen() ?? localPreferences.get().floatingTimer;
       }
       nativeOpen = await window.desktop.floatTimer(!nativeOpen);
       if (window.desktop.setFloatingPreferences) localPreferencesUpdate({ floatingTimer: nativeOpen });
