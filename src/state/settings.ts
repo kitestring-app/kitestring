@@ -77,7 +77,8 @@ export interface Settings {
   sounds: { master: number };
   /** The whole look of the app, and an optional effect drawn over any wallpaper.
    *  scheme: which ink and chrome Classic and Glass use. "auto" follows the wallpaper's brightness,
-   *  "system" follows the OS appearance, "light"/"dark" force one. Paper looks are always light. */
+   *  "system" follows the OS appearance, "light"/"dark" force one. Paper looks keep light paper on "auto" and
+   *  turn to night paper on "dark" (or "system" while the OS is dark). The floating timer follows the OS on "auto". */
   appearance: { lookBackdrop: boolean; look: LookId; fx: WallpaperFx; fxStrength: number; reminderGlass: "clear" | "frosted"; scheme: Scheme };
   dash: DashMode;
   lastTab: SettingsTab;

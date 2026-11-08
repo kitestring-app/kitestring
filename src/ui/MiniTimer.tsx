@@ -6,7 +6,9 @@ import { SEGMENT_LABEL } from "../state/timerEngine";
 import { Glyph, type GlyphName } from "./Glyph";
 import { Icon } from "./icons";
 import "./MiniTimer.css";
-import { useLook } from "./Look";
+import { PAPER_LOOKS, useLook } from "./Look";
+import { useSystemDark } from "./Background";
+import { floatingIsDark, floatingSurfaceAlpha } from "./floatingScheme";
 
 /** Each segment gets its own icon; its colour comes from the look (--state-*). */
 const STATE_GLYPH: Record<"focus" | "short" | "long", GlyphName> = { focus: "target", short: "coffee", long: "moon" };
@@ -46,10 +48,11 @@ export function MiniTimer({ native = false }: { native?: boolean }) {
     document.documentElement.classList.toggle("reduce-motion", reduceMotion);
     return () => document.documentElement.classList.remove("reduce-motion");
   }, [native, reduceMotion]);
+  const alpha = useFloatingScheme(native, glass.opacity);
   const segment = v.state.segment as "focus" | "short" | "long";
   const label = v.hiddenTime ? SEGMENT_LABEL[segment] : v.mode === "animedoro" && segment === "long" ? "Watch time" : SEGMENT_LABEL[segment];
   return (
-    <main className={`mini-timer is-${segment}${v.running ? " is-running" : ""}`} style={{ ["--mini-alpha" as string]: String(glass.opacity) }} aria-label={`Floating timer, ${label}`}>
+    <main className={`mini-timer is-${segment}${v.running ? " is-running" : ""}`} style={{ ["--mini-alpha" as string]: String(alpha) }} aria-label={`Floating timer, ${label}`}>
       {native && <button className="mini-close" aria-label="Close floating timer" onClick={() => void window.desktop?.floatTimer?.(false)}><span aria-hidden="true">×</span></button>}
       <div className="mini-state">
         <span className="mini-state-icon"><Glyph name={STATE_GLYPH[segment] ?? "target"} size={14} /></span>
@@ -75,4 +78,27 @@ export function MiniTimer({ native = false }: { native?: boolean }) {
       </div>}
     </main>
   );
+}
+
+/**
+ * Light or dark for the native floating window, and how solid its surface must be. The window has no wallpaper:
+ * it sits on the Mac's glass, which follows the OS appearance. Auto and System match that glass; Light and Dark
+ * are honoured and the surface is raised until the text passes WCAG AA on the opposite glass.
+ */
+function useFloatingScheme(native: boolean, chosen: number): number {
+  const scheme = useStore(settings, s => s.appearance.scheme);
+  const look = useStore(settings, s => s.appearance.look);
+  const osDark = useSystemDark(native);
+  const dark = floatingIsDark(scheme, osDark);
+  const [alpha, setAlpha] = useState(chosen);
+  useEffect(() => {
+    if (!native || typeof document === "undefined") return;
+    const root = document.documentElement;
+    root.classList.toggle("theme-light", !dark);
+    root.classList.toggle("paper-dark", dark && PAPER_LOOKS.includes(look));
+    const css = getComputedStyle(root);
+    const read = (name: string) => css.getPropertyValue(name).trim();
+    setAlpha(floatingSurfaceAlpha({ chosen, osDark, surface: read("--surface-solid"), inks: [read("--fg"), read("--fg-dim")] }));
+  }, [native, dark, look, osDark, chosen]);
+  return native ? alpha : chosen;
 }

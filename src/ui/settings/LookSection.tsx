@@ -20,6 +20,14 @@ const SCHEME_INFO: Record<Scheme, { name: string; blurb: string }> = {
   dark: { name: "Dark", blurb: "Always dark chrome." },
 };
 
+/** Paper looks draw their own paper, so Auto means the light paper they were designed on. */
+const PAPER_SCHEME_INFO: Record<Scheme, (name: string) => string> = {
+  auto: (name) => `${name} stays on light paper. The floating timer follows your Mac.`,
+  system: (name) => `${name} turns to night paper when your Mac or browser is dark.`,
+  light: (name) => `${name} always on light paper.`,
+  dark: (name) => `${name} always on night paper.`,
+};
+
 const FX_INFO: Record<WallpaperFx, { name: string; blurb: string }> = {
   none: { name: "None", blurb: "The wallpaper as it is." },
   frost: { name: "Frost", blurb: "A light, even frosting." },
@@ -65,15 +73,13 @@ export function LookSection() {
         <div className="look-scheme" role="group" aria-labelledby="scheme-label">
           <div className="look-scheme-head">
             <b id="scheme-label">Light or dark</b>
-            <span className="look-blurb">{PAPER_LOOKS.includes(a.look) ? `${LOOK_INFO[a.look].name} is drawn on paper, so it is always light.` : SCHEME_INFO[a.scheme].blurb}</span>
+            <span className="look-blurb">{PAPER_LOOKS.includes(a.look) ? PAPER_SCHEME_INFO[a.scheme](LOOK_INFO[a.look].name) : SCHEME_INFO[a.scheme].blurb}</span>
           </div>
-          {!PAPER_LOOKS.includes(a.look) && (
-            <div className="segmented" role="group" aria-label="Scheme">
-              {SCHEMES.map((id) => (
-                <button key={id} type="button" aria-pressed={a.scheme === id} onClick={() => settingsUpdate("appearance", { scheme: id })}>{SCHEME_INFO[id].name}</button>
-              ))}
-            </div>
-          )}
+          <div className="segmented" role="group" aria-label="Scheme">
+            {SCHEMES.map((id) => (
+              <button key={id} type="button" aria-pressed={a.scheme === id} onClick={() => settingsUpdate("appearance", { scheme: id })}>{SCHEME_INFO[id].name}</button>
+            ))}
+          </div>
         </div>
       </div>
 
