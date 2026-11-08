@@ -45,9 +45,13 @@ function normalizeAccelerator(value) {
   return [...MODIFIERS.filter(mod => mods.has(mod)), key].join('+');
 }
 
+/** The four actions, plus an optional `recording` flag while Settings records a new shortcut. */
 function validHotkeys(value) {
-  return !!value && typeof value === 'object' && !Array.isArray(value) &&
-    Object.keys(value).length === HOTKEY_ACTIONS.length &&
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const keys = Object.keys(value);
+  const extra = keys.filter(key => !HOTKEY_ACTIONS.includes(key));
+  if (extra.length > 1 || (extra.length === 1 && (extra[0] !== 'recording' || typeof value.recording !== 'boolean'))) return false;
+  return keys.length - extra.length === HOTKEY_ACTIONS.length &&
     HOTKEY_ACTIONS.every(action => value[action] === null || (typeof value[action] === 'string' && value[action].length <= 64));
 }
 
@@ -57,6 +61,7 @@ function validHotkeys(value) {
  */
 function createGlobalHotkeys({ globalShortcut, run }) {
   let registered = [];
+  let recording = false;
   let status = Object.fromEntries(HOTKEY_ACTIONS.map(action => [action, 'off']));
   function clear() {
     for (const accelerator of registered) { try { globalShortcut.unregister(accelerator); } catch { /* already gone */ } }
@@ -66,6 +71,9 @@ function createGlobalHotkeys({ globalShortcut, run }) {
     sync(value) {
       if (!validHotkeys(value)) return null;
       clear();
+      // While recording, nothing is registered, so pressing a combination only records it.
+      recording = value.recording === true;
+      if (recording) return Object.fromEntries(HOTKEY_ACTIONS.map(action => [action, 'off']));
       const seen = new Set();
       const next = {};
       for (const action of HOTKEY_ACTIONS) {
@@ -83,8 +91,10 @@ function createGlobalHotkeys({ globalShortcut, run }) {
       status = next;
       return { ...status };
     },
-    snapshot: () => ({ registered: [...registered], status: { ...status } }),
-    dispose() { clear(); status = Object.fromEntries(HOTKEY_ACTIONS.map(action => [action, 'off'])); },
+    /** Settings is recording a shortcut: keyboard-triggered menu commands should wait. */
+    recording: () => recording,
+    snapshot: () => ({ registered: [...registered], recording, status: { ...status } }),
+    dispose() { clear(); recording = false; status = Object.fromEntries(HOTKEY_ACTIONS.map(action => [action, 'off'])); },
   };
 }
 

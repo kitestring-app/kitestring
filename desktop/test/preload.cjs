@@ -303,3 +303,12 @@ test('global shortcuts send only the four known actions and refuse malformed val
   await bridge.setGlobalHotkeys(value);
   assert.equal(JSON.stringify(invoked), JSON.stringify([['desktop:global-hotkeys', value]]));
 });
+
+test('global shortcuts forward the recording flag and refuse a malformed one', async () => {
+  const { bridge, invoked } = loadBridge();
+  const value = { showApp: null, toggle: null, stop: null, skip: null };
+  assert.equal(await bridge.setGlobalHotkeys({ ...value, recording: 'yes' }), null);
+  assert.equal(await bridge.setGlobalHotkeys({ ...value, recording: true, extra: 1 }), null);
+  await bridge.setGlobalHotkeys({ ...value, recording: true });
+  assert.equal(JSON.stringify(invoked), JSON.stringify([['desktop:global-hotkeys', { ...value, recording: true }]]));
+});

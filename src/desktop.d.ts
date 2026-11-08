@@ -44,7 +44,7 @@ declare global {
       onMenuCommand?: (callback: (command: DesktopMenuCommand) => void) => () => void;
       parkingStatus?: () => Promise<{ registered: boolean } | null>;
       /** Replaces every opt-in global shortcut; null when the bridge refused the value. */
-      setGlobalHotkeys?: (value: import("./state/globalHotkeys").GlobalHotkeys) => Promise<import("./state/globalHotkeys").GlobalHotkeyStatus | null>;
+      setGlobalHotkeys?: (value: import("./state/globalHotkeys").GlobalHotkeys & { recording?: boolean }) => Promise<import("./state/globalHotkeys").GlobalHotkeyStatus | null>;
       consumeSuspensionAt?: () => { at: number; suspended: boolean } | null;
       consumeSuspension?: () => boolean;
       onLifecycle?: (callback: (event: "resume" | "activate" | "suspend") => void) => () => void;

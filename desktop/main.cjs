@@ -228,6 +228,8 @@ const timerCommands = createTimerCommands({ send: payload => {
 } });
 function menuCommand(command, origin) {
   if ((!validMenuCommand(command) && !validTimerCommand(command)) || quitting) return Promise.resolve({ ok: false, reason: 'invalid-command' });
+  // Settings is recording a shortcut: the keys pressed are being captured, not commands. Cmd+. still silences sound.
+  if (origin === 'accelerator' && command !== 'stopSound' && hotkeys?.recording()) return Promise.resolve({ ok: false, reason: 'unavailable' });
   if (command === 'stopSound') {
     native?.disarm();
     updateTimerState({ ...timerMenuState, ringing: false, sounding: false });

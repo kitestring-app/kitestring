@@ -983,6 +983,35 @@ test('fullscreen snapshot is restricted to the trusted main frame', () => {
   }
 });
 
+test('global shortcuts run guarded timer commands, and recording holds keyboard menu commands', async () => {
+  const off = { showApp: null, toggle: null, stop: null, skip: null };
+  assert.equal(ipc.invoke('desktop:global-hotkeys', { sender: {}, senderFrame: { url: 'https://evil.example/' } }, { ...off, stop: 'Control+Alt+S' }), null);
+  assert.deepEqual(ipc.invoke('desktop:global-hotkeys', event(), { ...off, stop: 'Control+Alt+S' }), { showApp: 'off', toggle: 'off', stop: 'ok', skip: 'off' });
+  window.sentArgs = []; window.sent = null;
+  shortcuts.get('Control+Alt+S')();
+  assert.equal(window.sent, 'desktop:timer-request');
+  assert.equal(window.sentArgs[0].command, 'stop'); assert.equal(window.sentArgs[0].origin, 'accelerator');
+  ipc.emit('desktop:timer-result', event(), window.sentArgs[0].id, { ok: true });
+
+  ipc.invoke('desktop:global-hotkeys', event(), { ...off, stop: 'Control+Alt+S', recording: true });
+  assert.equal(shortcuts.has('Control+Alt+S'), false);
+  const reset = applicationMenu.find(item => item.label === 'Timer').submenu.find(item => item.label === 'Reset');
+  window.sent = null;
+  reset.click(null, null, { triggeredByAccelerator: true });
+  assert.equal(window.sent, null, 'Shift+Cmd+R while recording is captured, not run');
+  reset.click(null, null, { triggeredByAccelerator: false });
+  assert.equal(window.sent, 'desktop:timer-request', 'a pointer click still works');
+  ipc.emit('desktop:timer-result', event(), window.sentArgs[0].id, { ok: true });
+
+  ipc.invoke('desktop:global-hotkeys', event(), { ...off, stop: 'Control+Alt+S' });
+  window.sent = null;
+  reset.click(null, null, { triggeredByAccelerator: true });
+  assert.equal(window.sent, 'desktop:timer-request');
+  ipc.emit('desktop:timer-result', event(), window.sentArgs[0].id, { ok: true });
+  ipc.invoke('desktop:global-hotkeys', event(), off);
+  assert.equal(shortcuts.has('Control+Alt+S'), false);
+});
+
 test('Quit waits for a matching trusted renderer flush before allowing termination', () => {
   ipc.emit('desktop:prevent-sleep', event(), true);
   ipc.invoke('desktop:float-timer', event(), true);
@@ -1012,3 +1041,4 @@ test('a renderer exit during Quit does not recreate the window', () => {
   assert.equal(previous.isDestroyed(), true);
   assert.equal(window, previous);
 });
+

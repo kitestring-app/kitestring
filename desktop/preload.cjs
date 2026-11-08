@@ -43,9 +43,13 @@ contextBridge.exposeInMainWorld('desktop', Object.freeze(mini ? {
   }),
   parkingStatus: () => ipcRenderer.invoke('desktop:parking-status'),
   setGlobalHotkeys: (value) => {
-    const valid = !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 4 &&
-      ['showApp', 'toggle', 'stop', 'skip'].every(key => value[key] === null || (typeof value[key] === 'string' && value[key].length <= 64));
-    return valid ? ipcRenderer.invoke('desktop:global-hotkeys', { showApp: value.showApp, toggle: value.toggle, stop: value.stop, skip: value.skip }) : Promise.resolve(null);
+    const keys = ['showApp', 'toggle', 'stop', 'skip'];
+    const flag = !!value && typeof value === 'object' && 'recording' in value;
+    const valid = !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === (flag ? 5 : 4) &&
+      (!flag || typeof value.recording === 'boolean') &&
+      keys.every(key => value[key] === null || (typeof value[key] === 'string' && value[key].length <= 64));
+    if (!valid) return Promise.resolve(null);
+    return ipcRenderer.invoke('desktop:global-hotkeys', { showApp: value.showApp, toggle: value.toggle, stop: value.stop, skip: value.skip, ...(flag ? { recording: value.recording } : {}) });
   },
   toggleFullScreen: () => ipcRenderer.invoke('desktop:toggle-fullscreen'),
   onFullScreenTransition: (callback) => subscribe('desktop:fullscreen-transition', value => { if (value === 'start' || value === 'end') callback(value); }),

@@ -130,7 +130,7 @@ it("unregisters every shortcut while one is being recorded, then restores them",
   h.pauseGlobalHotkeys(true);
   h.pauseGlobalHotkeys(true); // repeat is a no-op
   await vi.waitFor(() => expect(calls).toHaveLength(2));
-  expect(calls[1]).toEqual({ showApp: null, toggle: null, stop: null, skip: null });
+  expect(calls[1]).toEqual({ showApp: null, toggle: null, stop: null, skip: null, recording: true });
   await Promise.resolve();
   expect(h.hotkeyStatus.get()?.stop).toBe("ok"); // the paused "off" answer isn't shown
   h.pauseGlobalHotkeys(false);

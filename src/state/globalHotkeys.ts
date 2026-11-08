@@ -123,8 +123,8 @@ export const hotkeyStatus = {
 };
 function setStatus(next: GlobalHotkeyStatus | null) { lastStatus = next; statusListeners.forEach(fn => fn(next)); }
 
-// While a shortcut is being recorded, nothing is registered, so pressing an
-// existing combination can't run its action in the main process.
+// While a shortcut is being recorded, nothing is registered and the Mac app
+// ignores keyboard menu commands, so pressing a combination only records it.
 let paused = false;
 const pauseListeners = new Set<() => void>();
 export function pauseGlobalHotkeys(on: boolean) {
@@ -147,7 +147,7 @@ export async function connectGlobalHotkeys() {
     previous = key;
     const id = ++serial;
     const report = !paused; // keep the last real status on screen while recording
-    void bridge.setGlobalHotkeys!({ ...value }).then(status => { if (id === serial && report) setStatus(status); }, () => { if (id === serial && report) setStatus(null); });
+    void bridge.setGlobalHotkeys!(paused ? { ...value, recording: true } : { ...value }).then(status => { if (id === serial && report) setStatus(status); }, () => { if (id === serial && report) setStatus(null); });
   };
   const offStore = globalHotkeys.subscribe(sync);
   pauseListeners.add(sync);

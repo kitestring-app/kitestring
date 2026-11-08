@@ -101,3 +101,18 @@ test('own menu keys, Redo and Lock Screen are refused', () => {
   assert.deepEqual(status, { showApp: 'reserved', toggle: 'reserved', stop: 'reserved', skip: 'reserved' });
   assert.equal(h.shortcuts.size, 0);
 });
+
+test('recording unregisters everything and reports it, then a normal sync restores', () => {
+  const h = fixture();
+  h.hotkeys.sync({ ...off, stop: 'Control+Alt+S' });
+  assert.equal(h.hotkeys.recording(), false);
+  assert.deepEqual(h.hotkeys.sync({ ...off, stop: 'Control+Alt+S', recording: true }), { showApp: 'off', toggle: 'off', stop: 'off', skip: 'off' });
+  assert.equal(h.hotkeys.recording(), true);
+  assert.equal(h.shortcuts.size, 0);
+  assert.equal(h.hotkeys.sync({ ...off, stop: 'Control+Alt+S' }).stop, 'ok');
+  assert.equal(h.hotkeys.recording(), false);
+  for (const bad of [{ ...off, recording: 'yes' }, { ...off, recording: true, extra: 1 }, { ...off, other: true }]) assert.equal(validHotkeys(bad), false);
+  h.hotkeys.sync({ ...off, recording: true });
+  h.hotkeys.dispose();
+  assert.equal(h.hotkeys.recording(), false);
+});
