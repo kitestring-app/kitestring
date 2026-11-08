@@ -3,6 +3,7 @@ import { NextAction } from "./NextAction";
 import { FocusCardSlot } from "./FocusCardSlot";
 import { openParkingReview } from "../state/parkingReview";
 import { StartSupport } from "./StartSupport";
+import { QuickPicks } from "./QuickPicks";
 import { EndSessionControl, HardModeBadge } from "./timer/EndSession";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { useStore } from "../lib/store";
@@ -137,6 +138,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
       </div>
       <FocusCardSlot override={closeOut} onChooseTask={onChooseTask} onRecall={onRecall} />
       <StartSupport />
+      <QuickPicks />
       {v.hardLocked && <><HardModeBadge pendingOff={v.hardModePendingOff} /><EndSessionControl /></>}
       <ParkCapture open={captureOpen} onClose={onCaptureClose} />
       {count > 0 && (v.running && v.state.segment === "focus" ? <span className="park-chip muted small">{count} parked</span> :
