@@ -319,6 +319,19 @@ export const floatingGlass = createStore("floatingGlass", { opacity: 0.12 }, (st
   const v = Number((stored as { opacity?: unknown } | null)?.opacity);
   return { opacity: Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.12 };
 });
+/** Mac app only: what the dashboard window does when focus starts or ends. Device-local, opt-in. */
+export type WindowStartAction = "nothing" | "minimise" | "floating";
+export type WindowEndAction = "nothing" | "restore" | "full";
+export interface WindowEvents { onStart: WindowStartAction; onEnd: WindowEndAction }
+export const DEFAULT_WINDOW_EVENTS: WindowEvents = { onStart: "nothing", onEnd: "nothing" };
+export function sanitizeWindowEvents(stored: unknown): WindowEvents {
+  const v = (stored ?? {}) as { onStart?: unknown; onEnd?: unknown };
+  return {
+    onStart: v.onStart === "minimise" || v.onStart === "floating" ? v.onStart : "nothing",
+    onEnd: v.onEnd === "restore" || v.onEnd === "full" ? v.onEnd : "nothing",
+  };
+}
+export const windowEvents = createStore("windowEvents", DEFAULT_WINDOW_EVENTS, sanitizeWindowEvents);
 type LocalPreference = Exclude<keyof typeof DEFAULT_LOCAL_PREFERENCES, "migrated">;
 const locallyChanged = new Set<LocalPreference>();
 export function localPreferencesUpdate(patch: Partial<Record<LocalPreference, boolean>>) {

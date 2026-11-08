@@ -23,6 +23,7 @@ import { currentTask, etaOf, focusPick, tasks } from "./tasks";
 import * as E from "./timerEngine";
 import { transitionStore } from "../ui/timer/TransitionStore";
 import { alertTypingGuard } from "../lib/alertTypingGuard";
+import { windowOnFocusEnd, windowOnFocusStart } from "./windowEvents";
 import { captureStoppedAttempt, registerStopClock, stopAttempt, stopOutcomes } from './stopOutcomes';
 
 registerPersistenceGroup(["timer", "stats"]);
@@ -576,6 +577,7 @@ const localTimerActions = {
     timer.set(s);
     noteAlive();
     if (shouldStartChime(cur, T(), localPreferences.get().muted)) playStartChime(T().startChimeSound, T().alertVolume);
+    if (s.segment === "focus") windowOnFocusStart();
     if (!window.desktop?.armAlarm && T().notify && "Notification" in window && Notification.permission === "default") void Notification.requestPermission();
   },
   pause() {
@@ -688,6 +690,7 @@ const localTimerActions = {
       nativeAttentionSegment = next.segId;
       window.desktop.attention(kind, next.segId);
     }
+    if (s.segment === "focus") windowOnFocusEnd();
     announce(kind, cycleComplete ? { phase: "cycle" } : next.startedAt !== null ?
       { phase: next.segment === "focus" ? "focus" : "break", minutes: totalMs()! / 60_000 } : undefined);
   },
@@ -1074,6 +1077,7 @@ export function answerRecovery(expected: RecoveryCommand, action: RecoveryAnswer
       reentry: undefined };
     timer.set(next);
     if (action === "stop") captureStoppedAttempt(s, next, now);
+    if (action === "continue") windowOnFocusStart();
     void timerActions.stopSound();
     return true;
   }
@@ -1096,6 +1100,7 @@ export function answerRecovery(expected: RecoveryCommand, action: RecoveryAnswer
     credit(s, now, false);
     const next = E.advance(s, { ...T(), autoRun: "off" }, now, false, "focus");
     timer.set({ ...next, context: captureContext(next.context), startedAt: now, frozen: true, frozenTotal: 5 * 60_000, hardLocked: T().hardMode, taskId: currentTaskId() });
+    windowOnFocusStart();
   }
   return true;
 }
