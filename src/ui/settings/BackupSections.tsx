@@ -27,7 +27,7 @@ function details(section: BackupSection, backup?: ParsedBackup): string {
     const radio = data.radio as { pinned?: unknown[] } | undefined;
     return [count(mixer?.layers?.length ?? 0, "sound layer"), count(mixer?.mixes?.length ?? 0, "saved mix", "saved mixes"), count(radio?.pinned?.length ?? 0, "radio pin")].join(" · ");
   }
-  return count((data.devicePreferences ? Object.keys(data.devicePreferences).filter(key => key !== "migrated").length : 0) + (data.floatingGlass ? 1 : 0), "device option");
+  return count((data.devicePreferences ? Object.keys(data.devicePreferences).filter(key => key !== "migrated").length : 0) + (data.floatingGlass ? 1 : 0) + (data.menuBarText ? 1 : 0), "device option");
 }
 
 /** A declared section can be empty in a partial or older file. Only offer stored content. */
