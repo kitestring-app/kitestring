@@ -14,11 +14,14 @@ export function IdleNudgeCard() {
   const webPermission = !native && typeof window !== "undefined" && "Notification" in window ? Notification.permission : null;
   const [nativeStatus, setNativeStatus] = useState<{ supported: boolean; failed: boolean } | null>(null);
   const [msg, setMsg] = useState("");
+  // Permission is read on each render; a finished prompt re-renders so the card stops asking.
+  const [, setAsked] = useState(0);
+  const askPermission = () => void Notification.requestPermission().then(() => setAsked(n => n + 1), () => setAsked(n => n + 1));
   useEffect(() => { if (native) void window.desktop?.notificationStatus?.().then(setNativeStatus); }, [native]);
   const intervals: number[] = NUDGE_INTERVALS.includes(cfg.every as (typeof NUDGE_INTERVALS)[number]) ? [...NUDGE_INTERVALS] : [...NUDGE_INTERVALS, cfg.every].sort((a, b) => a - b);
   const enable = (enabled: boolean) => {
     idleNudgeUpdate({ enabled });
-    if (enabled && webPermission === "default") void Notification.requestPermission();
+    if (enabled && webPermission === "default") askPermission();
   };
   const off = !cfg.enabled;
   return (
@@ -53,7 +56,7 @@ export function IdleNudgeCard() {
       </p>}
       {cfg.enabled && webPermission === "denied" && <p className="help" role="status">This browser blocks notifications for Kitestring, so the reminder can’t appear. Allow them in the site settings.</p>}
       {cfg.enabled && webPermission === "default" && <p className="help" role="status">
-        Needs notification permission. <button type="button" className="btn small" onClick={() => void Notification.requestPermission()}>Allow notifications</button>
+        Needs notification permission. <button type="button" className="btn small" onClick={askPermission}>Allow notifications</button>
       </p>}
       {cfg.enabled && webPermission === null && !native && <p className="help" role="status">This browser can’t show notifications, so the reminder can’t appear here.</p>}
       {cfg.enabled && native && nativeStatus && (!nativeStatus.supported || nativeStatus.failed) && <p className="help" role="status">macOS reports notifications are unavailable. Allow them in System Settings &gt; Notifications &gt; Kitestring.</p>}

@@ -10,8 +10,10 @@ it("is off by default and sanitizes bad stored values", () => {
   expect(DEFAULT_IDLE_NUDGE.enabled).toBe(false);
   expect(sanitizeIdleNudge(null)).toEqual(DEFAULT_IDLE_NUDGE);
   expect(sanitizeIdleNudge({ enabled: "yes", every: 9999, from: "25:00", to: "7:00", days: [true], message: "a\nb" + "x".repeat(200) }))
-    .toEqual({ ...DEFAULT_IDLE_NUDGE, every: 240, message: ("a b" + "x".repeat(200)).slice(0, 120) });
-  expect(sanitizeIdleNudge({ every: 1 }).every).toBe(5);
+    .toEqual({ ...DEFAULT_IDLE_NUDGE, every: 120, message: ("a b" + "x".repeat(200)).slice(0, 120) });
+  expect(sanitizeIdleNudge({ every: 1 }).every).toBe(10);
+  // Missing or non-numeric values fall back to the default, never to the floor.
+  for (const every of [null, "", [], "45"]) expect(sanitizeIdleNudge({ every }).every).toBe(30);
   expect(sanitizeIdleNudge({ every: Number.NaN }).every).toBe(30);
 });
 

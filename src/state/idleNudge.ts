@@ -10,7 +10,7 @@ export interface IdleNudge {
   message: string; // empty uses DEFAULT_NUDGE_MESSAGE
 }
 
-export const NUDGE_EVERY = { min: 5, max: 240 } as const;
+export const NUDGE_EVERY = { min: 10, max: 120 } as const; // matches the choices offered in Settings
 export const NUDGE_MESSAGE_MAX = 120;
 /** Choices offered in Settings. Stored values outside the list still show. */
 export const NUDGE_INTERVALS = [10, 15, 20, 30, 45, 60, 90, 120] as const;
@@ -32,7 +32,7 @@ export const minutesOf = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Numbe
 export function sanitizeIdleNudge(stored: unknown): IdleNudge {
   const raw = (stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {}) as Partial<Record<keyof IdleNudge, unknown>>;
   const d = DEFAULT_IDLE_NUDGE;
-  const every = Number(raw.every);
+  const every = typeof raw.every === "number" ? raw.every : Number.NaN;
   const days = Array.isArray(raw.days) && raw.days.length === 7 && raw.days.every(v => typeof v === "boolean") ? [...raw.days] as boolean[] : [...d.days];
   return {
     enabled: typeof raw.enabled === "boolean" ? raw.enabled : d.enabled,

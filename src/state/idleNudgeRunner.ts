@@ -19,6 +19,15 @@ export async function deliverNudge(text: string): Promise<boolean> {
   }
 }
 
+/** The last reminder time is shared by this device's tabs, so a newly promoted clock owner doesn't repeat it. */
+export const LAST_NUDGE_KEY = "kitestring-idle-nudge-last";
+function sharedLastNudge(): number {
+  try { const v = Number(globalThis.localStorage?.getItem(LAST_NUDGE_KEY)); return Number.isFinite(v) ? v : 0; } catch { return 0; }
+}
+function shareLastNudge(at: number) {
+  try { globalThis.localStorage?.setItem(LAST_NUDGE_KEY, String(at)); } catch { /* Private mode: this tab still remembers it. */ }
+}
+
 const running = () => timer.get().startedAt !== null;
 /** Never during a block, a Hard mode lock or a ringing end alarm. */
 const busy = () => running() || hardModeLocked() || boundaryAlert.get().sounding || boundaryAlert.get().ringing;
@@ -44,8 +53,10 @@ export function startIdleNudge({ now = Date.now, interval = 30_000, deliver = de
     const t = now();
     if (busy()) { idleSince = t; return; }
     if (!canWriteClockStore("timer")) return;
-    if (!nudgeDue(idleNudge.get(), { now: t, busy: false, idleSince, lastNudgeAt })) return;
+    const last = Math.max(lastNudgeAt ?? 0, sharedLastNudge()) || null;
+    if (!nudgeDue(idleNudge.get(), { now: t, busy: false, idleSince, lastNudgeAt: last })) return;
     lastNudgeAt = t;
+    shareLastNudge(t);
     void deliver(nudgeText(idleNudge.get()));
   };
   const id = setInterval(check, interval);

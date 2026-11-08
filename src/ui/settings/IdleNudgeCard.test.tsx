@@ -4,7 +4,7 @@ vi.hoisted(() => { vi.stubGlobal("navigator", {}); vi.stubGlobal("BroadcastChann
 vi.mock("react", async original => ({
   ...await original<typeof import("react")>(),
   useSyncExternalStore: (_subscribe: unknown, get: () => unknown) => get(),
-  useState: (initial: unknown) => [initial, vi.fn()],
+  useState: vi.fn((initial: unknown) => [initial, vi.fn()]),
   useEffect: vi.fn(),
 }));
 vi.mock("../../audio/core", () => ({ cancelAllChimes: vi.fn(), previewChime: vi.fn() }));
@@ -43,6 +43,20 @@ it("switching on asks the browser once for notification permission", () => {
   (toggle.props.onChange as (v: boolean) => void)(true);
   expect(idleNudge.get().enabled).toBe(true);
   expect(requestPermission).toHaveBeenCalledOnce();
+});
+
+it("re-renders once the permission prompt is answered", async () => {
+  const setters: ReturnType<typeof vi.fn>[] = [];
+  const react = await import("react");
+  vi.mocked(react.useState).mockImplementation(((initial: unknown) => { const set = vi.fn(); setters.push(set); return [initial, set]; }) as never);
+  const N = { permission: "default", requestPermission: vi.fn(async () => "granted") };
+  vi.stubGlobal("window", { Notification: N });
+  vi.stubGlobal("Notification", N);
+  idleNudge.set({ ...DEFAULT_IDLE_NUDGE, enabled: true });
+  const allow = elements(IdleNudgeCard()).find(el => el.props.children === "Allow notifications")!;
+  allow.props.onClick!();
+  await Promise.resolve(); await Promise.resolve();
+  expect(setters.some(set => set.mock.calls.length > 0)).toBe(true);
 });
 
 it("Mac app never asks for browser permission", () => {

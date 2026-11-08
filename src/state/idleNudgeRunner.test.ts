@@ -75,3 +75,22 @@ it("on the web, shows a silent notification only when already allowed", async ()
   expect(await deliverNudge("Start")).toBe(true);
   expect(made).toEqual([{ title: "Kitestring", options: { body: "Start", tag: "kitestring-idle-nudge", silent: true } }]);
 });
+
+it("a tab promoted to clock owner does not repeat a reminder another tab just sent", () => {
+  const store = new Map<string, string>();
+  vi.stubGlobal("localStorage", { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) });
+  idleNudge.set({ ...DEFAULT_IDLE_NUDGE, enabled: true, every: 30 });
+  const first = vi.fn(async () => true), second = vi.fn(async () => true);
+  const leader = startIdleNudge({ deliver: first });
+  vi.advanceTimersByTime(30 * MIN);
+  expect(first).toHaveBeenCalledOnce();
+  leader.stop(); // the owner tab closes right after reminding
+  // A second tab, open (and idle) since before, becomes the owner.
+  let opened = false;
+  const promoted = startIdleNudge({ deliver: second, now: () => opened ? Date.now() : (opened = true, Date.now() - 31 * MIN) });
+  vi.advanceTimersByTime(29 * MIN);
+  expect(second).not.toHaveBeenCalled();
+  vi.advanceTimersByTime(MIN);
+  expect(second).toHaveBeenCalledOnce();
+  promoted.stop();
+});
