@@ -1,6 +1,17 @@
 /* Built-in backdrops for the paper looks. They sit where the photo wallpaper would. */
 .look-bg { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 .look-bg-sketch { background-color: #faf5ea; background-image: radial-gradient(circle, rgb(51 48 43 / 7%) 0.9px, transparent 1px); background-size: 18px 18px; }
+/* Night paper: the same drawings in dark ink, so Dark and System reach the backdrop too. */
+html.paper-dark .look-bg-sketch { background-color: #1f1d1a; background-image: radial-gradient(circle, rgb(243 236 221 / 7%) 0.9px, transparent 1px); }
+html.paper-dark .look-bg-companion .pb-paper { fill: #1e1714; }
+html.paper-dark .look-bg-companion .pb-sun { fill: #2a1f1b; }
+html.paper-dark .look-bg-companion .pb-hill { fill: #261d19; }
+html.paper-dark .look-bg-companion .pb-meadow { fill: #1d2420; }
+html.paper-dark .look-bg-sunrise .pb-paper { fill: #24180f; }
+html.paper-dark .look-bg-sunrise .pb-ring1 { fill: #2f1f13; }
+html.paper-dark .look-bg-sunrise .pb-ring2 { fill: #3b2616; }
+html.paper-dark .look-bg-sunrise .pb-ring3 { fill: #4a2e18; }
+html.paper-dark .look-bg-sunrise .pb-cloud { fill: #33231a; }
 .look-bg-sunrise .sun { transform-origin: 600px 990px; animation: sun-breathe 14s ease-in-out infinite alternate; }
 @keyframes sun-breathe { from { transform: scale(1); } to { transform: scale(1.035); } }
 .reduce-motion .look-bg-sunrise .sun { animation: none; }
