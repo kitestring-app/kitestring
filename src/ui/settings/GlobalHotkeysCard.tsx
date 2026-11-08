@@ -59,7 +59,7 @@ export function GlobalHotkeysCard() {
             <span className="hotkey-text">
               <b id={`hotkey-${action}`}>{HOTKEY_LABELS[action]}</b>
               <span role={isRecording || problem ? "status" : undefined}>
-                {isRecording ? hint ?? "Press the new shortcut. Escape cancels." : problem ?? (value ? "Works from any app." : "Off")}
+                {isRecording ? hint ?? "Press the new shortcut. Escape cancels." : problem ?? (!value ? "Off" : state === "ok" ? "Works from any app." : "Saved. Not active yet.")}
               </span>
             </span>
             <button

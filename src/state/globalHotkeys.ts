@@ -16,7 +16,25 @@ const MODIFIERS = ["Control", "Alt", "Shift", "Command"] as const;
 type Modifier = (typeof MODIFIERS)[number];
 const NAMED_KEYS = new Set(["Space", "Up", "Down", "Left", "Right", "-", "=", "[", "]", "\\", ";", "'", ",", ".", "/", "`"]);
 const isKey = (key: string) => /^[A-Z0-9]$/.test(key) || /^F([1-9]|1[0-9]|2[0-4])$/.test(key) || NAMED_KEYS.has(key);
-export const RESERVED_HOTKEYS = new Set(["Alt+Command+P", "Command+.", "Shift+Command+3", "Shift+Command+4", "Shift+Command+5", "Shift+Command+6"]);
+/** Mirrors RESERVED in desktop/global-hotkeys.cjs: Kitestring's menu keys, Redo, Lock Screen, emoji picker, screenshots. */
+export const RESERVED_HOTKEYS = new Set([
+  "Alt+Command+P",
+  "Command+.",
+  "Alt+Command+H",
+  "Control+Command+F",
+  "Shift+Command+F",
+  "Shift+Command+M",
+  "Shift+Command+N",
+  "Shift+Command+R",
+  "Shift+Command+T",
+  "Shift+Command+Z",
+  "Control+Command+Q",
+  "Control+Command+Space",
+  "Shift+Command+3",
+  "Shift+Command+4",
+  "Shift+Command+5",
+  "Shift+Command+6",
+]);
 
 /** Mirrors desktop/global-hotkeys.cjs: two modifiers (one of ⌃⌥⌘), or one with an F key. */
 export function normalizeHotkey(value: unknown): string | null {
@@ -34,13 +52,27 @@ export function normalizeHotkey(value: unknown): string | null {
   return [...MODIFIERS.filter(mod => mods.has(mod)), key].join("+");
 }
 
+/** Usable for one action: canonical, not reserved. Duplicates are checked across actions. */
+const usable = (value: unknown): value is string => typeof value === "string" && normalizeHotkey(value) === value && !RESERVED_HOTKEYS.has(value);
+/** Keeps the first action that holds each usable shortcut; drops reserved, duplicate and unsafe ones. */
 export function sanitizeHotkeys(value: unknown): GlobalHotkeys {
   const raw = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
-  return Object.fromEntries(HOTKEY_ACTIONS.map(action => [action, normalizeHotkey(raw[action])])) as GlobalHotkeys;
+  const seen = new Set<string>();
+  return Object.fromEntries(HOTKEY_ACTIONS.map(action => {
+    const accelerator = normalizeHotkey(raw[action]);
+    if (!accelerator || RESERVED_HOTKEYS.has(accelerator) || seen.has(accelerator)) return [action, null];
+    seen.add(accelerator);
+    return [action, accelerator];
+  })) as GlobalHotkeys;
 }
-export const validHotkeys = (value: unknown) => !!value && typeof value === "object" && !Array.isArray(value) &&
-  Object.keys(value).every(key => (HOTKEY_ACTIONS as readonly string[]).includes(key)) &&
-  HOTKEY_ACTIONS.every(action => { const v = (value as Record<string, unknown>)[action]; return v === undefined || v === null || normalizeHotkey(v) === v; });
+/** Backup check: the same states the recorder allows, so an import can't save a clash. */
+export const validHotkeys = (value: unknown) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const raw = value as Record<string, unknown>;
+  if (!Object.keys(raw).every(key => (HOTKEY_ACTIONS as readonly string[]).includes(key))) return false;
+  const set = HOTKEY_ACTIONS.map(action => raw[action]).filter(v => v !== undefined && v !== null);
+  return set.every(usable) && new Set(set).size === set.length;
+};
 
 export const globalHotkeys = createStore<GlobalHotkeys>("globalHotkeys", DEFAULT_GLOBAL_HOTKEYS, sanitizeHotkeys);
 
@@ -107,6 +139,9 @@ export async function connectGlobalHotkeys() {
     void bridge.setGlobalHotkeys!({ ...value }).then(status => { if (id === serial) setStatus(status); }, () => { if (id === serial) setStatus(null); });
   };
   const off = globalHotkeys.subscribe(sync);
+  // Another app may have released a shortcut it held; try again when Kitestring comes forward.
+  const retry = () => { if (lastStatus && HOTKEY_ACTIONS.some(action => lastStatus![action] === "taken")) { previous = ""; sync(); } };
+  window.addEventListener?.("focus", retry);
   sync();
-  return off;
+  return () => { off(); window.removeEventListener?.("focus", retry); };
 }

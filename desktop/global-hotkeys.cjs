@@ -3,9 +3,27 @@
 const HOTKEY_ACTIONS = Object.freeze(['showApp', 'toggle', 'stop', 'skip']);
 const MODIFIERS = Object.freeze(['Control', 'Alt', 'Shift', 'Command']);
 const NAMED_KEYS = new Set(['Space', 'Up', 'Down', 'Left', 'Right', '-', '=', '[', ']', '\\', ';', "'", ',', '.', '/', '`']);
-// Shortcuts Kitestring already owns, plus macOS screenshot keys.
-const RESERVED = new Set(['Alt+Command+P', 'Command+.', 'Shift+Command+3', 'Shift+Command+4', 'Shift+Command+5', 'Shift+Command+6']);
-
+// Kitestring's own menu and global keys (a global registration would shadow them),
+// Redo, Lock Screen, the emoji picker and the macOS screenshot keys.
+// Keep in sync with RESERVED_HOTKEYS in src/state/globalHotkeys.ts; test/global-hotkeys.cjs checks the menu.
+const RESERVED = new Set([
+  'Alt+Command+P',
+  'Command+.',
+  'Alt+Command+H',
+  'Control+Command+F',
+  'Shift+Command+F',
+  'Shift+Command+M',
+  'Shift+Command+N',
+  'Shift+Command+R',
+  'Shift+Command+T',
+  'Shift+Command+Z',
+  'Control+Command+Q',
+  'Control+Command+Space',
+  'Shift+Command+3',
+  'Shift+Command+4',
+  'Shift+Command+5',
+  'Shift+Command+6',
+]);
 const isKey = key => /^[A-Z0-9]$/.test(key) || /^F([1-9]|1[0-9]|2[0-4])$/.test(key) || NAMED_KEYS.has(key);
 
 /** Canonical "Control+Alt+Shift+Command+K" form, or null. Needs two modifiers, or one with a function key. */

@@ -51,6 +51,36 @@ it("validates backup values strictly", async () => {
   expect(validHotkeys({ toggle: "Alt+Control+T" })).toBe(false); // not canonical
   expect(validHotkeys({ bogus: null })).toBe(false);
   expect(validHotkeys([])).toBe(false);
+  // An import can't hold states the recorder refuses.
+  expect(validHotkeys({ showApp: "Control+Alt+K", toggle: "Control+Alt+K" })).toBe(false);
+  expect(validHotkeys({ toggle: "Shift+Command+R" })).toBe(false); // Reset in the Timer menu
+  expect(validHotkeys({ toggle: "Shift+Command+Z" })).toBe(false); // Redo
+});
+
+it("drops reserved and duplicate shortcuts from saved data, keeping the first holder", async () => {
+  disk.set("globalHotkeys", { showApp: "Control+Alt+K", toggle: "Alt+Control+K", stop: "Shift+Command+T", skip: "Control+Alt+N" });
+  const h = await load();
+  await h.globalHotkeys.ready;
+  expect(h.globalHotkeys.get()).toEqual({ showApp: "Control+Alt+K", toggle: null, stop: null, skip: "Control+Alt+N" });
+});
+
+it("retries a shortcut another app held when Kitestring comes forward", async () => {
+  const h = await load();
+  let taken = true;
+  const setGlobalHotkeys = vi.fn(async () => ({ showApp: "off", toggle: taken ? "taken" : "ok", stop: "off", skip: "off" } as const));
+  const listeners = new Map<string, () => void>();
+  vi.stubGlobal("window", { desktop: { setGlobalHotkeys }, addEventListener: (type: string, fn: () => void) => listeners.set(type, fn), removeEventListener: (type: string) => listeners.delete(type) });
+  h.globalHotkeys.set(current => ({ ...current, toggle: "Control+Alt+T" }));
+  const off = await h.connectGlobalHotkeys();
+  await vi.waitFor(() => expect(h.hotkeyStatus.get()?.toggle).toBe("taken"));
+  taken = false;
+  listeners.get("focus")!();
+  await vi.waitFor(() => expect(h.hotkeyStatus.get()?.toggle).toBe("ok"));
+  expect(setGlobalHotkeys).toHaveBeenCalledTimes(2);
+  listeners.get("focus")!(); // nothing taken now: no extra call
+  expect(setGlobalHotkeys).toHaveBeenCalledTimes(2);
+  off();
+  expect(listeners.has("focus")).toBe(false);
 });
 
 it("publishes saved shortcuts to the Mac bridge on start and on change, and keeps the latest status", async () => {

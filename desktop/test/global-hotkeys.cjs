@@ -74,3 +74,30 @@ test('IPC only accepts the trusted main renderer', async () => {
   assert.equal(h.shortcuts.size, 0);
   assert.equal(handler({ trusted: true }, { ...off, toggle: 'Control+Alt+T' }).toggle, 'ok');
 });
+
+test('every multi-modifier menu accelerator is reserved, and both reserved lists match', () => {
+  const { applicationMenu } = require('../menu.cjs');
+  const { RESERVED } = require('../global-hotkeys.cjs');
+  const controls = { appMenuItem: () => ({ label: 'Show in Menu Bar' }), menu: () => [{ label: 'Floating timer' }, { label: 'On top' }, { label: 'Time' }] };
+  const accelerators = [];
+  const walk = items => { for (const item of items) { if (item.accelerator) accelerators.push(item.accelerator); if (Array.isArray(item.submenu)) walk(item.submenu); } };
+  for (const timerState of [{ segment: 'focus', running: false, hasProgress: false, ringing: true, sounding: true }]) {
+    walk(applicationMenu({ command() {}, showWindow() {}, closeWindow() {}, toggleTimer() {}, floatingControls: controls, park() {}, openGitHub() {}, timerState }));
+  }
+  assert.ok(accelerators.includes('Command+Shift+R'));
+  for (const accelerator of accelerators) {
+    const canonical = normalizeAccelerator(accelerator);
+    if (canonical) assert.ok(RESERVED.has(canonical), `${accelerator} must be reserved`);
+  }
+  const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'src', 'state', 'globalHotkeys.ts'), 'utf8');
+  const start = source.indexOf('RESERVED_HOTKEYS = new Set([');
+  const list = source.slice(start, source.indexOf(']);', start));
+  assert.deepEqual([...list.matchAll(/"([^"]+)"/g)].map(m => m[1]).sort(), [...RESERVED].sort());
+});
+
+test('own menu keys, Redo and Lock Screen are refused', () => {
+  const h = fixture();
+  const status = h.hotkeys.sync({ showApp: 'Shift+Command+R', toggle: 'Shift+Command+Z', stop: 'Control+Command+Q', skip: 'Command+Shift+T' });
+  assert.deepEqual(status, { showApp: 'reserved', toggle: 'reserved', stop: 'reserved', skip: 'reserved' });
+  assert.equal(h.shortcuts.size, 0);
+});

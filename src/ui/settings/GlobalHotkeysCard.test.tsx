@@ -31,6 +31,9 @@ it("shows a saved shortcut with symbols and clears it", () => {
   globalHotkeys.set({ ...DEFAULT_GLOBAL_HOTKEYS, toggle: "Control+Alt+Space" });
   const tree = elements(GlobalHotkeysCard());
   expect(text(GlobalHotkeysCard())).toContain("⌃⌥Space");
+  // Before the Mac app answers, a saved shortcut isn't claimed to work yet.
+  expect(text(GlobalHotkeysCard())).toContain("Saved. Not active yet.");
+  expect(text(GlobalHotkeysCard())).not.toContain("Works from any app.");
   const clear = tree.find(el => el.props["aria-label"] === "Clear Start or pause shortcut")!;
   clear.props.onClick!();
   expect(globalHotkeys.get().toggle).toBeNull();
@@ -45,6 +48,7 @@ it("recording accepts safe shortcuts and explains the rest", () => {
   expect(recordHotkey(key("KeyP", { altKey: true, metaKey: true }), "toggle", saved)).toMatchObject({ kind: "hint", hint: expect.stringContaining("⌥⌘P") });
   expect(recordHotkey(key("KeyS", { ctrlKey: true, altKey: true }), "toggle", saved)).toMatchObject({ kind: "hint", hint: expect.stringContaining("Stop") });
   expect(recordHotkey(key("KeyS", { ctrlKey: true, altKey: true }), "stop", saved)).toEqual({ kind: "set", accelerator: "Control+Alt+S" });
+  expect(recordHotkey(key("KeyR", { shiftKey: true, metaKey: true }), "stop", saved)).toMatchObject({ kind: "hint", hint: expect.stringContaining("⇧⌘R") });
 });
 
 it("Extras shows the card only in the Mac app", () => {
