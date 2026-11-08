@@ -1,5 +1,6 @@
 import { commitStoreEntries, createStore, flushAll, mergeDefaults, storeSource, storeRevision, storeReadFailed } from "../lib/store";
 import { dbGet, dbKeys, storageMode } from "../lib/db";
+import { cleanAlertText } from "../audio/alertText";
 
 export type TimerMode = "pomodoro" | "countdown" | "stopwatch" | "animedoro" | "5217";
 export type TimerStyle = "default" | "flip" | "bar" | "gauge" | "dots" | "pie";
@@ -41,10 +42,15 @@ export interface Settings {
     tickVolume: number;
     alertVolume: number; // 0..1
     notify: boolean;
+    /** Custom notification and spoken text when focus ends / a break ends. "" uses the default. */
+    focusDoneText: string;
+    breakOverText: string;
     takeover: boolean;
     speak: boolean;
     bringToFront: boolean;
     tally: TallyId;
+    /** Opt-in one-tap lengths on the focus screen. Picking one runs a single block at that length; saved lengths stay put. */
+    quickPicks: QuickPicks;
   };
   clock: {
     format: "12" | "24";
@@ -85,6 +91,16 @@ export function effectiveDefaultTab(extras: Pick<Settings["extras"], "hideStats"
 export const WARN_BEFORE = [0, 1, 2, 3, 5] as const;
 export type WarnBefore = (typeof WARN_BEFORE)[number];
 
+export interface QuickPicks { enabled: boolean; focus: number[]; breaks: number[] }
+export const QUICK_PICK_MAX = 5;
+export const QUICK_PICK_MAX_MINUTES = 600;
+/** Whole minutes 1 to 600, no repeats, shortest first, at most five. Anything else falls back. */
+export function sanitizeQuickPickList(value: unknown, fallback: number[]): number[] {
+  if (!Array.isArray(value)) return [...fallback];
+  const clean = value.filter((n): n is number => typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= QUICK_PICK_MAX_MINUTES);
+  return [...new Set(clean)].sort((a, b) => a - b).slice(0, QUICK_PICK_MAX);
+}
+
 export const LOOKS = ["classic", "glass", "sketch", "companion", "sunrise"] as const;
 export type LookId = (typeof LOOKS)[number];
 export const SCHEMES = ["auto", "system", "light", "dark"] as const;
@@ -118,10 +134,13 @@ export const DEFAULT_SETTINGS: Settings = {
     tickVolume: 0.25,
     alertVolume: 0.85,
     notify: true,
+    focusDoneText: "",
+    breakOverText: "",
     takeover: true,
     speak: true,
     bringToFront: true,
     tally: "dots",
+    quickPicks: { enabled: false, focus: [15, 25, 50], breaks: [5, 10, 15] },
   },
   clock: { showStreak: false, format: "12", seconds: false, flip: false, size: "regular", font: "look", greetings: true, dynamicGreetings: true },
   themes: {
@@ -214,8 +233,15 @@ export function sanitizeSettings(stored: unknown): Settings {
     alertVolume: clamp(t.alertVolume, 0, 1, d.timer.alertVolume),
     takeover: typeof t.takeover === "boolean" ? t.takeover : d.timer.takeover,
     speak: typeof t.speak === "boolean" ? t.speak : d.timer.speak,
+    focusDoneText: cleanAlertText(t.focusDoneText),
+    breakOverText: cleanAlertText(t.breakOverText),
     bringToFront: typeof t.bringToFront === "boolean" ? t.bringToFront : d.timer.bringToFront,
     tally: oneOf(t.tally, ["dots", "tomato", "check", "star", "tree", "tokyo", "stem"] as const, d.timer.tally),
+    quickPicks: {
+      enabled: typeof t.quickPicks.enabled === "boolean" ? t.quickPicks.enabled : false,
+      focus: sanitizeQuickPickList(t.quickPicks.focus, d.timer.quickPicks.focus),
+      breaks: sanitizeQuickPickList(t.quickPicks.breaks, d.timer.quickPicks.breaks),
+    },
   };
   const rawWarn = rawTimer?.warnBefore;
   timer.warnBefore = rawWarn === undefined ? legacyWarnBefore(timer) : (WARN_BEFORE as readonly unknown[]).includes(rawWarn) ? rawWarn : 0;

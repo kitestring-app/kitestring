@@ -437,11 +437,11 @@ if (!app.requestSingleInstanceLock()) {
     });
     // Settings > Alerts: fire the real notification and panels, then let go after 6 s.
     let testRelease = null;
-    ipcMain.handle('desktop:test-reminder', (event) => {
+    ipcMain.handle('desktop:test-reminder', (event, text) => {
       if (!trustedSender(event)) return null;
       // Its own path: no alarm, no attention state, no rate limit, so it can never swallow or release a real reminder.
       const status = native.notificationStatus();
-      native.testReminder('focus-done');
+      native.testReminder('focus-done', text); // native-services validates the custom text
       const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
       if (attention.releaseAt === null) {
         banners?.start('focus-done', display.id, { allDisplays: true });

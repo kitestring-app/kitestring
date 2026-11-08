@@ -373,3 +373,46 @@ it.each(["pause", "stop"] as const)("cancels web deadlines after Stop sound twic
   expect(core.scheduleChime).not.toHaveBeenCalled(); expect(core.scheduleEnd).not.toHaveBeenCalled();
   expect(companion.armCompanionWithSpeech).not.toHaveBeenCalled();
 });
+
+describe("custom reminder text", () => {
+  const withText = (patch: Partial<typeof DEFAULT_SETTINGS.timer> = {}) =>
+    settings.set({ ...settings.get(), timer: { ...settings.get().timer, focusDoneText: "Stretch and refill your water.", breakOverText: "Back to the draft.", ...patch } });
+
+  it("is spoken instead of the default line, still followed by the next task", () => {
+    withText();
+    tasks.set([{ id: "task", title: "Write the outline", done: false, createdAt: 0 }]);
+    finish();
+    vi.advanceTimersByTime(6500);
+    expect(speak).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Stretch and refill your water. Next up: Write the outline" }));
+    timerActions.answerTransition("start");
+    tasks.set([]);
+    timer.set({ ...timer.get(), segment: "short" });
+    finish();
+    vi.advanceTimersByTime(5500);
+    expect(speak).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Back to the draft." }));
+  });
+
+  it("replaces the browser notification body, including Animedoro", () => {
+    const Notification = Object.assign(vi.fn(), { permission: "granted" });
+    vi.stubGlobal("Notification", Notification);
+    Object.assign(window, { Notification });
+    withText({ notify: true, mode: "animedoro" });
+    finish();
+    expect(Notification).toHaveBeenLastCalledWith("Focus session done", expect.objectContaining({ body: "Stretch and refill your water." }));
+    withText({ notify: true, mode: "pomodoro", focusDoneText: "" });
+    timerActions.answerTransition("dismiss");
+    timer.set({ ...timer.get(), segment: "focus" });
+    finish();
+    expect(Notification).toHaveBeenLastCalledWith("Focus session done", expect.objectContaining({ body: "Nice work. Take your break: stand up, look far away, drink water." }));
+  });
+
+  it("is sent to the companion and re-armed when it changes", () => {
+    vi.stubGlobal("document", { addEventListener: vi.fn() });
+    window.addEventListener = vi.fn();
+    startTicker();
+    timerActions.start();
+    expect(armCompanionWithSpeech).toHaveBeenLastCalledWith(expect.any(Number), "focus-done", 0.85, true, "signature");
+    withText({ focusDoneText: "  Stretch\nnow " });
+    expect(armCompanionWithSpeech).toHaveBeenLastCalledWith(expect.any(Number), "focus-done", 0.85, true, "signature", "Stretch now");
+  });
+});

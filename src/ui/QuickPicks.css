@@ -1,0 +1,4 @@
+.quick-start { width: min(460px, 100%); margin: 8px auto 0; display: grid; justify-items: center; gap: 6px; color: var(--fg); flex: none; }
+.quick-start-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; }
+.quick-start-label { color: var(--fg-dim); min-width: 44px; text-align: right; }
+.quick-start .btn.small { font-variant-numeric: tabular-nums; }
