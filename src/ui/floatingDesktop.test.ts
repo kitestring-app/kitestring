@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { localPreferences, localPreferencesUpdate, localPreferencesReady, settingsUpdate } from "../state/settings";
-import { connectFloatingSettings } from "./floatingDesktop";
+import { connectFloatingSettings, floatingWindowOpen } from "./floatingDesktop";
 afterEach(() => vi.unstubAllGlobals());
 it("restores persisted preferences and mirrors tray changes into the same settings", async () => {
   await localPreferencesReady;
@@ -27,4 +27,20 @@ it("does not expose desktop preferences on web or in a mini renderer", async () 
   vi.stubGlobal("window", { desktop: { mini: true, setFloatingPreferences: send } });
   await connectFloatingSettings();
   expect(send).not.toHaveBeenCalled();
+});
+
+it("tracks whether the floating window is open, separately from the saved setting", async () => {
+  await localPreferencesReady;
+  localPreferencesUpdate({ floatingTimer: false });
+  let changed!: (open: boolean) => void;
+  const offLive = vi.fn();
+  vi.stubGlobal("window", { desktop: { setFloatingPreferences: vi.fn(async () => true), onFloatTimer: (fn: typeof changed) => { changed = fn; return offLive; } } });
+  expect(floatingWindowOpen()).toBeNull();
+  const disconnect = await connectFloatingSettings();
+  changed(true);
+  expect(floatingWindowOpen()).toBe(true);
+  expect(localPreferences.get().floatingTimer).toBe(false);
+  disconnect();
+  expect(offLive).toHaveBeenCalledOnce();
+  expect(floatingWindowOpen()).toBeNull();
 });

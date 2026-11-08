@@ -34,7 +34,7 @@ test('main bridge is frozen and routes the supported native methods', async () =
   assert.deepEqual(Object.keys(bridge).sort(), [
     'armAlarm', 'attention', 'cancelSpeech', 'cloud', 'consumeSuspension', 'consumeSuspensionAt', 'disarmAlarm', 'floatTimer',
     'getSecureDns', 'notificationStatus', 'onAudioAction', 'onAudioRequest', 'onFloatTimer', 'onFloatingPreferences', 'onFlush', 'onFullScreenTransition', 'onLifecycle', 'onMenuCommand', 'onParked', 'onTimerAction', 'onTimerRequest', 'parkingStatus', 'preventSleep', 'publishAudioState', 'publishTimerState', 'release',
-    'platform', 'getFullScreen', 'onFullScreenChange', 'setFloatingPreferences', 'setSecureDns', 'setStatus', 'speak', 'testReminder', 'toggleFullScreen',
+    'platform', 'getFullScreen', 'onFullScreenChange', 'setFloatingPreferences', 'setSecureDns', 'setStatus', 'speak', 'testReminder', 'toggleFullScreen', 'windowEvent',
   ].sort());
   assert.equal(Object.isFrozen(bridge), true);
   bridge.setStatus(42);
@@ -293,4 +293,10 @@ test('away suspension bridge carries explicit suspend state and rejects malforme
     assert.equal(loadBridge([], 'darwin', invalid).bridge.consumeSuspensionAt(), null);
   }
   assert.equal(loadBridge(['--mini-timer']).bridge.consumeSuspensionAt, undefined);
+});
+
+test('main bridge sends only the four window actions', () => {
+  const { bridge, sent } = loadBridge();
+  for (const action of ['minimise', 'floating', 'restore', 'full', 'close', 42, undefined]) bridge.windowEvent(action);
+  assert.deepEqual(sent, [['desktop:window-event', 'minimise'], ['desktop:window-event', 'floating'], ['desktop:window-event', 'restore'], ['desktop:window-event', 'full']]);
 });
