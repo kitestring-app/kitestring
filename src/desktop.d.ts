@@ -70,6 +70,7 @@ declare global {
       onFullScreenTransition?: (callback: (phase: "start" | "end") => void) => () => void;
       floatTimer?: (open: boolean) => Promise<boolean>;
       onFloatTimer?: (callback: (open: boolean) => void) => () => void;
+      windowEvent?: (action: "minimise" | "floating" | "restore" | "full") => void;
       showMain?: () => void;
       timerControl?: (action: DesktopTimerCommand | "endSession") => Promise<DesktopTimerResult>;
       onTimerRequest?: (callback: (action: DesktopTimerCommand, origin?: DesktopTimerOrigin) => Promise<DesktopTimerResult>) => () => void;
@@ -79,6 +80,8 @@ declare global {
       cancelSpeech?: () => void;
       notificationStatus?: () => Promise<{ supported: boolean; failed: boolean }>;
       testReminder?: (text?: string) => Promise<{ supported: boolean; failed: boolean; displays: number } | null>;
+      /** Idle reminder to start a block: a silent native notification that opens the app when clicked. */
+      nudge?: (text: string) => Promise<boolean>;
       preventSleep?: (on: boolean) => void;
       onTimerAction?: (callback: (action: DesktopTimerAction) => void) => () => void;
       onFlush?: (callback: () => Promise<void>) => () => void;

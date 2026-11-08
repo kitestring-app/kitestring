@@ -21,6 +21,7 @@ const fs = require('node:fs');
 const { createAttentionLog } = require('./attention-log.cjs');
 const { attachFullscreen } = require('./fullscreen.cjs');
 const { createShowWorkspaces } = require('./show-workspaces.cjs');
+const { createWindowEvents, registerWindowEvents } = require('./window-events.cjs');
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: {
   standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true,
@@ -367,6 +368,8 @@ if (!app.requestSingleInstanceLock()) {
       stateFile: path.join(app.getPath('userData'), 'menu-bar.json'), setMenuBarVisible });
     registerMenuCommands(ipcMain, trustedSender, menuCommand);
     registerFloatingControls(ipcMain, { trustedMain: trustedSender, floating, controls: floatingControls, sendMain });
+    registerWindowEvents(ipcMain, { trustedMain: trustedSender, events: createWindowEvents({
+      mainWindow: () => window, floatingControls: () => floatingControls, fullscreen: () => fullscreen, showWorkspaces }) });
     parking = createParking({ BrowserWindow, screen, globalShortcut, deliver: text => {
       if (!window || window.isDestroyed() || window.webContents.isLoadingMainFrame()) return false;
       window.webContents.send('desktop:parked', text);
@@ -413,6 +416,7 @@ if (!app.requestSingleInstanceLock()) {
     ipcMain.on('desktop:cancel-speech', (event) => { if (trustedSender(event)) native.cancelSpeech(); });
     ipcMain.handle('desktop:speak', (event, input) => trustedSender(event) ? native.speak(input) : false);
     ipcMain.handle('desktop:notification-status', (event) => trustedSender(event) ? native.notificationStatus() : null);
+    ipcMain.handle('desktop:nudge', (event, text) => trustedSender(event) ? native.nudge(text) : false);
     ipcMain.on('desktop:prevent-sleep', (event, enabled) => { if (trustedSender(event) && typeof enabled === 'boolean') native.preventSleep(enabled); });
     ipcMain.handle('desktop:float-timer', (event, enabled) => {
       if (typeof enabled !== 'boolean' || !(trustedSender(event) || (enabled === false && floating.trusted(event)))) return false;

@@ -14,6 +14,7 @@ it.each([false, true])("marks desktop=%s before React can paint", desktop => {
     "./state/timer": { startTicker: vi.fn() },
     "./ui/floatingDesktop": { connectFloatingSettings: vi.fn() },
     "./state/globalHotkeys": { connectGlobalHotkeys: vi.fn() },
+    "./state/idleNudgeRunner": { startIdleNudge: vi.fn() },
   };
   const source = readFileSync(new URL("./main.tsx", import.meta.url), "utf8");
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;

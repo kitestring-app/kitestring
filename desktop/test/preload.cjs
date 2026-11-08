@@ -33,8 +33,8 @@ test('main bridge is frozen and routes the supported native methods', async () =
   const { bridge, sent, invoked } = loadBridge();
   assert.deepEqual(Object.keys(bridge).sort(), [
     'armAlarm', 'attention', 'cancelSpeech', 'cloud', 'consumeSuspension', 'consumeSuspensionAt', 'disarmAlarm', 'floatTimer',
-    'getSecureDns', 'notificationStatus', 'onAudioAction', 'onAudioRequest', 'onFloatTimer', 'onFloatingPreferences', 'onFlush', 'onFullScreenTransition', 'onLifecycle', 'onMenuCommand', 'onParked', 'onTimerAction', 'onTimerRequest', 'parkingStatus', 'preventSleep', 'setGlobalHotkeys', 'publishAudioState', 'publishTimerState', 'release',
-    'platform', 'getFullScreen', 'onFullScreenChange', 'setFloatingPreferences', 'setSecureDns', 'setStatus', 'speak', 'testReminder', 'toggleFullScreen',
+    'getSecureDns', 'notificationStatus', 'nudge', 'onAudioAction', 'onAudioRequest', 'onFloatTimer', 'onFloatingPreferences', 'onFlush', 'onFullScreenTransition', 'onLifecycle', 'onMenuCommand', 'onParked', 'onTimerAction', 'onTimerRequest', 'parkingStatus', 'preventSleep', 'setGlobalHotkeys', 'publishAudioState', 'publishTimerState', 'release',
+    'platform', 'getFullScreen', 'onFullScreenChange', 'setFloatingPreferences', 'setSecureDns', 'setStatus', 'speak', 'testReminder', 'toggleFullScreen', 'windowEvent',
   ].sort());
   assert.equal(Object.isFrozen(bridge), true);
   bridge.setStatus(42);
@@ -66,10 +66,13 @@ test('main bridge is frozen and routes the supported native methods', async () =
   await bridge.armAlarm(alarm);
   await bridge.speak(speech);
   await bridge.notificationStatus();
+  assert.equal(await bridge.nudge(42), false);
+  assert.equal(await bridge.nudge('   '), false);
+  await bridge.nudge('y'.repeat(300));
   assert.deepEqual(invoked, [
     ['desktop:float-timer', true], ['desktop:float-timer', false],
     ['desktop:arm-alarm', alarm], ['desktop:speak', speech],
-    ['desktop:notification-status'],
+    ['desktop:notification-status'], ['desktop:nudge', 'y'.repeat(200)],
   ]);
 });
 
@@ -311,4 +314,10 @@ test('global shortcuts forward the recording flag and refuse a malformed one', a
   assert.equal(await bridge.setGlobalHotkeys({ ...value, recording: true, extra: 1 }), null);
   await bridge.setGlobalHotkeys({ ...value, recording: true });
   assert.equal(JSON.stringify(invoked), JSON.stringify([['desktop:global-hotkeys', { ...value, recording: true }]]));
+});
+
+test('main bridge sends only the four window actions', () => {
+  const { bridge, sent } = loadBridge();
+  for (const action of ['minimise', 'floating', 'restore', 'full', 'close', 42, undefined]) bridge.windowEvent(action);
+  assert.deepEqual(sent, [['desktop:window-event', 'minimise'], ['desktop:window-event', 'floating'], ['desktop:window-event', 'restore'], ['desktop:window-event', 'full']]);
 });

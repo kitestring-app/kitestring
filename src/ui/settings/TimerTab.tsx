@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { companionAvailable, testCompanion } from "../../audio/companion";
 import { matchPreset, PRESETS } from "../../state/presets";
 import { TallyPreview } from "../FocusView";
+import { IdleNudgeCard } from "./IdleNudgeCard";
 
 /** Shows whether the macOS companion is running (alerts even with Chrome closed) and lets you test it. */
 function CompanionStatus({ volume, alertSound }: { volume: number; alertSound: AlertSound }) {
@@ -271,6 +272,8 @@ export function TimerTab() {
         </div>
         <p id="alert-text-help" className="help">Your own words for the notification and the spoken reminder. Leave blank for the default.</p>
       </div>
+
+      <IdleNudgeCard />
 
       <div className="card">
         <h3>Ticking</h3>
