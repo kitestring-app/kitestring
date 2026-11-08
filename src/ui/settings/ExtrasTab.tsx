@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "../../lib/store";
 import { effectiveDefaultTab, floatingGlass, localPreferences, localPreferencesUpdate, settings, settingsUpdate, windowEvents, type Settings, type SettingsTab, type WindowEndAction, type WindowStartAction } from "../../state/settings";
 import { Choices, Toggle } from "./SettingsDrawer";
+import { MENU_BAR_LENGTHS, menuBarText } from "../../state/menuBar";
 
 export function ExtrasTab() {
   const [parking, setParking] = useState<boolean | null>(null);
@@ -10,6 +11,9 @@ export function ExtrasTab() {
   const local = useStore(localPreferences);
   const glass = useStore(floatingGlass);
   const win = useStore(windowEvents);
+  const bar = useStore(menuBarText);
+  const barText = local.showMenuBar && local.menuBarTime;
+  const setBar = (patch: Partial<typeof bar>) => menuBarText.set(b => ({ ...b, ...patch }));
   const set = (p: Partial<Settings["extras"]>) => settingsUpdate("extras", p);
   return (
     <>
@@ -26,6 +30,15 @@ export function ExtrasTab() {
         </label>
         <Toggle title="Show in menu bar" help="When hidden, open the app from the Dock." checked={local.showMenuBar} onChange={v => localPreferencesUpdate({ showMenuBar: v })} />
         <Toggle disabled={!local.showMenuBar} title="Show time in menu bar" help="The tooltip always shows the current time." checked={local.menuBarTime} onChange={v => localPreferencesUpdate({ menuBarTime: v })} />
+        <Toggle disabled={!barText} title="Show what you’re working on" help="During focus, your pinned next action or current task appears next to the time." checked={bar.task} onChange={task => setBar({ task })} />
+        {bar.task && <label className="opt">
+          <span><b>Longest task name</b><span>Longer names end with an ellipsis.</span></span>
+          <select className="input" style={{ maxWidth: 200 }} aria-label="Longest task name" disabled={!barText} value={bar.maxLength} onChange={e => setBar({ maxLength: Number(e.target.value) })}>
+            {[...new Set([...MENU_BAR_LENGTHS, bar.maxLength])].sort((a, b) => a - b).map(n => <option key={n} value={n}>{n} characters</option>)}
+          </select>
+        </label>}
+        <Toggle disabled={!barText} title="Show time during breaks" help="Off shows just “Break” until focus starts again." checked={bar.breakTime} onChange={breakTime => setBar({ breakTime })} />
+        <Toggle disabled={!barText} title="Show seconds in menu bar" help="Off shows whole minutes, like 12m." checked={bar.seconds} onChange={seconds => setBar({ seconds })} />
       </div>}
       {window.desktop?.windowEvent && <div className="card window-events">
         <h3>Window when focus starts and ends</h3>

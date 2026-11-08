@@ -263,3 +263,17 @@ it.each([1, 2])("N5: plain recall notes round-trip in Focus v%s with existing cl
   expect(notes.get()).toBe(text); expect(await dbGet("notes")).toBe(text);
   expect(JSON.parse(await b.createBackup({ sections: [] })).data).not.toHaveProperty("notes");
 });
+
+it("carries the menu bar text options in the device section only", async () => {
+  const b = await import("./backup"); const s = await import("../state/settings"); await s.calmFoundationReady;
+  const { menuBarText, DEFAULT_MENU_BAR_TEXT } = await import("../state/menuBar");
+  await menuBarText.ready;
+  const chosen = { task: true, maxLength: 16, breakTime: false, seconds: false };
+  menuBarText.set(chosen);
+  expect(b.parseBackup(await b.createBackup({ sections: ["sounds"] })).data).not.toHaveProperty("menuBarText");
+  const parsed = b.parseBackup(await b.createBackup({ sections: ["device"] }));
+  expect(parsed.data.menuBarText).toEqual(chosen);
+  menuBarText.set(DEFAULT_MENU_BAR_TEXT);
+  await b.restoreBackup(parsed, metadata, ["device"]);
+  expect(menuBarText.get()).toEqual(chosen);
+});
