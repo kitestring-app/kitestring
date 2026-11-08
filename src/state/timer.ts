@@ -324,8 +324,9 @@ function announce(kind: AlertKind, announcement?: DesktopAnnouncement) {
 }
 
 // ---------- soft warning before a focus block ends (opt-in, off in Calm) ----------
-// The audio clock fires on time in throttled background tabs; the 250 ms ticker is the fallback
+// On the web the audio clock fires on time in throttled background tabs; the 250 ms ticker is the fallback
 // for a context that is still waiting on autoplay. Whichever comes first gives the cue once.
+// The Mac renderer is never throttled, so it uses only the ticker and keeps no silent audio clock running.
 let pendingWarning: { segId: string; at: number } | null = null;
 let cancelWarningWatch: (() => void) | null = null;
 function clearEndWarning() {
@@ -341,19 +342,29 @@ function syncEndWarning() {
   if (pendingWarning?.segId === s.segId && pendingWarning.at === at) return;
   clearEndWarning();
   pendingWarning = { segId: s.segId, at };
-  try { cancelWarningWatch = watchAudioClock((at - Date.now()) / 1000, checkEndWarning); }
-  catch { cancelWarningWatch = null; /* The ticker still gives the cue. */ }
+  armWarningWatch(at);
+}
+function armWarningWatch(at: number) {
+  cancelWarningWatch?.();
+  cancelWarningWatch = null;
+  if (typeof window !== "undefined" && window.desktop) return;
+  try { cancelWarningWatch = watchAudioClock((at - Date.now()) / 1000, () => { cancelWarningWatch = null; checkEndWarning(true); }); }
+  catch { /* The ticker still gives the cue. */ }
 }
 /** Gives the cue once, at or after its time, if the same block is still running with the same deadline. */
-function checkEndWarning() {
+function checkEndWarning(fromAudioClock = false) {
   const due = pendingWarning, now = Date.now();
-  if (!due || now < due.at) return;
+  if (!due) return;
+  // The audio clock can drift a little ahead of wall time: re-arm for the rest instead of leaving it to a throttled ticker.
+  if (now < due.at) { if (fromAudioClock) armWarningWatch(due.at); return; }
   clearEndWarning();
   const s = timer.get();
   if (!canWriteClockStore("timer") || s.segId !== due.segId || endWarningAt(s, totalMs(s), T()) !== due.at) return;
   if (now - due.at > 30_000) return; // Asleep through it: the end alert is next, so stay quiet.
   const t = T();
-  if (t.alertVolume > 0 && !localPreferences.get().muted) playStartChime(t.startChimeSound, t.alertVolume);
+  // Same sound rule as the start chime: both end sounds set to None means no cue sounds.
+  const sounds = t.focusDoneSound !== "none" || t.breakOverSound !== "none";
+  if (sounds && t.alertVolume > 0 && !localPreferences.get().muted) playStartChime(t.startChimeSound, t.alertVolume);
   if (t.speak) {
     clearTimeout(warningSpeech);
     // After the chime's first notes, and only if the same block is still running toward the same deadline.

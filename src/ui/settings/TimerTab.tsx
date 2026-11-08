@@ -215,7 +215,7 @@ export function TimerTab() {
           </label>
         </div>
         <p className="help">{t.warnBefore === 0 ? "No cue before a focus block ends." :
-          `Plays the start sound ${t.warnBefore === 1 ? "a minute" : `${t.warnBefore} minutes`} before a focus block ends${t.speak ? ", then says how long is left" : ""}. Skipped for blocks of ${t.warnBefore * 2} minutes or less.`}</p>
+          `Plays the start sound ${t.warnBefore === 1 ? "a minute" : `${t.warnBefore} minutes`} before a focus block ends${t.speak ? ", then says how long is left" : ""}. Skipped for blocks of ${t.warnBefore * 2} minutes or less${t.focusDoneSound === "none" && t.breakOverSound === "none" ? ". No sound plays while both end sounds are None" : ""}.`}</p>
         <p className="help">Each sound pack has its own focus-done and break-over cues.</p>
         {([['focusDoneSound', 'Focus done', 'focus-done'], ['breakOverSound', 'Break over', 'break-over']] as const).map(([field, label, kind]) => (
           <div className="row" key={field} style={{ marginBottom: 10 }}>

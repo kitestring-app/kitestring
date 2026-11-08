@@ -21,7 +21,7 @@ async function setup(native: boolean, timer: Record<string, unknown> = {}) {
   vi.stubGlobal("window", { desktop: native ? desktop : undefined, speechSynthesis: speech, addEventListener: vi.fn() });
   vi.stubGlobal("document", { visibilityState: "visible", addEventListener: vi.fn() });
   // Only the heads-up is on, so no end-of-block speech or chime muddies the counts.
-  s.settings.set({ ...s.DEFAULT_SETTINGS, timer: { ...s.DEFAULT_SETTINGS.timer, ...s.CALM_PATCH, speak: true, warnBefore: 2, ...timer } });
+  s.settings.set({ ...s.DEFAULT_SETTINGS, timer: { ...s.DEFAULT_SETTINGS.timer, ...s.CALM_PATCH, speak: true, warnBefore: 2, focusDoneSound: "signature", ...timer } });
   const { INITIAL_TIMER } = await import("./timerEngine");
   state.timer.set({ ...INITIAL_TIMER, segId: "warn", frozen: true, frozenTotal: 10 * MIN });
   state.startTicker(); await Promise.resolve();
@@ -125,4 +125,36 @@ it("switching to Hidden time stops a spoken heads-up that names the minutes", as
   q.speech.cancel.mockClear();
   q.s.settingsUpdate("timer", { display: "hidden" });
   expect(q.speech.cancel).toHaveBeenCalled();
+});
+
+it("an audio-clock wake a little early re-arms for the rest instead of waiting on the ticker", async () => {
+  const q = await setup(false);
+  const core = await import("../audio/core");
+  q.timerActions.start();
+  const watch = vi.mocked(core.watchAudioClock);
+  vi.setSystemTime(Date.now() + 8 * MIN - 400);
+  watch.mock.calls[0]![1]();
+  expect(q.chime).not.toHaveBeenCalled();
+  expect(watch).toHaveBeenCalledTimes(2);
+  expect(watch.mock.calls[1]![0]).toBeCloseTo(0.4, 1);
+  vi.setSystemTime(Date.now() + 400);
+  watch.mock.calls[1]![1]();
+  expect(q.chime).toHaveBeenCalledTimes(1);
+});
+
+it("the Mac app relies on its unthrottled ticker and keeps no audio clock running", async () => {
+  const q = await setup(true);
+  const core = await import("../audio/core");
+  q.timerActions.start();
+  await vi.advanceTimersByTimeAsync(8 * MIN + 250);
+  expect(core.watchAudioClock).not.toHaveBeenCalled();
+  expect(q.chime).toHaveBeenCalledTimes(1);
+});
+
+it("both end sounds set to None keeps the heads-up silent, like the start chime, but still speaks", async () => {
+  const q = await setup(false, { focusDoneSound: "none", breakOverSound: "none" });
+  q.timerActions.start();
+  await vi.advanceTimersByTimeAsync(8 * MIN + 2_000);
+  expect(q.chime).not.toHaveBeenCalled();
+  expect(q.speech.speak).toHaveBeenCalledTimes(1);
 });
