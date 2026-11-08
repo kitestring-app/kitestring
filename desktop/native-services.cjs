@@ -9,10 +9,17 @@ function writeJSON(file, value) {
   fs.renameSync(`${file}.tmp`, file);
 }
 const kinds = ['focus-done', 'break-over'];
+const warnWords = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five'];
 function announcement(input) {
   if (!input || !kinds.includes(input.kind)) return null;
   const a = input.announcement ?? input;
   if (a.phase === 'cycle') return 'Cycle complete. Nice work.';
+  // Soft heads-up before a focus block ends. Speak-only: arm() never accepts this phase.
+  if (a.phase === 'warning') {
+    if (a.minutes === undefined) return 'Focus is nearly done.';
+    if (![1, 2, 3, 5].includes(a.minutes)) return null;
+    return `${warnWords[a.minutes]} ${a.minutes === 1 ? 'minute' : 'minutes'} left.`;
+  }
   if (a.phase === 'focus' || a.phase === 'break') {
     if (!Number.isFinite(a.minutes) || a.minutes <= 0 || a.minutes > 600) return null;
     return `${a.phase === 'focus' ? 'Focus' : 'Break'} started. ${a.minutes} ${a.minutes === 1 ? 'minute' : 'minutes'}.`;
@@ -119,7 +126,9 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
     if (pending && pending.at <= now()) check();
     // The shared display policy also applies to the boundary already waiting behind its chime.
     if (input.genericSpeech && activeAnnouncement?.announcement) {
-      delete activeAnnouncement.announcement;
+      // A heads-up keeps its phase and only loses its number; anything else falls back to the generic reminder.
+      if (activeAnnouncement.announcement.phase === 'warning') delete activeAnnouncement.announcement.minutes;
+      else delete activeAnnouncement.announcement;
       if (speech) speak(activeAnnouncement);
     }
     if (`${input.kind}:${input.at}` === lastFired) return true;

@@ -234,3 +234,26 @@ it("3/11: a concurrent reminder edit during Restore keeps the restore point dura
   expect(fixture.disk.get("deviceCalmPreset")).toMatchObject({ snapshot });
   expect(fixture.disk.get("settings")).toMatchObject({ timer: { notify: true, speak: false } });
 });
+
+it("heads-up: profiles saved before the option keep their Calm or Strong label and their restore point", async () => {
+  const pre = await launch(); fixture.disk.clear();
+  const legacy = (fields: Record<string, unknown>) => Object.fromEntries(Object.entries(fields).filter(([key]) => key !== "warnBefore"));
+  const legacyCalm = legacy(pre.CALM_PATCH), legacyStrong = legacy(pre.STRONG_PATCH);
+  fixture.disk.set("settings", { timer: legacyCalm });
+  fixture.disk.set("deviceCalmPreset", { mode: "Calm", classified: true, provisional: false, baseline: legacyCalm, snapshot: legacyStrong, snapshotMode: "Strong" });
+  vi.resetModules();
+  const s = await launch(); await s.presetState.ready;
+  expect(s.settings.get().timer.warnBefore).toBe(0);
+  expect(s.supportPresetLabel()).toBe("Calm");
+  expect(s.presetState.get().baseline).toEqual(s.CALM_PATCH);
+  expect(s.presetState.get().snapshot).toEqual(s.STRONG_PATCH);
+  await s.applySupportPreset("Restore");
+  expect(s.settings.get().timer.warnBefore).toBe(2);
+  expect(s.supportPresetLabel()).toBe("Strong");
+});
+it("heads-up: changing it after Calm reads as Calm, customised", async () => {
+  const s = await launch();
+  expect(s.supportPresetLabel()).toBe("Calm");
+  s.settingsUpdate("timer", { warnBefore: 1 });
+  expect(s.supportPresetLabel()).toBe("Calm, customised");
+});

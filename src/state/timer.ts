@@ -9,7 +9,8 @@ import type { SessionContext } from "./recoveryPolicy";
 import { cleanThought } from "../lib/parked";
 import { useEffect, useState } from "react";
 import { canWriteClockStore, clearStoredProfile, registerClockAction, requestClockAction, CLOCK_OWNED_KEYS, executeClockAction, registerClockOwner, registerClockForwarder, refreshClockStores, createStore, flushReadyStores, registerPersistenceGroup, registerPersistenceOwner, uid, storeReady, storeSource, useStore } from "../lib/store";
-import { playTimerTick, cancelAllChimes, cancelChime, cancelEnd, releaseChime, scheduleChime, scheduleEnd } from "../audio/core";
+import { playTimerTick, cancelAllChimes, cancelChime, cancelEnd, releaseChime, scheduleChime, scheduleEnd, watchAudioClock } from "../audio/core";
+import { endWarningAt, endWarningLine } from "./endWarning";
 import { ALERT_TEXT, type AlertKind } from "../audio/alertSynth";
 import { SPOKEN_REMINDER, customAlertText } from "../audio/alertText";
 import { armCompanionWithSpeech, companionAvailable, companionKnownUp, disarmCompanion } from "../audio/companion";
@@ -290,7 +291,9 @@ let wasQuiet = false;
 let nativeAttentionSegment: string | null = null;
 let snoozedBreak: { segId: string; count: number } | null = null;
 
+let warningSpeech: ReturnType<typeof setTimeout> | undefined;
 function cancelSpeech() {
+  clearTimeout(warningSpeech);
   try { if (typeof window !== "undefined") window.desktop?.cancelSpeech?.(); } catch { /* Still cancel page speech. */ }
   speechTimer?.();
   speechTimer = null;
@@ -322,8 +325,79 @@ function announce(kind: AlertKind, announcement?: DesktopAnnouncement) {
   }, delay);
 }
 
+// ---------- soft warning before a focus block ends (opt-in, off in Calm) ----------
+// On the web the audio clock fires on time in throttled background tabs; the 250 ms ticker is the fallback
+// for a context that is still waiting on autoplay. Whichever comes first gives the cue once.
+// The Mac renderer is never throttled, so it uses only the ticker and keeps no silent audio clock running.
+let pendingWarning: { segId: string; at: number } | null = null;
+let cancelWarningWatch: (() => void) | null = null;
+function clearEndWarning() {
+  cancelWarningWatch?.();
+  cancelWarningWatch = null;
+  pendingWarning = null;
+}
+function syncEndWarning() {
+  const s = timer.get();
+  const owned = canWriteClockStore("timer") && recoveryHydrated && !departing && !settlingSnapshot;
+  const at = owned ? endWarningAt(s, totalMs(s), T()) : null;
+  if (at === null || at <= Date.now()) { clearEndWarning(); return; }
+  if (pendingWarning?.segId === s.segId && pendingWarning.at === at) return;
+  clearEndWarning();
+  pendingWarning = { segId: s.segId, at };
+  armWarningWatch(at);
+}
+function armWarningWatch(at: number) {
+  cancelWarningWatch?.();
+  cancelWarningWatch = null;
+  if (typeof window !== "undefined" && window.desktop) return;
+  try { cancelWarningWatch = watchAudioClock((at - Date.now()) / 1000, () => { cancelWarningWatch = null; checkEndWarning(true); }); }
+  catch { /* The ticker still gives the cue. */ }
+}
+/** Gives the cue once, at or after its time, if the same block is still running with the same deadline. */
+function checkEndWarning(fromAudioClock = false) {
+  const due = pendingWarning, now = Date.now();
+  if (!due) return;
+  // The audio clock can drift a little ahead of wall time: re-arm for the rest instead of leaving it to a throttled ticker.
+  if (now < due.at) { if (fromAudioClock) armWarningWatch(due.at); return; }
+  clearEndWarning();
+  const s = timer.get();
+  if (!canWriteClockStore("timer") || s.segId !== due.segId || endWarningAt(s, totalMs(s), T()) !== due.at) return;
+  if (now - due.at > 30_000) return; // Asleep through it: the end alert is next, so stay quiet.
+  const t = T();
+  // Same sound rule as the start chime: both end sounds set to None means no cue sounds.
+  const sounds = t.focusDoneSound !== "none" || t.breakOverSound !== "none";
+  if (sounds && t.alertVolume > 0 && !localPreferences.get().muted) playStartChime(t.startChimeSound, t.alertVolume);
+  if (t.speak) {
+    clearTimeout(warningSpeech);
+    // After the chime's first notes, and only if the same block is still running toward the same deadline.
+    warningSpeech = setTimeout(() => {
+      const current = timer.get();
+      if (current.segId === due.segId && endWarningAt(current, totalMs(current), T()) === due.at) speakEndWarning(T().warnBefore);
+    }, 900);
+  }
+}
+function speakEndWarning(minutes: number) {
+  const t = T();
+  if (!t.speak || typeof window === "undefined") return;
+  if (window.desktop?.speak) {
+    void window.desktop.speak({ kind: "focus-done", announcement: { phase: "warning", ...(t.display === "hidden" ? {} : { minutes }) } }).catch(() => undefined);
+    return;
+  }
+  if (!("speechSynthesis" in window)) return;
+  try {
+    const utterance = new SpeechSynthesisUtterance(endWarningLine(minutes, t.display));
+    // Tracked like a timed announcement, so switching to Hidden time stops a line that names the minutes.
+    if (t.display !== "hidden") {
+      pageAnnouncement = utterance;
+      utterance.onend = utterance.onerror = () => { if (pageAnnouncement === utterance) pageAnnouncement = null; };
+    }
+    window.speechSynthesis.speak(utterance);
+  } catch { /* Speech is optional. */ }
+}
+
 /** Arm or disarm the end chime + end watch to match the timer. Idempotent; only the leader tab plays audio. */
 function syncAudio() {
+  syncEndWarning();
   if (!canWriteClockStore("timer") || !recoveryHydrated || departing || settlingSnapshot) return;
   if (suspensionRecovery()) return;
   if (pageAnnouncement && timerAnnouncement(T().display).genericSpeech) cancelSpeech();
@@ -788,6 +862,7 @@ export async function releaseTimerOwnership() {
   leader = false;
   armedKey = "";
   ticks.stop();
+  clearEndWarning();
   cancelAllChimes(); cancelEnd(); cancelSpeech();
   void disarmCompanion(); void boundaryAlert.stop();
 }
@@ -849,6 +924,7 @@ export function startTicker({ follower = false }: { follower?: boolean } = {}) {
     if (s.startedAt === null || !recoveryHydrated) return;
     const total = totalMs(s);
     if (canWriteClockStore("timer") && total !== null && E.elapsed(s, tickNow) >= total) timerActions.complete(s.segId, missed || s.segId === loadedExpiredSeg);
+    checkEndWarning();
     noteAlive(now, false);
     tickSubs.forEach((fn) => fn());
   }, 250);
