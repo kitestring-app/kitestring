@@ -1,4 +1,5 @@
 import { connectFloatingSettings } from "./ui/floatingDesktop";
+import { connectGlobalHotkeys } from "./state/globalHotkeys";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
@@ -18,6 +19,7 @@ const mini = window.desktop?.mini === true && new URLSearchParams(location.searc
 if (mini) startTicker({ follower: true });
 else {
   void connectFloatingSettings();
+  void connectGlobalHotkeys();
   window.desktop?.onTimerRequest?.(runTimerCommand);
   window.desktop?.onTimerAction?.((action) => timerActions[action]());
   window.desktop?.onFlush?.(async () => { await prepareTimerDeparture(); await flushReadyStores(); });

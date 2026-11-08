@@ -42,6 +42,11 @@ contextBridge.exposeInMainWorld('desktop', Object.freeze(mini ? {
     if (['settings', 'home', 'focus', 'ambient', 'tasks', 'sounds', 'notes', 'toggle', 'skip', 'reset', 'shortcuts', 'stop', 'stopSound', 'stopAndPause', 'endSession'].includes(value)) callback(value);
   }),
   parkingStatus: () => ipcRenderer.invoke('desktop:parking-status'),
+  setGlobalHotkeys: (value) => {
+    const valid = !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 4 &&
+      ['showApp', 'toggle', 'stop', 'skip'].every(key => value[key] === null || (typeof value[key] === 'string' && value[key].length <= 64));
+    return valid ? ipcRenderer.invoke('desktop:global-hotkeys', { showApp: value.showApp, toggle: value.toggle, stop: value.stop, skip: value.skip }) : Promise.resolve(null);
+  },
   toggleFullScreen: () => ipcRenderer.invoke('desktop:toggle-fullscreen'),
   onFullScreenTransition: (callback) => subscribe('desktop:fullscreen-transition', value => { if (value === 'start' || value === 'end') callback(value); }),
   consumeSuspensionAt: () => { const value = ipcRenderer.sendSync('desktop:consume-suspension-at'); return value && typeof value.at === 'number' && Number.isFinite(value.at) && typeof value.suspended === 'boolean' ? { at: value.at, suspended: value.suspended } : null; },

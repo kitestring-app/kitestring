@@ -7,6 +7,7 @@ const CLOUD_ORIGIN = 'https://kitestring.custom-pomodoro.workers.dev';
 const LEGACY_CLOUD_ORIGIN = 'https://custom-pomodoro.custom-pomodoro.workers.dev';
 const { createNativeServices } = require('./native-services.cjs');
 const { createParking } = require('./parking.cjs');
+const { createGlobalHotkeys, registerGlobalHotkeys } = require('./global-hotkeys.cjs');
 const { createFloating } = require('./floating.cjs');
 const { createFloatingControls, registerFloatingControls } = require('./floating-controls.cjs');
 const { applicationMenu, registerMenuCommands, validMenuCommand, timerMenuItems, validTimerState } = require('./menu.cjs');
@@ -69,6 +70,7 @@ let attentionLog;
 let floating;
 let floatingControls;
 let parking;
+let hotkeys;
 let native;
 const quitGuard = createQuitGuard({
   requestFlush: (id) => {
@@ -293,7 +295,7 @@ if (!app.requestSingleInstanceLock()) {
     floating?.close(); parking?.dispose(); native?.releasePower();
     quitGuard.beforeQuit(event);
   });
-  app.on('will-quit', () => { clearTimeout(soundWindowTimer); if (globalStopRegistered) globalShortcut.unregister('Command+.'); parking?.dispose(); native?.dispose(); });
+  app.on('will-quit', () => { clearTimeout(soundWindowTimer); if (globalStopRegistered) globalShortcut.unregister('Command+.'); parking?.dispose(); hotkeys?.dispose(); native?.dispose(); });
   app.on('activate', () => { if (window && !window.isDestroyed()) window.webContents.send('desktop:lifecycle', 'activate'); if (parking?.snapshot().capture) return; if (window && !window.isDestroyed()) showWindow(); else if (floatingControls && !quitting) createWindow(); });
   app.on('window-all-closed', () => { /* The tray or Dock keeps the app reachable. */ });
   app.whenReady().then(async () => {
@@ -370,6 +372,13 @@ if (!app.requestSingleInstanceLock()) {
     } });
     parking.register();
     ipcMain.handle('desktop:parking-status', event => trustedSender(event) ? parking.status() : null);
+    // Opt-in global shortcuts; timer actions take the same guarded path as menu accelerators.
+    hotkeys = createGlobalHotkeys({ globalShortcut, run: action => {
+      if (quitting) return;
+      if (action === 'showApp') showWindow();
+      else void menuCommand(action, 'accelerator');
+    } });
+    registerGlobalHotkeys(ipcMain, { trustedMain: trustedSender, hotkeys });
     // The page's own Fullscreen API is refused by the permission handler; use the native macOS full-screen Space instead.
     ipcMain.handle('desktop:get-fullscreen', event => trustedSender(event) ? window.isFullScreen() : null);
     ipcMain.handle('desktop:toggle-fullscreen', event => {
