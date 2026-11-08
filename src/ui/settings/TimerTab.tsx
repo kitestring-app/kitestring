@@ -2,7 +2,7 @@ import { playStartChime } from "../../audio/startChime";
 import { chooseReviewBoundary, parkingReview, type ReviewBoundary } from "../../state/parkingReview";
 import { useTimerView } from "../../state/timer";
 import { useStore } from "../../lib/store";
-import { applySupportPreset, localPreferences, presetState, quietTimer, supportPresetLabel, settings, settingsUpdate, type Settings, type TimerMode, type TimerStyle, type TallyId } from "../../state/settings";
+import { applySupportPreset, localPreferences, presetState, quietTimer, supportPresetLabel, settings, settingsUpdate, WARN_BEFORE, type WarnBefore, type Settings, type TimerMode, type TimerStyle, type TallyId } from "../../state/settings";
 import { previewChime, type AlertSound } from "../../audio/core";
 import { FlipPalettePicker } from "../timer/FlipPalettePicker";
 import { FACES } from "../timer/faces";
@@ -104,7 +104,7 @@ export function TimerTab() {
           <div className="preset-text">
             <h3 id="reminders-label">Reminders</h3>
             <p className="help">{supportPresetLabel() === "Calm" ? "No chimes, notifications, ticking or auto-start. New installs start here."
-              : supportPresetLabel() === "Strong" ? "Chimes, notifications, spoken alerts and auto-start, to pull you back on time."
+              : supportPresetLabel() === "Strong" ? "Chimes, notifications, spoken alerts, a two-minute heads-up and auto-start, to pull you back on time."
               : <><b>{supportPresetLabel()}</b>: your own mix. Pick Calm or Strong to reset it.</>}</p>
           </div>
           <div className="segmented" role="group" aria-labelledby="reminders-label">
@@ -207,6 +207,15 @@ export function TimerTab() {
           </label>
           <button className="btn small" aria-label="Preview start chime" disabled={!t.startChime || t.alertVolume <= 0 || muted || (t.focusDoneSound === "none" && t.breakOverSound === "none")} onClick={() => { if (!localPreferences.get().muted) playStartChime(t.startChimeSound, t.alertVolume); }}>Preview</button>
         </div>
+        <div className="row" style={{ marginBottom: 4 }}>
+          <label className="row"><span>Heads-up before focus ends</span>
+            <select className="input" aria-label="Heads-up before focus ends" value={t.warnBefore} onChange={e => set({ warnBefore: Number(e.target.value) as WarnBefore })}>
+              {WARN_BEFORE.map(minutes => <option key={minutes} value={minutes}>{minutes === 0 ? "Off" : `${minutes} ${minutes === 1 ? "minute" : "minutes"} before`}</option>)}
+            </select>
+          </label>
+        </div>
+        <p className="help">{t.warnBefore === 0 ? "No cue before a focus block ends." :
+          `Plays the start sound ${t.warnBefore === 1 ? "a minute" : `${t.warnBefore} minutes`} before a focus block ends${t.speak ? ", then says how long is left" : ""}. Skipped for blocks of ${t.warnBefore * 2} minutes or less.`}</p>
         <p className="help">Each sound pack has its own focus-done and break-over cues.</p>
         {([['focusDoneSound', 'Focus done', 'focus-done'], ['breakOverSound', 'Break over', 'break-over']] as const).map(([field, label, kind]) => (
           <div className="row" key={field} style={{ marginBottom: 10 }}>

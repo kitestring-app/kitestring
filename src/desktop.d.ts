@@ -71,7 +71,8 @@ declare global {
       onTimerRequest?: (callback: (action: DesktopTimerCommand, origin?: DesktopTimerOrigin) => Promise<DesktopTimerResult>) => () => void;
       armAlarm?: (alarm: DesktopAlarm) => Promise<boolean>;
       disarmAlarm?: () => void;
-      speak?: (input: { kind: DesktopAlarm["kind"]; announcement?: DesktopAnnouncement }) => Promise<boolean>;
+      /** phase "warning" is the soft heads-up before a focus block ends; no minutes means Hidden time's generic line. */
+      speak?: (input: { kind: DesktopAlarm["kind"]; announcement?: DesktopAnnouncement | { phase: "warning"; minutes?: number } }) => Promise<boolean>;
       cancelSpeech?: () => void;
       notificationStatus?: () => Promise<{ supported: boolean; failed: boolean }>;
       testReminder?: () => Promise<{ supported: boolean; failed: boolean; displays: number } | null>;

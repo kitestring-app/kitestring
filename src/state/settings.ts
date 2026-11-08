@@ -32,6 +32,8 @@ export interface Settings {
     alertSound: "signature" | "bell" | "chime" | "digital" | "wood" | "none";
     startChime: boolean;
     startChimeSound: "bubble" | "music-box" | "bell";
+    /** Minutes before a focus block ends to give a soft heads-up (start chime sound, plus a spoken line when speech is on). 0 is off. */
+    warnBefore: WarnBefore;
     focusDoneSound: Settings["timer"]["alertSound"];
     breakOverSound: Settings["timer"]["alertSound"];
     ticking: "off" | "breaks" | "focus" | "both";
@@ -80,6 +82,9 @@ export function effectiveDefaultTab(extras: Pick<Settings["extras"], "hideStats"
   return extras.hideStats && extras.defaultTab === "stats" ? "recent" : extras.defaultTab;
 }
 
+export const WARN_BEFORE = [0, 1, 2, 3, 5] as const;
+export type WarnBefore = (typeof WARN_BEFORE)[number];
+
 export const LOOKS = ["classic", "glass", "sketch", "companion", "sunrise"] as const;
 export type LookId = (typeof LOOKS)[number];
 export const SCHEMES = ["auto", "system", "light", "dark"] as const;
@@ -105,6 +110,7 @@ export const DEFAULT_SETTINGS: Settings = {
     alertSound: "signature",
     startChime: true,
     startChimeSound: "bubble",
+    warnBefore: 2,
     focusDoneSound: "signature",
     breakOverSound: "signature",
     ticking: "off",
@@ -140,6 +146,24 @@ export const DEFAULT_SETTINGS: Settings = {
   lastTab: "timer",
 };
 
+// The fields Calm and Strong set. Strong is the default reminder setup.
+export const CALM_PATCH = {
+  takeover: false, speak: false, bringToFront: false, notify: false,
+  interruptionPrompt: false, alertSound: "none", focusDoneSound: "none",
+  breakOverSound: "none", ticking: "off", autoRun: "off", countdownRepeat: false, warnBefore: 0,
+} as const satisfies Partial<Settings["timer"]>;
+export type PresetFields = Pick<Settings["timer"], keyof typeof CALM_PATCH>;
+export function presetFields(timer: Settings["timer"]): PresetFields {
+  return Object.fromEntries(Object.keys(CALM_PATCH).map(key => [key, timer[key as keyof PresetFields]])) as PresetFields;
+}
+export const STRONG_PATCH = presetFields(DEFAULT_SETTINGS.timer);
+/** A setup saved before the warning existed gets it only if the rest of its reminders already match Strong,
+ *  so Calm stays Calm, Strong stays Strong, and a custom setup stays as quiet as it was. */
+function legacyWarnBefore(timer: Settings["timer"]): WarnBefore {
+  const strong = (Object.keys(CALM_PATCH) as (keyof PresetFields)[]).every(key => key === "warnBefore" || timer[key] === STRONG_PATCH[key]);
+  return strong ? STRONG_PATCH.warnBefore : 0;
+}
+
 const oneOf = <T extends string>(v: string, allowed: readonly T[], fallback: T): T => ((allowed as readonly string[]).includes(v) ? (v as T) : fallback);
 const clamp = (v: number, lo: number, hi: number, fallback: number) => (Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v * 1000) / 1000)) : fallback);
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -162,39 +186,42 @@ export function sanitizeSettings(stored: unknown): Settings {
   const sounds = ["signature", "bell", "chime", "digital", "wood", "none"] as const;
   const oldSound = oneOf(t.alertSound, sounds, d.timer.alertSound);
   const hasAppearance = !!(stored as { appearance?: unknown } | null)?.appearance;
+  const timer: Settings["timer"] = {
+    ...t,
+    autoRun: oneOf(legacy.autoRun, ["off", "cycle", "always"] as const, legacy.autoStart ? "always" : "off"),
+    countdownRepeat: typeof t.countdownRepeat === "boolean" ? t.countdownRepeat : false,
+    interruptionPrompt: typeof t.interruptionPrompt === "boolean" ? t.interruptionPrompt : true,
+    flipPalette: oneOf(t.flipPalette, ["midnight", "porcelain", "mulberry", "lagoon", "fern", "slate", "ember", "sandstone"] as const, "midnight"),
+    mode: oneOf(t.mode, ["pomodoro", "countdown", "stopwatch", "animedoro", "5217"] as const, d.timer.mode),
+    lengths: {
+      ...t.lengths,
+      pomodoro: clamp(t.lengths.pomodoro, 1, 600, d.timer.lengths.pomodoro),
+      short: clamp(t.lengths.short, 1, 600, d.timer.lengths.short),
+      long: clamp(t.lengths.long, 1, 600, d.timer.lengths.long),
+      countdown: clamp(t.lengths.countdown, 1, 600, d.timer.lengths.countdown),
+    },
+    longEvery: clamp(t.longEvery, 1, 12, d.timer.longEvery),
+    display: oneOf(t.display, ["remaining", "elapsed", "hidden"] as const, "remaining"),
+    style: oneOf(t.style, ["default", "flip", "bar", "gauge", "dots", "pie"] as const, d.timer.style),
+    alertSound: oneOf(t.alertSound, ["signature", "bell", "chime", "digital", "wood", "none"] as const, d.timer.alertSound),
+    focusDoneSound: oneOf(rawTimer?.focusDoneSound ?? oldSound, sounds, oldSound),
+    breakOverSound: oneOf(rawTimer?.breakOverSound ?? oldSound, sounds, oldSound),
+    startChime: typeof t.startChime === "boolean" ? t.startChime : true,
+    startChimeSound: oneOf(t.startChimeSound, ["bubble", "music-box", "bell"] as const, "bubble"),
+    ticking: oneOf(t.ticking, ["off", "breaks", "focus", "both"] as const, "off"),
+    tickStyle: oneOf(t.tickStyle, ["soft", "wood", "digital"] as const, "soft"),
+    tickVolume: clamp(t.tickVolume, 0, 1, d.timer.tickVolume),
+    alertVolume: clamp(t.alertVolume, 0, 1, d.timer.alertVolume),
+    takeover: typeof t.takeover === "boolean" ? t.takeover : d.timer.takeover,
+    speak: typeof t.speak === "boolean" ? t.speak : d.timer.speak,
+    bringToFront: typeof t.bringToFront === "boolean" ? t.bringToFront : d.timer.bringToFront,
+    tally: oneOf(t.tally, ["dots", "tomato", "check", "star", "tree", "tokyo", "stem"] as const, d.timer.tally),
+  };
+  const rawWarn = rawTimer?.warnBefore;
+  timer.warnBefore = rawWarn === undefined ? legacyWarnBefore(timer) : (WARN_BEFORE as readonly unknown[]).includes(rawWarn) ? rawWarn : 0;
   return {
     ...s,
-    timer: {
-      ...t,
-      autoRun: oneOf(legacy.autoRun, ["off", "cycle", "always"] as const, legacy.autoStart ? "always" : "off"),
-      countdownRepeat: typeof t.countdownRepeat === "boolean" ? t.countdownRepeat : false,
-      interruptionPrompt: typeof t.interruptionPrompt === "boolean" ? t.interruptionPrompt : true,
-      flipPalette: oneOf(t.flipPalette, ["midnight", "porcelain", "mulberry", "lagoon", "fern", "slate", "ember", "sandstone"] as const, "midnight"),
-      mode: oneOf(t.mode, ["pomodoro", "countdown", "stopwatch", "animedoro", "5217"] as const, d.timer.mode),
-      lengths: {
-        ...t.lengths,
-        pomodoro: clamp(t.lengths.pomodoro, 1, 600, d.timer.lengths.pomodoro),
-        short: clamp(t.lengths.short, 1, 600, d.timer.lengths.short),
-        long: clamp(t.lengths.long, 1, 600, d.timer.lengths.long),
-        countdown: clamp(t.lengths.countdown, 1, 600, d.timer.lengths.countdown),
-      },
-      longEvery: clamp(t.longEvery, 1, 12, d.timer.longEvery),
-      display: oneOf(t.display, ["remaining", "elapsed", "hidden"] as const, "remaining"),
-      style: oneOf(t.style, ["default", "flip", "bar", "gauge", "dots", "pie"] as const, d.timer.style),
-      alertSound: oneOf(t.alertSound, ["signature", "bell", "chime", "digital", "wood", "none"] as const, d.timer.alertSound),
-      focusDoneSound: oneOf(rawTimer?.focusDoneSound ?? oldSound, sounds, oldSound),
-      breakOverSound: oneOf(rawTimer?.breakOverSound ?? oldSound, sounds, oldSound),
-      startChime: typeof t.startChime === "boolean" ? t.startChime : true,
-      startChimeSound: oneOf(t.startChimeSound, ["bubble", "music-box", "bell"] as const, "bubble"),
-      ticking: oneOf(t.ticking, ["off", "breaks", "focus", "both"] as const, "off"),
-      tickStyle: oneOf(t.tickStyle, ["soft", "wood", "digital"] as const, "soft"),
-      tickVolume: clamp(t.tickVolume, 0, 1, d.timer.tickVolume),
-      alertVolume: clamp(t.alertVolume, 0, 1, d.timer.alertVolume),
-      takeover: typeof t.takeover === "boolean" ? t.takeover : d.timer.takeover,
-      speak: typeof t.speak === "boolean" ? t.speak : d.timer.speak,
-      bringToFront: typeof t.bringToFront === "boolean" ? t.bringToFront : d.timer.bringToFront,
-      tally: oneOf(t.tally, ["dots", "tomato", "check", "star", "tree", "tokyo", "stem"] as const, d.timer.tally),
-    },
+    timer,
     clock: {
       ...s.clock,
       showStreak: typeof s.clock.showStreak === "boolean" ? s.clock.showStreak : false,
@@ -290,17 +317,7 @@ export const localPreferencesReady = Promise.all([localPreferences.ready, settin
 });
 
 
-// Presets, restore points and classification are device-local, like devicePreferences.
-export const CALM_PATCH = {
-  takeover: false, speak: false, bringToFront: false, notify: false,
-  interruptionPrompt: false, alertSound: "none", focusDoneSound: "none",
-  breakOverSound: "none", ticking: "off", autoRun: "off", countdownRepeat: false,
-} as const satisfies Partial<Settings["timer"]>;
-export type PresetFields = Pick<Settings["timer"], keyof typeof CALM_PATCH>;
-export function presetFields(timer: Settings["timer"]): PresetFields {
-  return Object.fromEntries(Object.keys(CALM_PATCH).map(key => [key, timer[key as keyof PresetFields]])) as PresetFields;
-}
-export const STRONG_PATCH = presetFields(DEFAULT_SETTINGS.timer);
+// Presets, restore points and classification are device-local, like devicePreferences (CALM_PATCH is defined above sanitizeSettings).
 export const quietTimer = (t: Settings["timer"]) => !t.takeover && !t.speak && !t.bringToFront && !t.notify &&
   !t.interruptionPrompt && t.focusDoneSound === "none" && t.breakOverSound === "none" && t.ticking === "off";
 interface PresetState {
@@ -312,19 +329,20 @@ interface PresetState {
   provisional: boolean;
 }
 // Nullable fields need a validator, rather than schema merging against null.
-const validPresetFields = (v: unknown): v is PresetFields => {
-  if (!v || typeof v !== "object" || Array.isArray(v)) return false;
+// A restore point saved before warnBefore existed is upgraded the same way as saved settings.
+const parsePresetFields = (v: unknown): PresetFields | null => {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
   const raw = v as Record<string, unknown>;
   const parsed = presetFields(sanitizeSettings({ timer: raw }).timer);
-  return Object.keys(CALM_PATCH).every(key => raw[key] === parsed[key as keyof PresetFields]);
+  return Object.keys(CALM_PATCH).every(key => (key === "warnBefore" && raw[key] === undefined) || raw[key] === parsed[key as keyof PresetFields]) ? parsed : null;
 };
 const samePreset = (a: PresetFields, b: PresetFields) => Object.keys(CALM_PATCH).every(key => a[key as keyof PresetFields] === b[key as keyof PresetFields]);
 const modeFor = (fields: PresetFields): PresetState["mode"] => samePreset(fields, CALM_PATCH) ? "Calm" : samePreset(fields, STRONG_PATCH) ? "Strong" : "Your setup";
 export const presetState = createStore<PresetState>("deviceCalmPreset", { mode: "Your setup", baseline: null, snapshot: null, snapshotMode: null, classified: false, provisional: false }, value => {
   const raw = value as Partial<PresetState> | null;
   return { mode: raw?.mode === "Calm" ? "Calm" : raw?.mode === "Strong" ? "Strong" : "Your setup", classified: raw?.classified === true, provisional: raw?.provisional === true,
-    baseline: validPresetFields(raw?.baseline) ? raw.baseline : null,
-    snapshot: validPresetFields(raw?.snapshot) ? raw.snapshot : null,
+    baseline: parsePresetFields(raw?.baseline),
+    snapshot: parsePresetFields(raw?.snapshot),
     snapshotMode: raw?.snapshotMode === "Calm" || raw?.snapshotMode === "Strong" || raw?.snapshotMode === "Your setup" ? raw.snapshotMode : null };
 });
 function deriveReceivedPreset() {

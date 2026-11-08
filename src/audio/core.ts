@@ -149,6 +149,29 @@ export function cancelEnd() {
   try { src.stop(); } catch { /* not started */ }
 }
 
+/**
+ * Call `onFire` after `inSeconds` on the audio clock, like scheduleEnd but independent of it.
+ * Returns a cancel function. Used for the soft warning before a block ends.
+ */
+export function watchAudioClock(inSeconds: number, onFire: () => void): () => void {
+  const c = getCtx();
+  const src = c.createConstantSource();
+  const mute = c.createGain();
+  mute.gain.value = 0;
+  src.connect(mute).connect(c.destination);
+  let live = true;
+  src.onended = () => { mute.disconnect(); if (live) { live = false; onFire(); } };
+  src.start();
+  src.stop(c.currentTime + Math.max(0, inSeconds));
+  return () => {
+    if (!live) return;
+    live = false;
+    src.onended = null;
+    try { src.stop(); } catch { /* not started */ }
+    mute.disconnect();
+  };
+}
+
 /** Includes released boundary voices and previews, without forgetting playing sources. */
 export function cancelAllChimes() {
   cancelChime();

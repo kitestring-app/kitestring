@@ -559,3 +559,20 @@ test('away recovery keeps saved and suspended future alarms silent until an expl
     assert.equal(sounds(h).length, 1);
   }
 });
+
+test('the heads-up before a focus block ends is speak-only, with a fixed line', () => {
+  for (const [announcement, line] of [
+    [{ phase: 'warning', minutes: 1 }, 'One minute left.'],
+    [{ phase: 'warning', minutes: 2 }, 'Two minutes left.'],
+    [{ phase: 'warning', minutes: 5 }, 'Five minutes left.'],
+    [{ phase: 'warning' }, 'Focus is nearly done.'],
+  ]) {
+    const h = harness();
+    assert.equal(h.services.speak({ kind: 'focus-done', announcement: { ...announcement, text: 'Untrusted text' } }), true);
+    assert.deepEqual(speech(h)[0].args, [line]);
+  }
+  const h = harness();
+  assert.equal(h.services.speak({ kind: 'focus-done', announcement: { phase: 'warning', minutes: 4 } }), false);
+  assert.equal(h.services.arm(alarm(h, { announcement: { phase: 'warning', minutes: 2 } })), false);
+  assert.equal(speech(h).length, 0);
+});
