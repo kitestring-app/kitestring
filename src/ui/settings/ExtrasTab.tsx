@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "../../lib/store";
-import { effectiveDefaultTab, floatingGlass, localPreferences, localPreferencesUpdate, settings, settingsUpdate, type Settings, type SettingsTab } from "../../state/settings";
-import { Toggle } from "./SettingsDrawer";
+import { effectiveDefaultTab, floatingGlass, localPreferences, localPreferencesUpdate, settings, settingsUpdate, windowEvents, type Settings, type SettingsTab, type WindowEndAction, type WindowStartAction } from "../../state/settings";
+import { Choices, Toggle } from "./SettingsDrawer";
 
 export function ExtrasTab() {
   const [parking, setParking] = useState<boolean | null>(null);
@@ -9,6 +9,7 @@ export function ExtrasTab() {
   const x = useStore(settings, (s) => s.extras);
   const local = useStore(localPreferences);
   const glass = useStore(floatingGlass);
+  const win = useStore(windowEvents);
   const set = (p: Partial<Settings["extras"]>) => settingsUpdate("extras", p);
   return (
     <>
@@ -25,6 +26,21 @@ export function ExtrasTab() {
         </label>
         <Toggle title="Show in menu bar" help="When hidden, open the app from the Dock." checked={local.showMenuBar} onChange={v => localPreferencesUpdate({ showMenuBar: v })} />
         <Toggle disabled={!local.showMenuBar} title="Show time in menu bar" help="The tooltip always shows the current time." checked={local.menuBarTime} onChange={v => localPreferencesUpdate({ menuBarTime: v })} />
+      </div>}
+      {window.desktop?.windowEvent && <div className="card window-events">
+        <h3>Window when focus starts and ends</h3>
+        <p className="help">Off by default. Applies on this Mac only.</p>
+        <div className="field-grid">
+          <label>When focus starts</label>
+          <Choices<WindowStartAction> value={win.onStart} onChange={onStart => windowEvents.set(s => ({ ...s, onStart }))} options={[
+            { id: "nothing", label: "Do nothing" }, { id: "minimise", label: "Minimise" }, { id: "floating", label: "Switch to floating timer" },
+          ]} />
+          <label>When focus ends</label>
+          <Choices<WindowEndAction> value={win.onEnd} onChange={onEnd => windowEvents.set(s => ({ ...s, onEnd }))} options={[
+            { id: "nothing", label: "Do nothing" }, { id: "restore", label: "Restore window" }, { id: "full", label: "Switch to full window" },
+          ]} />
+        </div>
+        <p className="help">Restore brings the dashboard back without taking the keyboard. Switch to full window also closes the floating timer.</p>
       </div>}
       {window.desktop?.getSecureDns && window.desktop?.setSecureDns && <SecureDnsSettings />}
       <div className="card">

@@ -20,6 +20,7 @@ const fs = require('node:fs');
 const { createAttentionLog } = require('./attention-log.cjs');
 const { attachFullscreen } = require('./fullscreen.cjs');
 const { createShowWorkspaces } = require('./show-workspaces.cjs');
+const { createWindowEvents, registerWindowEvents } = require('./window-events.cjs');
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: {
   standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true,
@@ -363,6 +364,8 @@ if (!app.requestSingleInstanceLock()) {
       stateFile: path.join(app.getPath('userData'), 'menu-bar.json'), setMenuBarVisible });
     registerMenuCommands(ipcMain, trustedSender, menuCommand);
     registerFloatingControls(ipcMain, { trustedMain: trustedSender, floating, controls: floatingControls, sendMain });
+    registerWindowEvents(ipcMain, { trustedMain: trustedSender, events: createWindowEvents({
+      mainWindow: () => window, floatingControls: () => floatingControls, fullscreen: () => fullscreen, showWorkspaces }) });
     parking = createParking({ BrowserWindow, screen, globalShortcut, deliver: text => {
       if (!window || window.isDestroyed() || window.webContents.isLoadingMainFrame()) return false;
       window.webContents.send('desktop:parked', text);

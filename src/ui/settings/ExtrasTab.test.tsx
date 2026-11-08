@@ -49,3 +49,20 @@ it("dims only a disabled switch, preserving its explanatory text", () => {
   const input = elements(label).find(el => el.type === "input")!;
   expect((input.props as unknown as { style: object }).style).toEqual({ opacity: 0.5 });
 });
+
+it("window on start and end appears only in the Mac app and saves each choice", async () => {
+  const { windowEvents, DEFAULT_WINDOW_EVENTS } = await import("../../state/settings");
+  const { Choices } = await import("./SettingsDrawer");
+  vi.stubGlobal("navigator", {});
+  vi.stubGlobal("window", {});
+  const choices = () => elements(ExtrasTab()).filter(el => el.type === Choices) as unknown as ReactElement<{ value: string; onChange: (v: string) => void; options: { id: string }[] }>[];
+  expect(choices()).toHaveLength(0);
+  vi.stubGlobal("window", { desktop: { windowEvent: vi.fn() } });
+  const [start, end] = choices();
+  expect(start.props.options.map(o => o.id)).toEqual(["nothing", "minimise", "floating"]);
+  expect(end.props.options.map(o => o.id)).toEqual(["nothing", "restore", "full"]);
+  expect([start.props.value, end.props.value]).toEqual(["nothing", "nothing"]);
+  start.props.onChange("floating"); end.props.onChange("full");
+  expect(windowEvents.get()).toEqual({ onStart: "floating", onEnd: "full" });
+  windowEvents.set(DEFAULT_WINDOW_EVENTS);
+});

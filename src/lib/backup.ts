@@ -38,6 +38,7 @@ export const STORE_CLASS = {
   intent: { class: "content", section: "focus" },
   devicePreferences: { class: "device", section: "device" },
   floatingGlass: { class: "device", section: "device" },
+  windowEvents: { class: "device", section: "device" },
   customBgs: { class: "content", section: "images" },
   deviceCalmPreset: { class: "internal", section: null },
   clockPresence: { class: "internal", section: null },
@@ -101,6 +102,8 @@ const checks: Record<BackupKey, (v: unknown) => string | null> = {
   stopOutcomes: v => validStopOutcomes(v) ? null : 'stop labels',
   devicePreferences: value => isObj(value) && Object.values(value).every(v => typeof v === "boolean") ? null : "device preferences",
   floatingGlass: value => isObj(value) && isNum(value.opacity, 0, 1) ? null : "floating timer opacity",
+  windowEvents: value => isObj(value) && ["nothing", "minimise", "floating"].includes(value.onStart as string) &&
+    ["nothing", "restore", "full"].includes(value.onEnd as string) ? null : "window on start and end",
   intent: value => parseIntentDocument(value) ? null : "next action",
   settings: (v) => (isObj(v) ? null : "settings"), // shape and ranges are enforced by sanitizeSettings on load
   timer: (v) => (isObj(v) && ["focus", "short", "long"].includes(v.segment as string) && isNum(v.elapsedBefore, 0, DAY) && isNum(v.round, 0, 1000) &&

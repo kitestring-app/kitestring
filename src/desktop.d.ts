@@ -66,6 +66,7 @@ declare global {
       onFullScreenTransition?: (callback: (phase: "start" | "end") => void) => () => void;
       floatTimer?: (open: boolean) => Promise<boolean>;
       onFloatTimer?: (callback: (open: boolean) => void) => () => void;
+      windowEvent?: (action: "minimise" | "floating" | "restore" | "full") => void;
       showMain?: () => void;
       timerControl?: (action: DesktopTimerCommand | "endSession") => Promise<DesktopTimerResult>;
       onTimerRequest?: (callback: (action: DesktopTimerCommand, origin?: DesktopTimerOrigin) => Promise<DesktopTimerResult>) => () => void;
