@@ -116,3 +116,13 @@ it.each(["pause", "off"] as const)("drops the spoken line if the block changes d
   await vi.advanceTimersByTimeAsync(2_000);
   expect(q.speech.speak).not.toHaveBeenCalled();
 });
+
+it("switching to Hidden time stops a spoken heads-up that names the minutes", async () => {
+  const q = await setup(false);
+  q.timerActions.start();
+  await vi.advanceTimersByTimeAsync(8 * MIN + 2_000);
+  expect(q.speech.speak).toHaveBeenCalledTimes(1);
+  q.speech.cancel.mockClear();
+  q.s.settingsUpdate("timer", { display: "hidden" });
+  expect(q.speech.cancel).toHaveBeenCalled();
+});

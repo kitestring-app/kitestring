@@ -371,7 +371,15 @@ function speakEndWarning(minutes: number) {
     return;
   }
   if (!("speechSynthesis" in window)) return;
-  try { window.speechSynthesis.speak(new SpeechSynthesisUtterance(endWarningLine(minutes, t.display))); } catch { /* Speech is optional. */ }
+  try {
+    const utterance = new SpeechSynthesisUtterance(endWarningLine(minutes, t.display));
+    // Tracked like a timed announcement, so switching to Hidden time stops a line that names the minutes.
+    if (t.display !== "hidden") {
+      pageAnnouncement = utterance;
+      utterance.onend = utterance.onerror = () => { if (pageAnnouncement === utterance) pageAnnouncement = null; };
+    }
+    window.speechSynthesis.speak(utterance);
+  } catch { /* Speech is optional. */ }
 }
 
 /** Arm or disarm the end chime + end watch to match the timer. Idempotent; only the leader tab plays audio. */
