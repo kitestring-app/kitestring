@@ -42,6 +42,15 @@ contextBridge.exposeInMainWorld('desktop', Object.freeze(mini ? {
     if (['settings', 'home', 'focus', 'ambient', 'tasks', 'sounds', 'notes', 'toggle', 'skip', 'reset', 'shortcuts', 'stop', 'stopSound', 'stopAndPause', 'endSession'].includes(value)) callback(value);
   }),
   parkingStatus: () => ipcRenderer.invoke('desktop:parking-status'),
+  setGlobalHotkeys: (value) => {
+    const keys = ['showApp', 'toggle', 'stop', 'skip'];
+    const flag = !!value && typeof value === 'object' && 'recording' in value;
+    const valid = !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === (flag ? 5 : 4) &&
+      (!flag || typeof value.recording === 'boolean') &&
+      keys.every(key => value[key] === null || (typeof value[key] === 'string' && value[key].length <= 64));
+    if (!valid) return Promise.resolve(null);
+    return ipcRenderer.invoke('desktop:global-hotkeys', { showApp: value.showApp, toggle: value.toggle, stop: value.stop, skip: value.skip, ...(flag ? { recording: value.recording } : {}) });
+  },
   toggleFullScreen: () => ipcRenderer.invoke('desktop:toggle-fullscreen'),
   onFullScreenTransition: (callback) => subscribe('desktop:fullscreen-transition', value => { if (value === 'start' || value === 'end') callback(value); }),
   consumeSuspensionAt: () => { const value = ipcRenderer.sendSync('desktop:consume-suspension-at'); return value && typeof value.at === 'number' && Number.isFinite(value.at) && typeof value.suspended === 'boolean' ? { at: value.at, suspended: value.suspended } : null; },
