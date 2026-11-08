@@ -64,6 +64,25 @@ describe("quick-pick lengths", () => {
     expect(m.timer.get()).toMatchObject({ segment: "focus", round: 1, frozenTotal: 15 * 60_000 });
   });
 
+  it.each([["pomodoro", "short"], ["5217", "short"], ["animedoro", "long"], ["countdown", null], ["stopwatch", null]] as const)(
+    "a break pick in %s mode starts the mode's own break (%s), or nothing when it has none", (mode, segment) => {
+      m.settingsUpdate("timer", { mode });
+      expect(m.quickBreakSegment(mode, "focus")).toBe(segment);
+      expect(pick("break", 10)).toBe(segment !== null);
+      if (segment) expect(m.timer.get()).toMatchObject({ segment, frozenTotal: 10 * 60_000 });
+      else expect(m.timer.get()).toMatchObject({ segment: "focus", segId: "first", startedAt: null });
+    });
+
+  it("refuses a length that is no longer on the list", () => {
+    expect(pick("focus", 45)).toBe(false);
+    expect(pick("break", 15)).toBe(false);
+    expect(pick("break", 25)).toBe(false); // a focus length is not a break length
+    m.settingsUpdate("timer", { quickPicks: { ...m.settings.get().timer.quickPicks, focus: [15, 50] } });
+    expect(pick("focus", 25)).toBe(false);
+    expect(m.timer.get().startedAt).toBeNull();
+    expect(pick("focus", 50)).toBe(true);
+  });
+
   it("refuses stale, running, paused or invalid picks", () => {
     expect(m.startQuickPick("someone-else", "focus", 25)).toBe(false);
     for (const minutes of [0, -5, 2.5, 601, Number.NaN, Number.POSITIVE_INFINITY]) expect(pick("focus", minutes)).toBe(false);

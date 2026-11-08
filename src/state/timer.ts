@@ -1034,12 +1034,16 @@ export function startTinyBlock(expectedSegId: string, minutes: number): boolean 
 
 export type QuickPickKind = "focus" | "break";
 /** A one-off block from a quick pick: like a tiny start, but for focus or a break and without tiny-start progress.
- *  Only from an untouched idle block, never under Hard mode, and stale clicks cannot replace a run. Saved lengths stay put. */
+ *  Only from an untouched idle block and only a length still on the list; stale clicks cannot replace a run.
+ *  Like tiny start, it may begin an idle block while Hard mode is on, and that block is then locked. Saved lengths stay put. */
 export function startQuickPick(expectedSegId: string, kind: QuickPickKind, minutes: number): boolean {
   const s = timer.get();
-  if (!canWriteClockStore("timer") || !T().quickPicks.enabled || hardModeLocked(s) || s.segId !== expectedSegId || s.startedAt !== null || s.elapsedBefore > 0 ||
-    s.boundary || s.reentry || recoveryOffer() || !Number.isInteger(minutes) || minutes < 1 || minutes > QUICK_PICK_MAX_MINUTES) return false;
-  const want: E.Segment = kind === "focus" ? "focus" : s.segment === "long" ? "long" : "short";
+  const picks = T().quickPicks;
+  if (!canWriteClockStore("timer") || !picks.enabled || hardModeLocked(s) || s.segId !== expectedSegId || s.startedAt !== null || s.elapsedBefore > 0 ||
+    s.boundary || s.reentry || recoveryOffer() || !Number.isInteger(minutes) || minutes < 1 || minutes > QUICK_PICK_MAX_MINUTES ||
+    !(kind === "focus" ? picks.focus : picks.breaks).includes(minutes)) return false;
+  const want = kind === "focus" ? "focus" : E.quickBreakSegment(T().mode, s.segment);
+  if (!want) return false;
   // Switching segment from an idle block has no time to credit; advance keeps the round and the pinned context.
   const next = s.segment === want ? s : E.advance(s, { ...T(), autoRun: "off" }, Date.now(), false, want);
   purposefulAction();
