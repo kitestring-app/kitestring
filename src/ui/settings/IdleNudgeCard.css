@@ -1,0 +1,2 @@
+/* Seven weekday toggles fit one row in the settings column; they still wrap on phones. */
+.segmented.nudge-days button { padding: 8px 10px; min-width: 44px; }

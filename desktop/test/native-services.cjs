@@ -559,3 +559,30 @@ test('away recovery keeps saved and suspended future alarms silent until an expl
     assert.equal(sounds(h).length, 1);
   }
 });
+
+test('idle nudge shows a silent click-to-open notification without touching alarms, attention or sound', () => {
+  const h = harness();
+  h.services.arm(alarm(h));
+  const pending = structuredClone(h.services.snapshot().pending);
+  const writes = h.writes.length;
+  assert.equal(h.services.nudge('  Ready when\nyou are  '), true);
+  const [n] = h.notifications;
+  assert.deepEqual(n.options, { title: 'Kitestring', body: 'Ready when you are', silent: true, actions: [] });
+  assert.equal(n.shown, 1);
+  n.emit('click');
+  assert.equal(h.shown(), 1);
+  assert.deepEqual(h.attention, []);
+  assert.deepEqual(h.processes, []);
+  assert.deepEqual(h.services.snapshot().pending, pending);
+  assert.equal(h.writes.length, writes);
+  assert.equal(h.services.nudge(''), false);
+  assert.equal(h.services.nudge(42), false);
+  assert.equal(h.services.nudge('x'.repeat(500)), true);
+  assert.equal(h.notifications.at(-1).options.body.length, 200);
+});
+
+test('idle nudge reports false when macOS notifications are unsupported', () => {
+  const h = harness({ supported: false });
+  assert.equal(h.services.nudge('Start'), false);
+  assert.equal(h.notifications.length, 0);
+});
