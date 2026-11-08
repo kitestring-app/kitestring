@@ -21,7 +21,7 @@ vi.mock("../../audio/core", () => ({ previewChime: vi.fn() }));
 vi.mock("../../audio/companion", () => ({ companionAvailable: vi.fn(), testCompanion: vi.fn().mockResolvedValue(true) }));
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
 
-type Props = { children?: ReactNode; "aria-label"?: string; onClick?: () => void };
+type Props = { children?: ReactNode; "aria-label"?: string; onClick?: () => void; id?: string; placeholder?: string; maxLength?: number; onChange?: (e: unknown) => void };
 function elements(node: ReactNode): ReactElement<Props>[] {
   return Children.toArray(node).flatMap(child => isValidElement<Props>(child) ? [child, ...elements(child.props.children)] : []);
 }
@@ -111,4 +111,18 @@ it("start preview rechecks mute even when an older button handler is retained", 
   button.props.onClick!(); expect(playStartChime).not.toHaveBeenCalled();
   localPreferences.set(s => ({ ...s, muted: false }));
   button.props.onClick!(); expect(playStartChime).toHaveBeenCalledWith("bubble", DEFAULT_SETTINGS.timer.alertVolume);
+});
+
+it("edits the focus done and break over reminder text", async () => {
+  await settings.ready;
+  settings.set(DEFAULT_SETTINGS);
+  const inputs = elements(TimerTab()).filter(el => el.type === "input");
+  const focus = inputs.find(el => el.props.id === "focus-done-text")!, rest = inputs.find(el => el.props.id === "break-over-text")!;
+  expect(focus.props.placeholder).toBe("Focus session done. Time for a break.");
+  expect(rest.props.placeholder).toBe("Break is over. Time to focus.");
+  expect(focus.props.maxLength).toBe(140);
+  focus.props.onChange!({ target: { value: "Stretch." } });
+  rest.props.onChange!({ target: { value: "Back to it." } });
+  expect(settings.get().timer.focusDoneText).toBe("Stretch.");
+  expect(settings.get().timer.breakOverText).toBe("Back to it.");
 });

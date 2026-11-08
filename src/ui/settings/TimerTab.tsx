@@ -4,6 +4,7 @@ import { useTimerView } from "../../state/timer";
 import { useStore } from "../../lib/store";
 import { applySupportPreset, localPreferences, presetState, quietTimer, supportPresetLabel, settings, settingsUpdate, type Settings, type TimerMode, type TimerStyle, type TallyId } from "../../state/settings";
 import { previewChime, type AlertSound } from "../../audio/core";
+import { ALERT_TEXT_MAX, SPOKEN_REMINDER } from "../../audio/alertText";
 import { FlipPalettePicker } from "../timer/FlipPalettePicker";
 import { FACES } from "../timer/faces";
 import { Choices, Toggle } from "./SettingsDrawer";
@@ -235,6 +236,13 @@ export function TimerTab() {
         <Toggle title="Full-screen break/focus reminder" help="Keep the next step on screen until you choose it." checked={t.takeover} onChange={(v) => set({ takeover: v })} />
         <Toggle title="Say it out loud" help="Speak a short reminder after the alert sound." checked={t.speak} onChange={(v) => set({ speak: v })} />
         <Toggle title="Bring the app to the front (Mac app)" help="Bring the reminder forward when a segment ends." checked={t.bringToFront} onChange={(v) => set({ bringToFront: v })} />
+        <div className="field-grid" aria-disabled={!t.notify && !t.speak}>
+          <label htmlFor="focus-done-text">Focus done text</label>
+          <input id="focus-done-text" className="input" maxLength={ALERT_TEXT_MAX} placeholder={SPOKEN_REMINDER["focus-done"]} value={t.focusDoneText} onChange={e => set({ focusDoneText: e.target.value })} aria-describedby="alert-text-help" />
+          <label htmlFor="break-over-text">Break over text</label>
+          <input id="break-over-text" className="input" maxLength={ALERT_TEXT_MAX} placeholder={SPOKEN_REMINDER["break-over"]} value={t.breakOverText} onChange={e => set({ breakOverText: e.target.value })} aria-describedby="alert-text-help" />
+        </div>
+        <p id="alert-text-help" className="help">Your own words for the notification and the spoken reminder. Leave blank for the default.</p>
       </div>
 
       <div className="card">

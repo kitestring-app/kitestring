@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { canWriteClockStore, clearStoredProfile, registerClockAction, requestClockAction, CLOCK_OWNED_KEYS, executeClockAction, registerClockOwner, registerClockForwarder, refreshClockStores, createStore, flushReadyStores, registerPersistenceGroup, registerPersistenceOwner, uid, storeReady, storeSource, useStore } from "../lib/store";
 import { playTimerTick, cancelAllChimes, cancelChime, cancelEnd, releaseChime, scheduleChime, scheduleEnd } from "../audio/core";
 import { ALERT_TEXT, type AlertKind } from "../audio/alertSynth";
+import { SPOKEN_REMINDER, customAlertText } from "../audio/alertText";
 import { armCompanionWithSpeech, companionAvailable, companionKnownUp, disarmCompanion } from "../audio/companion";
 import { calmFoundationReady, localPreferences, quietTimer, settings } from "./settings";
 import { boundaryAlert, repeatBoundarySound } from "../audio/boundaryAlert";
@@ -310,7 +311,7 @@ function announce(kind: AlertKind, announcement?: DesktopAnnouncement) {
     // This queued boundary belongs to the page, even if its timed line becomes generic.
     if (!T().speak) return;
     const task = currentTask(tasks.get())?.title.trim();
-    const reminder = kind === "focus-done" ? "Focus session done. Time for a break." : "Break is over. Time to focus.";
+    const reminder = customAlertText(T(), kind) || SPOKEN_REMINDER[kind];
     const utterance = new SpeechSynthesisUtterance(line ?? reminder + (task ? ` Next up: ${task}` : ""));
     if (line) {
       pageAnnouncement = utterance;
@@ -363,11 +364,12 @@ function syncAudio() {
   // The page owns timed auto-run speech; Hidden uses the companion's generic reminder.
   const companionSpeak = speak && (!autoRunEnabled() || T().display === "hidden");
   reminderStatus.set("");
-  const key = `${s.segId}:${s.startedAt}:${total}:${T().display}:${alertSound}:${alertVolume}:${speak}:${T().autoRun}:${T().countdownRepeat}:${T().notify}:${T().bringToFront}:${T().longEvery}:${JSON.stringify(T().lengths)}`;
+  const key = `${s.segId}:${s.startedAt}:${total}:${T().display}:${alertSound}:${alertVolume}:${speak}:${T().autoRun}:${T().countdownRepeat}:${T().notify}:${T().bringToFront}:${JSON.stringify([T().focusDoneText, T().breakOverText])}:${T().longEvery}:${JSON.stringify(T().lengths)}`;
   if (key === armedKey) return;
   armedKey = key;
   const leftMs = E.remaining(s, total, Date.now());
   const kind: AlertKind = s.segment === "focus" ? "focus-done" : "break-over";
+  const text = customAlertText(T(), kind);
   const seg = s.segId;
   if (window.desktop?.armAlarm) {
     cancelChime();
@@ -378,7 +380,7 @@ function syncAudio() {
       next.startedAt !== null ? { phase: next.segment === "focus" ? "focus" : "break", minutes: liveTotal(next)! / 60_000 } : undefined);
     void window.desktop.armAlarm({ at: s.startedAt + total - s.elapsedBefore, kind, alertSound,
       volume: alertSound === "none" ? 0 : alertVolume, speak, notify: T().notify, attention: T().bringToFront,
-      genericSpeech: speech.genericSpeech, ...(speech.native ? { announcement: speech.native } : {}) }).then(ok => {
+      genericSpeech: speech.genericSpeech, ...(speech.native ? { announcement: speech.native } : {}), ...(text ? { text } : {}) }).then(ok => {
         if (armedKey !== key) return;
         if (!ok) throw new Error("Native reminder unavailable");
       }).catch(() => {
@@ -390,7 +392,7 @@ function syncAudio() {
   }
   scheduleEnd(leftMs / 1000, () => timerActions.complete(seg, missedEnding()));
   // the macOS companion rings even if Chrome is closed; when it's up, the page stays quiet to avoid a double alert
-  void armCompanionWithSpeech(Date.now() + leftMs, kind, alertSound === "none" ? 0 : alertVolume, companionSpeak, alertSound).then((ok) => {
+  void armCompanionWithSpeech(Date.now() + leftMs, kind, alertSound === "none" ? 0 : alertVolume, companionSpeak, alertSound, ...(text ? [text] : [])).then((ok) => {
     if (armedKey !== key) return;
     if (ok) cancelChime();
     else scheduleChime(alertSound, alertVolume, E.remaining(timer.get(), totalMs(), Date.now()) / 1000, kind);
@@ -663,8 +665,9 @@ function notify(ended: E.Segment) {
   if (companionKnownUp()) return; // the companion already posted a native notification
   if (!T().notify || !("Notification" in window) || Notification.permission !== "granted") return;
   const anime = T().mode === "animedoro";
-  const text = ALERT_TEXT[ended === "focus" ? "focus-done" : "break-over"];
-  const body = ended === "focus" && anime ? "Focus done. Enjoy an episode." : text.body;
+  const kind: AlertKind = ended === "focus" ? "focus-done" : "break-over";
+  const text = ALERT_TEXT[kind];
+  const body = customAlertText(T(), kind) || (ended === "focus" && anime ? "Focus done. Enjoy an episode." : text.body);
   try {
     new Notification(text.title, { body, silent: true, tag: "custom-pomodoro", requireInteraction: true });
   } catch {

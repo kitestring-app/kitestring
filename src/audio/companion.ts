@@ -35,12 +35,13 @@ export async function armCompanion(at: number, kind: AlertKind, volume: number, 
 }
 
 /** Arms the transition announcement as well as the native chime. Zero volume means speech only. */
-export async function armCompanionWithSpeech(at: number, kind: AlertKind, volume: number, speak: boolean, alertSound: AlertSound = "signature"): Promise<boolean> {
-  if (typeof window !== "undefined" && window.desktop?.armAlarm) return window.desktop.armAlarm({ at, kind, volume, speak, alertSound });
+export async function armCompanionWithSpeech(at: number, kind: AlertKind, volume: number, speak: boolean, alertSound: AlertSound = "signature", text?: string): Promise<boolean> {
+  const custom = text ? { text } : {}; // Custom notification and spoken text; omitted means the default.
+  if (typeof window !== "undefined" && window.desktop?.armAlarm) return window.desktop.armAlarm({ at, kind, volume, speak, alertSound, ...custom });
   const version = ++alarmVersion;
   if (!(await companionAvailable()) || version !== alarmVersion) return false;
   try {
-    const r = await queueAlarm(() => version === alarmVersion ? fetch("/api/alarm", { method: "POST", headers: HEADERS, body: JSON.stringify({ at, kind, volume, speak, alertSound }) }) : Promise.resolve(null));
+    const r = await queueAlarm(() => version === alarmVersion ? fetch("/api/alarm", { method: "POST", headers: HEADERS, body: JSON.stringify({ at, kind, volume, speak, alertSound, ...custom }) }) : Promise.resolve(null));
     if (!r) return false;
     if (!r.ok) throw new Error(String(r.status));
     return true;

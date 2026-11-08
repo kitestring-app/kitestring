@@ -4,7 +4,7 @@
 //
 // API (same-origin only, JSON, custom header required so other websites can't call it):
 //   GET    /api/health            -> { ok, version, alarm }
-//   POST   /api/alarm  { at, kind, volume, speak, alertSound }   (replaces any pending alarm)
+//   POST   /api/alarm  { at, kind, volume, speak, alertSound, text? }   (replaces any pending alarm)
 //   DELETE /api/alarm
 import { createServer } from "node:http";
 import { execFile } from "node:child_process";
@@ -14,7 +14,7 @@ import { dirname, extname, join, resolve, sep } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import alertFiles from "../desktop/alert-files.cjs";
-const { alertFile, validAlertSound } = alertFiles;
+const { alertFile, validAlertSound, validAlertText } = alertFiles;
 
 const VERSION = 1;
 const PORT = Number(process.argv[2] ?? 4747);
@@ -58,7 +58,10 @@ function save() {
 function ring(a) {
   stopSound();
   const version = speechVersion;
-  const { title, body } = TEXT[a.kind];
+  const { title } = TEXT[a.kind];
+  // Custom text (checked by valid()) replaces the notification body and the spoken line.
+  const body = a.text ?? TEXT[a.kind].body;
+  const spoken = a.text ?? TEXT[a.kind].spoken;
   // native notification (click opens the dashboard); no shell, fixed arguments
   execFile("/opt/homebrew/bin/terminal-notifier", ["-title", "Kitestring", "-subtitle", title, "-message", body, "-group", "custom-pomodoro", "-open", `http://localhost:${PORT}/`, "-ignoreDnD"], (err) => {
     if (err) execFile("/usr/bin/osascript", ["-e", `display notification ${JSON.stringify(body)} with title "Kitestring" subtitle ${JSON.stringify(title)}`], () => {});
@@ -67,7 +70,7 @@ function ring(a) {
   const vol = String(Math.min(1, Math.max(0, a.volume)));
   const speak = () => {
     if (!a.speak || version !== speechVersion) return;
-    const child = execFile("/usr/bin/say", [TEXT[a.kind].spoken], () => {
+    const child = execFile("/usr/bin/say", [spoken], () => {
       if (speaking === child) speaking = null;
     });
     speaking = child;
@@ -106,7 +109,7 @@ try {
 function valid(a) {
   return a && typeof a === "object" && Number.isFinite(a.at) && a.at > Date.now() - 60_000 && a.at < Date.now() + 24 * 3600_000
     && (a.kind === "focus-done" || a.kind === "break-over") && Number.isFinite(a.volume) && a.volume >= 0 && a.volume <= 1
-    && typeof a.speak === "boolean" && validAlertSound(a.alertSound);
+    && typeof a.speak === "boolean" && validAlertSound(a.alertSound) && validAlertText(a.text);
 }
 
 // ---------- http ----------
@@ -145,7 +148,7 @@ const server = createServer(async (req, res) => {
       try {
         const a = await readBody(req);
         if (!valid(a)) return json(res, 400, { ok: false });
-        schedule({ at: a.at, kind: a.kind, volume: a.volume, speak: a.speak, alertSound: a.alertSound ?? "signature" });
+        schedule({ at: a.at, kind: a.kind, volume: a.volume, speak: a.speak, alertSound: a.alertSound ?? "signature", ...(a.text !== undefined ? { text: a.text } : {}) });
         return json(res, 200, { ok: true });
       } catch {
         return json(res, 400, { ok: false });

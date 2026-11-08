@@ -98,6 +98,24 @@ describe("native spoken line", () => {
     expect(calls.map(([path]) => path)).toEqual(["/opt/homebrew/bin/terminal-notifier", "/usr/bin/afplay", "/usr/bin/say"]);
     expect(calls.at(-1)?.[1]).toEqual([kind === "focus-done" ? "Focus session done. Time for a break." : "Break is over. Time to focus."]);
   });
+  it.each(["focus-done", "break-over"])("uses validated custom %s text for the notification and the spoken line", (kind) => {
+    const { ring, execFile, valid } = alarmFunctions();
+    const base = { at: Date.now() + 60_000, kind, volume: 0.5, speak: true };
+    expect(valid({ ...base, text: "Stretch and refill your water." })).toBe(true);
+    for (const text of ["", " x", "x\n", "-o /tmp/out", "x".repeat(141), 1, null, {}]) expect(valid({ ...base, text })).toBe(false);
+    ring({ kind, volume: 0.8, speak: true, text: "Stretch and refill your water." });
+    const calls = execFile.mock.calls;
+    expect(calls[0][1]).toEqual(expect.arrayContaining(["-message", "Stretch and refill your water."]));
+    expect(calls.at(-1)).toEqual(["/usr/bin/say", ["Stretch and refill your water."], expect.any(Function)]);
+  });
+  it("stores posted custom text with the pending alarm", async () => {
+    vi.useFakeTimers();
+    const { post, writes } = alarmFunctions();
+    const alarm = { at: Date.now() + 60_000, kind: "focus-done", volume: 0.4, speak: true, alertSound: "wood", text: "Stand up." };
+    expect((await post("/api/alarm", alarm)).status).toBe(200);
+    expect(JSON.parse(writes.mock.calls.at(-1)![1])).toEqual(alarm);
+    expect((await post("/api/alarm", { ...alarm, text: "-o /tmp/x" })).status).toBe(400);
+  });
   it("does not speak when disabled and supports speech with no chime", () => {
     const { ring, execFile } = alarmFunctions();
     ring({ kind: "focus-done", volume: 0.8, speak: false });

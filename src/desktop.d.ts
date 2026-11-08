@@ -25,6 +25,8 @@ declare global {
     attention?: boolean;
     announcement?: DesktopAnnouncement;
     genericSpeech?: boolean;
+    /** Custom notification body and spoken reminder for this boundary (one line, max 140 characters). */
+    text?: string;
   }
   interface CloudReply { status: number; retryAfter?: string | null; data: { ok: boolean; email?: string; error?: string; entries?: { key: string; value: unknown; updatedAt: number }[] } }
   interface Window {

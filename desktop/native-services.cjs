@@ -1,6 +1,6 @@
 const path = require('node:path');
 const fs = require('node:fs');
-const { alertFile, validAlertSound } = require('./alert-files.cjs');
+const { alertFile, validAlertSound, validAlertText } = require('./alert-files.cjs');
 
 function readJSON(file) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; } }
 function writeJSON(file, value) {
@@ -18,6 +18,7 @@ function announcement(input) {
     return `${a.phase === 'focus' ? 'Focus' : 'Break'} started. ${a.minutes} ${a.minutes === 1 ? 'minute' : 'minutes'}.`;
   }
   if (a.phase !== undefined) return null;
+  if (input.text !== undefined) return validAlertText(input.text) ? input.text : null;
   return input.kind === 'focus-done' ? 'Focus session done. Time for a break.' : 'Break is over. Time to focus.';
 }
 function createNativeServices({ Notification, powerSaveBlocker, execFile, stateFile, alertsDir, attention, showWindow, onRing = () => {}, onStopSound = () => {},
@@ -32,10 +33,10 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
   function stopSound() { sound?.kill(); sound = null; }
   function notificationStatus() { return { supported: !!Notification?.isSupported(), failed }; }
   const delivered = [];
-  function notify(kind, test = false) {
+  function notify(kind, test = false, text) {
     if (!notificationStatus().supported) return;
     const current = new Notification({ title: kind === 'focus-done' ? 'Focus complete' : 'Break over',
-      body: kind === 'focus-done' ? 'Time for a break.' : 'Time to focus.', silent: true,
+      body: text ?? (kind === 'focus-done' ? 'Time for a break.' : 'Time to focus.'), silent: true,
       actions: test ? [] : [{ type: 'button', text: 'Stop Sound' }] });
     // A test reminder never takes over the live alarm's Stop Sound.
     if (!test) notification = current;
@@ -62,7 +63,7 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
     activeAnnouncement = a;
     const token = version;
     const afterSound = () => { if (token !== version) return; sound = null; if (a.speak) speak(a); };
-    if (a.notify !== false) notify(a.kind);
+    if (a.notify !== false) notify(a.kind, false, a.text);
     if (a.attention !== false) attention(a.kind);
     const file = alertFile(a.alertSound, a.kind);
     if (file && a.volume > 0) {
@@ -96,6 +97,7 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
     return input && typeof input === 'object' && Number.isFinite(input.at) && input.at >= now() - 60000 && input.at <= now() + 48 * 3600000 &&
       kinds.includes(input.kind) && validAlertSound(input.alertSound) && Number.isFinite(input.volume) && typeof input.speak === 'boolean' &&
       (input.genericSpeech === undefined || typeof input.genericSpeech === 'boolean') &&
+      validAlertText(input.text) &&
       (input.notify === undefined || typeof input.notify === 'boolean') && (input.attention === undefined || typeof input.attention === 'boolean') &&
       (input.announcement === undefined || (input.announcement && ['focus', 'break', 'cycle'].includes(input.announcement.phase) && announcement(input) !== null));
   }
@@ -110,6 +112,7 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
     if (`${input.kind}:${input.at}` === lastFired) return true;
     pending = { at: input.at, kind: input.kind, alertSound: input.alertSound ?? 'signature', volume: Math.min(1, Math.max(0, input.volume)), speak: input.speak,
       notify: input.notify !== false, attention: input.attention !== false,
+      ...(input.text !== undefined ? { text: input.text } : {}),
       ...(input.genericSpeech !== undefined ? { genericSpeech: input.genericSpeech } : {}),
       ...(input.announcement ? { announcement: { phase: input.announcement.phase, ...(input.announcement.minutes !== undefined ? { minutes: input.announcement.minutes } : {}) } } : {}) };
     save(); check(); return true;
