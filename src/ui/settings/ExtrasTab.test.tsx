@@ -49,3 +49,24 @@ it("dims only a disabled switch, preserving its explanatory text", () => {
   const input = elements(label).find(el => el.type === "input")!;
   expect((input.props as unknown as { style: object }).style).toEqual({ opacity: 0.5 });
 });
+
+it("Mac menu bar text options are opt-in, device-local and follow the time preference", async () => {
+  const { menuBarText, DEFAULT_MENU_BAR_TEXT } = await import("../../state/menuBar");
+  await localPreferencesReady; menuBarText.set(DEFAULT_MENU_BAR_TEXT);
+  vi.stubGlobal("window", { desktop: { floatTimer: vi.fn() } }); vi.stubGlobal("navigator", {});
+  for (const menuBarTime of [true, false]) {
+    localPreferencesUpdate({ showMenuBar: true, menuBarTime });
+    const controls = elements(ExtrasTab());
+    const task = controls.find(el => el.props.title === "Show what you’re working on")!;
+    expect(task.props.checked).toBe(false);
+    for (const title of ["Show what you’re working on", "Show time during breaks", "Show seconds in menu bar"]) expect(controls.find(el => el.props.title === title)!.props.disabled).toBe(!menuBarTime);
+    expect(controls.some(el => el.props["aria-label" as keyof ToggleProps] === "Longest task name")).toBe(false);
+  }
+  localPreferencesUpdate({ menuBarTime: true });
+  elements(ExtrasTab()).find(el => el.props.title === "Show what you’re working on")!.props.onChange(true);
+  expect(menuBarText.get()).toEqual({ ...DEFAULT_MENU_BAR_TEXT, task: true });
+  const length = elements(ExtrasTab()).find(el => el.type === "select" && (el.props as { "aria-label"?: string })["aria-label"] === "Longest task name")!;
+  (length.props as unknown as { onChange: (e: { target: { value: string } }) => void }).onChange({ target: { value: "16" } });
+  expect(menuBarText.get().maxLength).toBe(16);
+  expect(settings.get()).toEqual(DEFAULT_SETTINGS);
+});

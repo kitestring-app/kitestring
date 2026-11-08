@@ -281,3 +281,17 @@ it("the idle reminder travels only in the device section, validated, and never s
   expect(() => b.parseBackup(wrap({ ...mine, every: 2 }))).toThrow(/idle reminder/);
   expect(() => b.parseBackup(wrap({ ...mine, from: "9am" }))).toThrow(/idle reminder/);
 });
+
+it("carries the menu bar text options in the device section only", async () => {
+  const b = await import("./backup"); const s = await import("../state/settings"); await s.calmFoundationReady;
+  const { menuBarText, DEFAULT_MENU_BAR_TEXT } = await import("../state/menuBar");
+  await menuBarText.ready;
+  const chosen = { task: true, maxLength: 16, breakTime: false, seconds: false };
+  menuBarText.set(chosen);
+  expect(b.parseBackup(await b.createBackup({ sections: ["sounds"] })).data).not.toHaveProperty("menuBarText");
+  const parsed = b.parseBackup(await b.createBackup({ sections: ["device"] }));
+  expect(parsed.data.menuBarText).toEqual(chosen);
+  menuBarText.set(DEFAULT_MENU_BAR_TEXT);
+  await b.restoreBackup(parsed, metadata, ["device"]);
+  expect(menuBarText.get()).toEqual(chosen);
+});
