@@ -33,7 +33,9 @@ function createDns({ app, userData }) {
         url = value;
         return true;
       } catch {
-        await app.configureHostResolver(resolverOptions(url));
+        // A second resolver error must not escape IPC or leave the busy latch set.
+        // Retry only the prior policy; never downgrade a saved secure resolver to plaintext.
+        try { await app.configureHostResolver(resolverOptions(url)); } catch { /* Resolver remains unavailable. */ }
         return false;
       } finally { busy = false; }
     },

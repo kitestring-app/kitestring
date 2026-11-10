@@ -158,3 +158,13 @@ it("both end sounds set to None keeps the heads-up silent, like the start chime,
   expect(q.chime).not.toHaveBeenCalled();
   expect(q.speech.speak).toHaveBeenCalledTimes(1);
 });
+
+it("keeps a due warning when an unrelated setting changes before the next ticker", async () => {
+  const q = await setup(false);
+  q.timerActions.start();
+  await vi.advanceTimersByTimeAsync(8 * MIN - 250);
+  vi.setSystemTime(Date.now() + 250);
+  q.s.settingsUpdate("clock", { seconds: true });
+  await vi.advanceTimersByTimeAsync(250);
+  expect(q.chime).toHaveBeenCalledTimes(1);
+});

@@ -162,3 +162,16 @@ test('away breaks and unknown fields round-trip unchanged through native cloud s
     assert.deepEqual((await cloud.request('GET', '/api/sync')).data.entries, entries);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+for (const status of [200, 401, 403, 429]) for (const data of [null, [], false]) {
+  test(`malformed cloud JSON (${JSON.stringify(data)}) with status ${status} is bounded and preserves auth refusals`, async () => {
+    let calls = 0;
+    const cloud = createCloud({ origin: ORIGIN, fallbackOrigin: 'https://custom-pomodoro.custom-pomodoro.workers.dev',
+      userData: '/unused', safeStorage: { isEncryptionAvailable: () => true },
+      fetch: async () => { calls++; return Response.json(data, { status }); } });
+    const reply = await cloud.signIn('test@example.invalid', randomBytes(20).toString('hex'));
+    assert.equal(reply.status, status === 200 ? 503 : status);
+    assert.equal(reply.data.ok, false);
+    assert.equal(calls, status === 200 ? 2 : 1);
+  });
+}

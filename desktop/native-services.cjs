@@ -35,7 +35,10 @@ function createNativeServices({ Notification, powerSaveBlocker, execFile, stateF
   let failed = false;
   let lastFired = null;
   let notification = null;
-  function save() { write(stateFile, pending); }
+  function save() {
+    // Alarms are never restored on launch; a disk failure must not prevent cancellation or ringing.
+    try { write(stateFile, pending); } catch { /* Keep the live timer usable without persistence. */ }
+  }
   function cancelSpeech() { version++; speech?.kill(); speech = null; activeAnnouncement = null; }
   function stopSound() { sound?.kill(); sound = null; }
   function notificationStatus() { return { supported: !!Notification?.isSupported(), failed }; }

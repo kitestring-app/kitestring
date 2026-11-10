@@ -26,3 +26,11 @@
   .drawer nav { min-width: 0; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px 14px; overflow-x: auto; scrollbar-width: none; }
   .drawer nav::-webkit-scrollbar { display: none; }
 }
+/* Give form controls their own line before fixed label columns crowd them out. */
+@media (max-width: 600px) {
+  .drawer .field-grid, .drawer .card label.row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .drawer .field-grid > label { white-space: normal; }
+  .drawer .card > .row { flex-wrap: wrap; }
+  .drawer .card label.row { width: 100%; min-width: 0; }
+  .drawer .field-grid :is(.input, .row, .segmented) { min-width: 0; max-width: 100%; }
+}

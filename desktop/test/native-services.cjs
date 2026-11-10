@@ -4,7 +4,7 @@ const { EventEmitter } = require('node:events');
 const path = require('node:path');
 const { createNativeServices } = require('../native-services.cjs');
 
-function harness({ saved = null, supported = true } = {}) {
+function harness({ saved = null, supported = true, failWrites = false } = {}) {
   let time = 1_000_000;
   let nextTimer = 0;
   let stored = saved === null ? null : structuredClone(saved);
@@ -62,6 +62,7 @@ function harness({ saved = null, supported = true } = {}) {
     readJSON(file) { reads++; assert.equal(file, '/test-data/alarm.json'); return structuredClone(stored); },
     writeJSON(file, value) {
       assert.equal(file, '/test-data/alarm.json');
+      if (failWrites) throw new Error('disk full');
       stored = structuredClone(value);
       writes.push(structuredClone(value));
     },
@@ -647,4 +648,19 @@ test('testReminder shows valid custom text and ignores anything else', () => {
   h.services.testReminder('focus-done', 42);
   h.services.testReminder('focus-done', '🎉'.repeat(140));
   assert.deepEqual(h.notifications.map((n) => n.options.body), ['Stretch now.', 'Time for a break.', 'Time for a break.', '🎉'.repeat(140)]);
+});
+
+
+test('failed alarm persistence cannot block ringing, disarm, or suspend', () => {
+  const h = harness({ failWrites: true });
+  fire(h);
+  assert.equal(sounds(h).length, 1);
+  h.services.disarm();
+  assert.equal(sounds(h)[0].killed, true);
+  assert.equal(h.services.snapshot().pending, null);
+  assert.equal(h.timers.size, 0);
+  h.services.arm(alarm(h));
+  h.services.suspend();
+  assert.equal(h.services.snapshot().pending, null);
+  assert.equal(h.timers.size, 0);
 });

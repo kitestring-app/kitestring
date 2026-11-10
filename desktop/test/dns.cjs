@@ -36,3 +36,24 @@ test('DNS IPC accepts only trusted main frames and valid HTTPS endpoints', async
   assert.deepEqual(calls, []);
   assert.equal(await handlers.get('desktop:dns-get')({ trusted: true }), '');
 });
+
+
+test('resolver and rollback failures return false, retain secure policy and allow retry', async () => {
+  const userData = mkdtempSync(path.join(tmpdir(), 'kitestring-dns-failure-'));
+  const secure = 'https://resolver.example.invalid/dns-query';
+  const calls = [];
+  let failing = true;
+  try {
+    writeFileSync(path.join(userData, 'secure-dns.json'), JSON.stringify({ url: secure }));
+    const dns = createDns({ app: { configureHostResolver(value) {
+      calls.push(value);
+      if (failing) throw new Error('resolver unavailable');
+    } }, userData });
+    assert.equal(await dns.set('https://other.example.invalid/dns-query'), false);
+    assert.equal(dns.get(), secure);
+    assert.deepEqual(calls.at(-1), { secureDnsMode: 'secure', secureDnsServers: [secure] });
+    assert.equal(calls.some(value => value.secureDnsMode === 'off'), false);
+    failing = false;
+    assert.equal(await dns.set(secure), true);
+  } finally { rmSync(userData, { recursive: true, force: true }); }
+});
