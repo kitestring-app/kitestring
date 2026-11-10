@@ -340,8 +340,8 @@ function syncEndWarning() {
   const s = timer.get();
   const owned = canWriteClockStore("timer") && recoveryHydrated && !departing && !settlingSnapshot;
   const at = owned ? endWarningAt(s, totalMs(s), T()) : null;
-  if (at === null || at <= Date.now()) { clearEndWarning(); return; }
   if (pendingWarning?.segId === s.segId && pendingWarning.at === at) return;
+  if (at === null || at <= Date.now()) { clearEndWarning(); return; }
   clearEndWarning();
   pendingWarning = { segId: s.segId, at };
   armWarningWatch(at);

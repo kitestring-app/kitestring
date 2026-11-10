@@ -34,7 +34,7 @@ function createFloating({ BrowserWindow, screen, stateFile, smokeTest = false, o
     const bounds = window.getBounds();
     const display = screen.getDisplayMatching(bounds);
     positions[String(display.id)] = bounds;
-    writeJSON(stateFile, positions);
+    try { writeJSON(stateFile, positions); } catch { /* Saving bounds must not block closing or crash recovery. */ }
   }
   function reconcile() {
     if (!window || window.isDestroyed()) return;

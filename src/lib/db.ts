@@ -14,7 +14,9 @@ export const storageMode = () => mode;
 function open(): Promise<IDBDatabase | null> {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve) => {
+    let fellBack = false;
     const fallback = () => {
+      fellBack = true;
       mode = "memory";
       resolve(null);
     };
@@ -23,6 +25,7 @@ function open(): Promise<IDBDatabase | null> {
       const req = indexedDB.open(DB_NAME, 1);
       req.onupgradeneeded = () => req.result.createObjectStore(STORE);
       req.onsuccess = () => {
+        if (fellBack) { req.result.close(); return; }
         mode = "indexeddb";
         resolve(req.result);
       };
@@ -59,15 +62,18 @@ export async function dbSetMany(entries: [string, unknown][], deletes: string[] 
     return;
   }
   return new Promise<void>((resolve, reject) => {
+    let tx: IDBTransaction | undefined;
     try {
-      const tx = db.transaction(STORE, "readwrite");
+      tx = db.transaction(STORE, "readwrite");
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx!.error ?? new Error("write failed"));
+      tx.onabort = () => reject(tx!.error ?? new Error("write aborted"));
       const s = tx.objectStore(STORE);
       for (const [k, v] of entries) s.put(v, k);
       for (const k of deletes) s.delete(k);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error ?? new Error("write failed"));
-      tx.onabort = () => reject(tx.error ?? new Error("write aborted"));
     } catch (e) {
+      // A synchronous put/delete failure does not abort previously queued requests.
+      try { tx?.abort(); } catch { /* Already finished or aborted. */ }
       reject(e);
     }
   });

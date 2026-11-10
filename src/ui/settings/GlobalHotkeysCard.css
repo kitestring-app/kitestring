@@ -3,3 +3,7 @@
 .global-hotkeys .hotkey-key { min-width: 112px; justify-content: center; }
 .global-hotkeys .hotkey-key kbd { font: inherit; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; color: var(--fg); }
 .global-hotkeys .hotkey-key.recording { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+@media (max-width: 600px) {
+  .global-hotkeys .hotkey-row { flex-wrap: wrap; }
+  .global-hotkeys .hotkey-text { flex-basis: 100%; }
+}

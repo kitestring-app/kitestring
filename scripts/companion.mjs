@@ -21,6 +21,10 @@ const PORT = Number(process.argv[2] ?? 4747);
 const HOST = "127.0.0.1";
 const project = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const root = await realpath(resolve(project, "dist"));
+// Use the built app's policy, just as the packaged app does. Missing CSP fails startup closed.
+const headerSource = await readFile(join(root, "_headers"), "utf8");
+const csp = headerSource.match(/^\s*Content-Security-Policy:\s*(.+)$/mi)?.[1];
+if (!csp) throw new Error("Built app is missing its Content-Security-Policy");
 const stateDir = join(homedir(), "Library/Application Support/CustomPomodoro");
 const stateFile = join(stateDir, "alarm.json");
 mkdirSync(stateDir, { recursive: true });
@@ -136,7 +140,12 @@ async function readBody(req) {
 }
 
 const server = createServer(async (req, res) => {
-  const url = new URL(req.url ?? "/", `http://${HOST}:${PORT}`);
+  let url, pathname;
+  try {
+    url = new URL(req.url ?? "/", `http://${HOST}:${PORT}`);
+    pathname = decodeURIComponent(url.pathname);
+    if (pathname.includes("\0") || pathname.includes("\\")) throw new Error("Bad path");
+  } catch { return json(res, 400, { ok: false }); }
   if (url.pathname.startsWith("/api/")) {
     // only our own page may call the API: Host must be local, Origin (when sent) must be ours, custom header required
     const host = req.headers.host ?? "";
@@ -175,7 +184,7 @@ const server = createServer(async (req, res) => {
 
   // static files from dist (SPA fallback to index.html)
   if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405, SECURITY).end(); return; }
-  let file = resolve(root, "." + decodeURIComponent(url.pathname));
+  let file = resolve(root, "." + pathname);
   if (!file.startsWith(root + sep) && file !== root) { res.writeHead(403, SECURITY).end(); return; }
   try {
     if (!existsSync(file) || !extname(file)) file = join(root, "index.html");
@@ -194,3 +203,7 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => log(`companion on http://${HOST}:${PORT} serving ${root}`));
+
+// listen() accepts requests on the next event-loop turn. Set the built policy synchronously
+// during startup, before any request callback can run.
+SECURITY["Content-Security-Policy"] = csp;

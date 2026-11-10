@@ -181,13 +181,14 @@ function createWindow() {
   window.webContents.on('render-process-gone', () => {
     if (window !== createdWindow) return;
     native?.releasePower();
+    hotkeys?.dispose();
     floating?.close(); parking?.close();
     changeAttention('release');
     createdWindow.destroy();
     if (!quitting) createWindow();
   });
-  window.webContents.on('did-start-navigation', (_event, _url, _inPlace, isMainFrame) => {
-    if (isMainFrame) { native?.releasePower(); }
+  window.webContents.on('did-start-navigation', (_event, _url, inPlace, isMainFrame) => {
+    if (isMainFrame) { native?.releasePower(); if (!inPlace) hotkeys?.dispose(); }
   });
   window.webContents.on('will-navigate', (event, url) => {
     if (!isAppURL(event.url ?? url)) event.preventDefault();

@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
-const { mkdtempSync, writeFileSync, readFileSync, rmSync } = require('node:fs');
+const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 const { createFloating, fitBounds, MINI_URL } = require('../floating.cjs');
@@ -37,7 +37,7 @@ function fixture(saved = {}, options = {}) {
   screen.getCursorScreenPoint = () => ({ x: 10, y: 40 });
   screen.getDisplayNearestPoint = screen.getDisplayMatching = () => screen.display;
   const floating = createFloating({ BrowserWindow: Window, screen, stateFile, ...options, onChange: value => changes.push(value) });
-  return { floating, screen, created, changes, saved: () => JSON.parse(readFileSync(stateFile, 'utf8')),
+  return { floating, screen, created, changes, stateFile, saved: () => JSON.parse(readFileSync(stateFile, 'utf8')),
     cleanup() { floating.close(); rmSync(dir, { recursive: true, force: true }); } };
 }
 
@@ -185,5 +185,22 @@ test('missing vibrancy capability uses the existing solid color', () => {
     h.floating.open(true);
     assert.equal(h.created[0].options.vibrancy, undefined);
     assert.equal(h.created[0].options.backgroundColor, '#14121c');
+  } finally { h.cleanup(); }
+});
+
+
+test('a position write failure cannot block close or leak display and theme listeners', () => {
+  const nativeTheme = new EventEmitter();
+  const h = fixture({}, { nativeTheme });
+  try {
+    h.floating.open(true);
+    // Deterministic EISDIR, including when tests run with elevated filesystem access.
+    mkdirSync(h.stateFile + '.tmp');
+    assert.doesNotThrow(() => h.created[0].emit('move'));
+    assert.doesNotThrow(() => h.floating.close());
+    assert.equal(h.created[0].isDestroyed(), true);
+    assert.deepEqual(h.screen.eventNames(), []);
+    assert.equal(nativeTheme.listenerCount('updated'), 0);
+    assert.equal(h.floating.snapshot(), null);
   } finally { h.cleanup(); }
 });

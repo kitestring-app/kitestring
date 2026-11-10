@@ -1024,6 +1024,27 @@ test('global shortcuts run guarded timer commands, and recording holds keyboard 
   assert.equal(shortcuts.has('Control+Alt+S'), false);
 });
 
+test('main-frame navigation and renderer crashes release hotkeys and recording mode', () => {
+  const off = { showApp: null, toggle: null, stop: null, skip: null };
+  for (const crash of [false, true]) {
+    ipc.invoke('desktop:global-hotkeys', event(), { ...off, toggle: 'Control+Alt+T' });
+    assert.equal(shortcuts.has('Control+Alt+T'), true);
+    window.webContents.emit('did-start-navigation', {}, 'app://custom-pomodoro/#section', true, true);
+    assert.equal(shortcuts.has('Control+Alt+T'), true, 'same-document navigation retains registrations');
+    if (crash) window.webContents.emit('render-process-gone', {}, { reason: 'crashed' });
+    else window.webContents.emit('did-start-navigation', {}, 'app://custom-pomodoro/', false, true);
+    assert.equal(shortcuts.has('Control+Alt+T'), false);
+    ipc.invoke('desktop:global-hotkeys', event(), { ...off, recording: true });
+    if (crash) window.webContents.emit('render-process-gone', {}, { reason: 'crashed' });
+    else window.webContents.emit('did-start-navigation', {}, 'app://custom-pomodoro/', false, true);
+    const reset = applicationMenu.find(item => item.label === 'Timer').submenu.find(item => item.label === 'Reset');
+    window.sent = null;
+    reset.click(null, null, { triggeredByAccelerator: true });
+    assert.equal(window.sent, 'desktop:timer-request');
+    ipc.emit('desktop:timer-result', event(), window.sentArgs[0].id, { ok: true });
+  }
+});
+
 test('Quit waits for a matching trusted renderer flush before allowing termination', () => {
   ipc.emit('desktop:prevent-sleep', event(), true);
   ipc.invoke('desktop:float-timer', event(), true);

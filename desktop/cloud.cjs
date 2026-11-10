@@ -36,10 +36,15 @@ function createCloud({ origin, fallbackOrigin, userData, safeStorage, fetch: sen
         // An unavailable new Worker can use the existing sync service. Auth
         // refusals and rate limits remain authoritative and never trigger retry.
         if (endpoint !== fallbackOrigin && fallbackOrigin && (response.status === 404 || response.status >= 500)) continue;
-        const data = await response.json().catch(error => {
+        let data = await response.json().catch(error => {
           if ([401, 403, 429].includes(response.status)) return { ok: false };
           throw error;
         });
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+          // Auth refusals remain authoritative even when their JSON has the wrong shape.
+          if ([401, 403, 429].includes(response.status)) data = { ok: false };
+          else throw new Error('Invalid cloud response');
+        }
         return { status: response.status, data, retryAfter: response.headers.get('Retry-After') };
       } catch { /* Try the fixed legacy origin on transport/invalid-response failure. */ }
     }

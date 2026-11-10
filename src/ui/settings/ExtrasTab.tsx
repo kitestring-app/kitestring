@@ -69,7 +69,7 @@ export function ExtrasTab() {
       <div className="card">
         <h3>Default settings tab</h3>
         <p className="help">Which tab opens when you open settings.</p>
-        <select className="input" style={{ maxWidth: 320 }} value={effectiveDefaultTab(x)} onChange={(e) => set({ defaultTab: e.target.value as SettingsTab | "recent" })}>
+        <select className="input" aria-label="Default settings tab" style={{ maxWidth: 320 }} value={effectiveDefaultTab(x)} onChange={(e) => set({ defaultTab: e.target.value as SettingsTab | "recent" })}>
           <option value="recent">Recently opened</option>
           {(["themes", "clock", "timer", "stats", "quotes", "extras", "data"] as SettingsTab[]).filter(t => !x.hideStats || t !== "stats").map((t) => <option key={t} value={t}>{t[0].toUpperCase() + t.slice(1)}</option>)}
         </select>
@@ -77,7 +77,7 @@ export function ExtrasTab() {
       <div className="card">
         <h3>Theme randomizer</h3>
         <p className="help">Show a random library theme.</p>
-        <select className="input" style={{ maxWidth: 320 }} value={x.randomizer} onChange={(e) => set({ randomizer: e.target.value as Settings["extras"]["randomizer"] })}>
+        <select className="input" aria-label="Theme randomizer" style={{ maxWidth: 320 }} value={x.randomizer} onChange={(e) => set({ randomizer: e.target.value as Settings["extras"]["randomizer"] })}>
           <option value="off">Disabled</option>
           <option value="load">Every time the page loads</option>
           <option value="daily">Once a day</option>
