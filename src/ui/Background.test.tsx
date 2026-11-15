@@ -1,7 +1,7 @@
 import { Children, isValidElement } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import { DEFAULT_SETTINGS, LOOKS, settings } from "../state/settings";
-import { Background, wallpaperIsLight } from "./Background";
+import { Background, themeStyle, wallpaperIsLight } from "./Background";
 import { LookBackdrop, PAPER_LOOKS } from "./Look";
 vi.mock("react", async original => ({ ...await original<typeof import("react")>(), useEffect: vi.fn(), useState: () => [null, vi.fn()], useSyncExternalStore: (_s: unknown, get: () => unknown) => get() }));
 vi.mock("./BackgroundMotion", () => ({ useBackgroundMotion: vi.fn() }));
@@ -18,4 +18,9 @@ it.each(LOOKS)("renders the selected backdrop for %s with either flag", async lo
 it.each(PAPER_LOOKS)("reads the actual override rather than %s paper when choosing ink", look => {
   expect(wallpaperIsLight({ kind: "color", id: "#000000" }, "none", .5, look, false)).toBe(false);
   expect(wallpaperIsLight({ kind: "color", id: "#ffffff" }, "none", .5, look, false)).toBe(true);
+});
+it("resolves backgroundSize from a theme's size with cover and animated fallbacks", () => {
+  expect(themeStyle({ kind: "library", id: "chessboard" }, null, false).style).toMatchObject({ backgroundSize: "112px 112px" });
+  expect(themeStyle({ kind: "library", id: "dusk-glass" }, null, false).style).toMatchObject({ backgroundSize: "cover" });
+  for (const disableAnimated of [false, true]) expect(themeStyle({ kind: "library", id: "tide-pools" }, null, disableAnimated).style).toMatchObject({ backgroundSize: "400% 400%" });
 });

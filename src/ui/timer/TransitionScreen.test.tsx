@@ -140,7 +140,7 @@ describe("timer settings content", () => {
   it.each(["pomodoro", "animedoro"] as const)("offers presets, all length fields, and quick break values in %s", (mode) => {
     settings.set({ ...DEFAULT_SETTINGS, timer: { ...DEFAULT_SETTINGS.timer, mode } });
     const html = renderToStaticMarkup(<TimerTab />);
-    for (const text of ["25 · 5", "30 · 5", "40 · 5", "45 · 5", "50 · 10", "Custom", "Short break quick lengths", 'min="1" max="600"', "Full-screen break/focus reminder", "Say it out loud", "Bring the app to the front (Mac app)"]) expect(html).toContain(text);
+    for (const text of ["25 · 5", "30 · 5", "40 · 5", "45 · 5", "50 · 10", "45 · 12", "Custom", "Short break quick lengths", 'min="1" max="600"', "Full-screen break/focus reminder", "Say it out loud", "Bring the app to the front (Mac app)"]) expect(html).toContain(text);
     expect(html.match(/aria-pressed="true"/g)?.length).toBeGreaterThanOrEqual(3);
   });
   it("marks a custom combination as Custom", () => {

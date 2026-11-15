@@ -138,7 +138,7 @@ describe.skipIf(!chromePath || process.env.CATALOG_BROWSER !== "1")("sound and t
     const catalog = await evaluate(`import('/src/data/themes.ts').then(({THEMES}) => ({
       count: THEMES.length, invalid: THEMES.filter(theme => !CSS.supports('background', theme.background)).map(theme => theme.id)
     }))`);
-    expect(catalog).toEqual({ count: 96, invalid: [] });
+    expect(catalog).toEqual({ count: 97, invalid: [] });
     await click('button[aria-label^="Settings"]');
     await waitFor('document.querySelector(".drawer")');
     await evaluate(`Array.from(document.querySelectorAll('.drawer button')).find(button => button.textContent.trim() === 'Themes').click()`);

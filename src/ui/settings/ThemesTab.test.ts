@@ -120,9 +120,9 @@ describe("daily quote selection", () => {
 });
 
 describe("theme catalog compatibility", () => {
-  it("keeps the original IDs and provides 96 unique entries across all categories", () => {
-    expect(THEMES).toHaveLength(96);
-    expect(new Set(THEMES.map((t) => t.id)).size).toBe(96);
+  it("keeps the original IDs and provides 97 unique entries across all categories", () => {
+    expect(THEMES).toHaveLength(97);
+    expect(new Set(THEMES.map((t) => t.id)).size).toBe(97);
     for (const id of ["dusk-glass", "thermal", "cotton", "autumn", "midnight", "forest-dusk", "blue-flare", "pink-flare", "aurora", "lava"]) expect(findTheme(id)).toBeTruthy();
     expect(THEMES.filter((t) => t.animated)).toHaveLength(7);
     expect(THEMES.filter((t) => t.credit)).toHaveLength(53);
