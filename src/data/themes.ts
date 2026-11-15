@@ -1,6 +1,7 @@
 import { dbDel, dbGet, dbSet } from "../lib/db";
 import { createStore, uid } from "../lib/store";
 import { settings, settingsUpdate } from "../state/settings";
+import { CHESS_THEME_ID } from "../state/presets";
 
 // Theme library. Gradients/animated themes are pure CSS (no licensing questions).
 // Photo themes hotlink curated Unsplash CDN images (Unsplash license: free use; we don't bundle the files).
@@ -15,6 +16,7 @@ export interface ThemeDef {
   animated?: string; // CSS class for animated themes
   credit?: string; // photographer credit for photo themes
   light?: boolean; // light background: dashboard text switches to dark
+  size?: string; // CSS background-size value (e.g. a tiled checkerboard)
 }
 
 export const THEME_CATEGORIES: { id: ThemeCategory; label: string }[] = [
@@ -131,6 +133,7 @@ export const THEMES: ThemeDef[] = [
   {"id": "fireside-room", "name": "Fireside Room", "category": "interior", "credit": "Spacejoy", "background": "url(\"https://images.unsplash.com/photo-1632829882891-5047ccc421bc?auto=format&fit=crop&w=2400&q=80\") center / cover no-repeat"},
   {"id": "blue-bedroom", "name": "Blue Bedroom", "category": "interior", "credit": "Spacejoy", "background": "url(\"https://images.unsplash.com/photo-1632829401795-2745c905ac77?auto=format&fit=crop&w=2400&q=80\") center / cover no-repeat"},
   {"id": "dark-retreat", "name": "Dark Retreat", "category": "interior", "credit": "Spacejoy", "background": "url(\"https://images.unsplash.com/photo-1632210702485-e1841e30752a?auto=format&fit=crop&w=2400&q=80\") center / cover no-repeat"},
+  { id: CHESS_THEME_ID, name: "Chessboard", category: "abstract", background: "linear-gradient(#0d1512aa, #0d1512aa), conic-gradient(#28382f 0% 25%, #4a5e50 25% 50%, #28382f 50% 75%, #4a5e50 75% 100%)", size: "112px 112px" },
 ];
 
 export const findTheme = (id: string) => THEMES.find((t) => t.id === id);

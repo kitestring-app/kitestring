@@ -6,6 +6,7 @@ import { dbGet } from "../../lib/db";
 import { useStore } from "../../lib/store";
 import { DEFAULT_SETTINGS, settings, settingsUpdate } from "../../state/settings";
 import type { DashMode, ThemeRef } from "../../state/settings";
+import { themeTimerPatch } from "../../state/presets";
 import { themeStyle } from "../Background";
 import { formatClock, useClock } from "../ClockView";
 import { Toggle } from "./SettingsDrawer";
@@ -72,6 +73,12 @@ export function ThemesTab() {
   const pick = (next: ThemeRef) => {
     settings.set(current => ({ ...current, themes: { ...current.themes, [mode]: next }, appearance: { ...current.appearance, lookBackdrop: false } }));
     setMessage(`Applied to ${mode}.`);
+  };
+  const pickLibrary = (id: string) => {
+    pick({ kind: "library", id });
+    const patch = themeTimerPatch(id);
+    if (!patch) return;
+    settings.set(current => ({ ...current, timer: { ...current.timer, lengths: { ...current.timer.lengths, ...patch.lengths }, longEvery: patch.longEvery } }));
   };
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
@@ -164,8 +171,8 @@ export function ThemesTab() {
               {category === "all" && <button className="btn small" aria-label={`See all ${items.length} ${c.label} themes`} onClick={() => setCategory(c.id)}>See all ({items.length})</button>}
             </div>
             <div className="theme-grid">
-              {(isExpanded ? items : items.slice(0, 3)).map((t) => <button key={t.id} className="theme-tile" aria-pressed={selected("library", t.id)} disabled={!ready || busy} onClick={() => pick({ kind: "library", id: t.id })}>
-                <span className="theme-thumb" style={{ background: t.background.replace("w=2400", "w=480"), backgroundSize: "cover", backgroundPosition: "center" }} />
+              {(isExpanded ? items : items.slice(0, 3)).map((t) => <button key={t.id} className="theme-tile" aria-pressed={selected("library", t.id)} disabled={!ready || busy} onClick={() => pickLibrary(t.id)}>
+                <span className="theme-thumb" style={{ background: t.background.replace("w=2400", "w=480"), backgroundSize: t.size ?? "cover", backgroundPosition: "center" }} />
                 <span className="theme-name">{t.name}{t.animated && <span className="theme-motion-label">Animated</span>}</span>
                 {t.credit && <span className="theme-credit">Photo: {t.credit} / Unsplash</span>}
               </button>)}

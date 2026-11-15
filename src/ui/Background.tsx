@@ -30,7 +30,7 @@ export function themeStyle(ref: ThemeRef, customUrl: string | null, disableAnima
   if (ref.kind === "color") return { style: { background: /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(ref.id) ? ref.id : "#14121C" }, cls: "" };
   if (ref.kind === "custom") return { style: { background: customUrl ? `center / cover no-repeat url(${customUrl}), #111` : "#111" }, cls: "" };
   const t = findTheme(ref.id) ?? THEMES[0];
-  return { style: { background: t.background, backgroundSize: t.animated ? "400% 400%" : "cover" }, cls: !disableAnimated && t.animated ? t.animated : "" };
+  return { style: { background: t.background, backgroundSize: t.size ?? (t.animated ? "400% 400%" : "cover") }, cls: !disableAnimated && t.animated ? t.animated : "" };
 }
 
 /** Relative luminance of a #rgb/#rrggbb colour (0..1); null for anything else. */
