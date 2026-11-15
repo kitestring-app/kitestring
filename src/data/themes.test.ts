@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BACKGROUND_LIMITS, backgroundCapacityError, backgroundDimensions, customBgs, prepareBackground, saveCustomBackground, THEMES } from "./themes";
+import { CHESS_THEME_ID } from "../state/presets";
 import { dbDel, dbGet, dbSet } from "../lib/db";
 import * as db from "../lib/db";
 
@@ -36,7 +37,7 @@ afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("expanded theme library", () => {
   it("meets the audited category breadth with unique compositions and credited, allowlisted photos", () => {
-    for (const [category, count] of Object.entries({ gradients: 24, abstract: 12, scenic: 24, nature: 7, urban: 7, interior: 15, animated: 7 }))
+    for (const [category, count] of Object.entries({ gradients: 24, abstract: 13, scenic: 24, nature: 7, urban: 7, interior: 15, animated: 7 }))
       expect(THEMES.filter((theme) => theme.category === category), category).toHaveLength(count);
     expect(new Set(THEMES.map((theme) => theme.background)).size).toBe(THEMES.length);
     for (const theme of THEMES) {
@@ -48,6 +49,15 @@ describe("expanded theme library", () => {
     }
     for (const id of ["porcelain-sky", "apricot-mist", "paper-arcs"]) expect(THEMES.find((theme) => theme.id === id)?.light).toBe(true);
     for (const id of ["carbon-night", "violet-horizon", "moss-pool", "rust-bloom", "pacific-ink", "garnet", "interference", "glass-blocks", "contour", "amber-ribbon", "lattice", "tide-pools"]) expect(THEMES.find((theme) => theme.id === id)?.light).not.toBe(true);
+  });
+  it("adds the CSS-only Chessboard theme with a tiled size and no credit, animation or light flag", () => {
+    const chess = THEMES.find((theme) => theme.id === CHESS_THEME_ID);
+    expect(chess).toBeTruthy();
+    expect(chess?.size).toBe("112px 112px");
+    expect(chess?.credit).toBeUndefined();
+    expect(chess?.animated).toBeUndefined();
+    expect(chess?.light).toBeUndefined();
+    expect(chess?.background).not.toContain("url(");
   });
 });
 

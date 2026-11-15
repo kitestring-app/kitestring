@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchPreset, PRESETS } from "./presets";
+import { CHESS_PRESET_ID, CHESS_THEME_ID, matchPreset, PRESETS, themeTimerPatch } from "./presets";
 
 describe("Pomodoro presets", () => {
   it("matches all three lengths and uses four sessions for every preset", () => {
@@ -15,5 +15,28 @@ describe("Pomodoro presets", () => {
     expect(matchPreset({ pomodoro: 26, short: 5, long: 15 })).toBe("custom");
     expect(matchPreset({ pomodoro: 25.5, short: 5, long: 15 })).toBe("custom");
     expect(PRESETS.at(-1)?.label).toBe("Custom");
+  });
+  it("matches the 45/12/25 preset and keeps near misses custom", () => {
+    expect(matchPreset({ pomodoro: 45, short: 12, long: 25 })).toBe(CHESS_PRESET_ID);
+    for (const combo of [
+      { pomodoro: 45, short: 12, long: 26 },
+      { pomodoro: 45, short: 13, long: 25 },
+      { pomodoro: 44, short: 12, long: 25 },
+    ]) expect(matchPreset(combo)).toBe("custom");
+  });
+});
+
+describe("themeTimerPatch", () => {
+  it("returns the chess preset with exactly pomodoro/short/long and longEvery 4", () => {
+    const patch = themeTimerPatch(CHESS_THEME_ID);
+    expect(patch?.lengths).toEqual({ pomodoro: 45, short: 12, long: 25 });
+    expect(patch?.longEvery).toBe(4);
+    expect(Object.keys(patch?.lengths ?? {}).sort()).toEqual(["long", "pomodoro", "short"]);
+    expect(patch?.lengths).not.toHaveProperty("countdown");
+    const row = PRESETS.find((p) => p.id === CHESS_PRESET_ID);
+    expect(patch).toEqual({ lengths: row?.lengths, longEvery: row?.longEvery });
+  });
+  it("returns null for every non-chess theme id", () => {
+    for (const id of ["", "custom", "dusk-glass", "not-a-real-theme"]) expect(themeTimerPatch(id)).toBeNull();
   });
 });
