@@ -37,10 +37,10 @@ describe("C3 device gap policy", () => {
   });
 });
 describe("C4 selector exhaustive truth table", () => {
-  for (let bits = 0; bits < 32; bits++) it(`chooses at most one offer for ${bits.toString(2).padStart(5, "0")}`, () => {
-    const [boundary, reentry, gap, review, runningFocus] = [1, 2, 4, 8, 16].map(mask => !!(bits & mask));
-    expect(selectRecovery({ boundary, reentry, gap, review, runningFocus })).toBe(
-      boundary ? "missed-end" : reentry ? "re-entry" : runningFocus ? null : gap ? "gap-return" : review ? "parking-review" : null);
+  for (let bits = 0; bits < 64; bits++) it(`chooses at most one offer for ${bits.toString(2).padStart(6, "0")}`, () => {
+    const [boundary, reentry, gap, review, runningFocus, roundStale] = [1, 2, 4, 8, 16, 32].map(mask => !!(bits & mask));
+    expect(selectRecovery({ boundary, reentry, gap, review, runningFocus, roundStale })).toBe(
+      boundary ? "missed-end" : reentry ? "re-entry" : runningFocus ? null : roundStale ? "stale-round" : gap ? "gap-return" : review ? "parking-review" : null);
   });
 });
 it("C5 Continue duration: override, ETA, mode length including stopwatch", () => {

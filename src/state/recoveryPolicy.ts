@@ -18,9 +18,10 @@ export interface ReturnActivity {
   lastPurposefulAt: number | null;
   pendingGap: string | null;
   acknowledgedGap: string | null;
+  acknowledgedRound: string | null;
   uncertain: boolean;
 }
-export const EMPTY_ACTIVITY: ReturnActivity = { version: 1, lastPurposefulAt: null, pendingGap: null, acknowledgedGap: null, uncertain: false };
+export const EMPTY_ACTIVITY: ReturnActivity = { version: 1, lastPurposefulAt: null, pendingGap: null, acknowledgedGap: null, acknowledgedRound: null, uncertain: false };
 export interface ClockSample { wall: number; mono: number }
 export function clockDiscontinuous(before: ClockSample | null, after: ClockSample, woke = false): boolean {
   if (!Number.isFinite(after.wall) || after.wall < 0 || !Number.isFinite(after.mono)) return true;
@@ -38,11 +39,12 @@ export function evaluateGap(state: ReturnActivity, now: number, discontinuous = 
   const token = `gap:${last}`;
   return state.acknowledgedGap === token || state.pendingGap === token ? state : { ...state, pendingGap: token };
 }
-export type RecoveryOffer = "missed-end" | "re-entry" | "gap-return" | "parking-review" | null;
-export function selectRecovery(pending: { boundary: boolean; reentry: boolean; gap: boolean; review: boolean; runningFocus?: boolean }): RecoveryOffer {
+export type RecoveryOffer = "missed-end" | "re-entry" | "stale-round" | "gap-return" | "parking-review" | null;
+export function selectRecovery(pending: { boundary: boolean; reentry: boolean; gap: boolean; review: boolean; runningFocus?: boolean; roundStale?: boolean }): RecoveryOffer {
   if (pending.boundary) return "missed-end";
   if (pending.reentry) return "re-entry";
   if (pending.runningFocus) return null;
+  if (pending.roundStale) return "stale-round";
   if (pending.gap) return "gap-return";
   return pending.review ? "parking-review" : null;
 }

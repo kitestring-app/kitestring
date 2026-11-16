@@ -5,8 +5,12 @@ import type { ClockSample, ReturnActivity } from "./recoveryPolicy";
 /** Not synced or restored from backups: another device's/old backup's activity is not this device's activity. */
 export const returnActivity = createStore<ReturnActivity>("returnActivity", EMPTY_ACTIVITY, value => {
   const s = value as ReturnActivity | null;
-  return s?.version === 1 && (s.lastPurposefulAt === null || Number.isFinite(s.lastPurposefulAt)) &&
-    [s.pendingGap, s.acknowledgedGap].every(t => t === null || typeof t === "string" && t.length <= 64) && typeof s.uncertain === "boolean" ? s : { ...EMPTY_ACTIVITY, uncertain: true };
+  const acknowledgedRound = s?.acknowledgedRound;
+  const validAckRound = acknowledgedRound === undefined || acknowledgedRound === null || (typeof acknowledgedRound === "string" && acknowledgedRound.length <= 64);
+  const valid = s?.version === 1 && (s.lastPurposefulAt === null || Number.isFinite(s.lastPurposefulAt)) &&
+    [s.pendingGap, s.acknowledgedGap].every(t => t === null || typeof t === "string" && t.length <= 64) && validAckRound && typeof s.uncertain === "boolean";
+  if (!valid) return { ...EMPTY_ACTIVITY, uncertain: true };
+  return { ...s, acknowledgedRound: acknowledgedRound ?? null };
 });
 let ownsActivity = () => canWriteClockStore("returnActivity");
 let forwardActivity: (at: number) => void = () => {};
@@ -43,5 +47,10 @@ export function purposefulAction(at = Date.now()) {
 export function acknowledgeGap(token: string): boolean {
   if (!ownsActivity() || returnActivity.get().pendingGap !== token) return false;
   returnActivity.set(s => ({ ...s, acknowledgedGap: token, pendingGap: null }));
+  return true;
+}
+export function acknowledgeRound(token: string): boolean {
+  if (!ownsActivity() || returnActivity.get().pendingGap !== token) return false;
+  returnActivity.set(s => ({ ...s, acknowledgedRound: token }));
   return true;
 }

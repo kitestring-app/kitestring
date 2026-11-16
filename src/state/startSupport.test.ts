@@ -83,7 +83,9 @@ describe("parking review and C4", () => {
     expect(m.recoveryOffer()).toBe("missed-end"); m.answerRecovery(m.recoveryCommand(), "continue");
     expect(m.recoveryOffer()).toBeNull(); m.timerActions.pause(); expect(m.recoveryOffer()).toBe("re-entry");
     m.answerRecovery(m.recoveryCommand(), "dismiss"); expect(m.recoveryOffer()).toBe("parking-review");
-    m.returnActivity.set({ ...m.returnActivity.get(), pendingGap: "gap:test" }); expect(m.recoveryOffer()).toBe("gap-return");
+    m.returnActivity.set({ ...m.returnActivity.get(), pendingGap: "gap:test", acknowledgedRound: null });
+    if (m.recoveryOffer() === "stale-round") m.answerRecovery(m.recoveryCommand(), "resume");
+    expect(m.recoveryOffer()).toBe("gap-return");
     m.answerRecovery(m.recoveryCommand(), "keep"); expect(m.recoveryOffer()).toBe("parking-review");
   });
   it("end-session waits for Stop, not each block, and cycle endings also qualify", () => {
@@ -174,9 +176,10 @@ it.each([false, true])("round4 gap short block carries banked time and current f
   m.updateIntent({ action: "Open the draft" });
   tiny(); finish(); m.answerRecovery(m.recoveryCommand(), "stop");
   if (running) { m.timerActions.start(); vi.setSystemTime(Date.now() + 60_000); }
-  m.returnActivity.set({ ...m.returnActivity.get(), pendingGap: "gap:short" });
+  m.returnActivity.set({ ...m.returnActivity.get(), pendingGap: "gap:short", acknowledgedRound: null });
   if (running) m.timerActions.pause();
   if (m.timer.get().reentry) m.answerRecovery(m.recoveryCommand(), "dismiss");
+  if (m.recoveryOffer() === "stale-round") m.answerRecovery(m.recoveryCommand(), "resume");
   expect(m.answerRecovery(m.recoveryCommand(), "short-block")).toBe(true);
   expect(m.timer.get().context?.spentMs).toBe(running ? 360_000 : 300_000);
   finish(); expect(m.timer.get().context?.spentMs).toBe(running ? 660_000 : 600_000);
@@ -186,7 +189,8 @@ it.each(["tiny", "gap"] as const)("round4 %s start resets context time for a dif
   m.updateIntent({ action: "Different action" });
   if (kind === "tiny") expect(tiny()).toBe(true);
   else {
-    m.returnActivity.set({ ...m.returnActivity.get(), pendingGap: "gap:new-action" });
+    m.returnActivity.set({ ...m.returnActivity.get(), pendingGap: "gap:new-action", acknowledgedRound: null });
+    if (m.recoveryOffer() === "stale-round") m.answerRecovery(m.recoveryCommand(), "resume");
     expect(m.answerRecovery(m.recoveryCommand(), "short-block")).toBe(true);
   }
   expect(m.timer.get().context).toMatchObject({ action: "Different action", spentMs: 0 });
@@ -212,7 +216,8 @@ it.each(["defer", "close"] as const)("round4 guarded review %s preserves current
 it.each([false, true])("round5 a gap block never counts as a tiny finish (missed=%s)", missed => {
   expect(tiny()).toBe(true); const first = finish();
   m.answerRecovery(m.recoveryCommand(), "stop");
-  m.returnActivity.set({ ...m.returnActivity.get(), pendingGap: "gap:short" });
+  m.returnActivity.set({ ...m.returnActivity.get(), pendingGap: "gap:short", acknowledgedRound: null });
+  if (m.recoveryOffer() === "stale-round") m.answerRecovery(m.recoveryCommand(), "resume");
   expect(m.answerRecovery(m.recoveryCommand(), "short-block")).toBe(true);
   expect(m.totalMs()).toBe(300_000);
   const id = m.timer.get().segId;

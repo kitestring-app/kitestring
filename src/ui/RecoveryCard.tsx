@@ -69,9 +69,12 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
   if (!offer && !undo) return fallback ?? null;
   if (offer === "parking-review") return <ParkingReviewCard />;
   const spent = (context?.spentMs ?? 0) + (s.segment === "focus" ? view.elapsed : 0);
-  const title = offer === "missed-end" ? "Your block is finished" : offer === "re-entry" ? "Ready when you are" : "Welcome back";
+  const title = offer === "missed-end" ? "Your block is finished" : offer === "re-entry" ? "Ready when you are" : offer === "stale-round" ? "Pomodoro progress from earlier session" : "Welcome back";
   const buttons = <div className="recovery-buttons">
-    {offer === "gap-return" ? <>
+    {offer === "stale-round" ? <>
+      <button className="btn primary" disabled={busy} onClick={() => void answer("resume")}>Resume pomodoro</button>
+      <button className="btn" disabled={busy} onClick={() => void answer("reset-round")}>Reset progress</button>
+    </> : offer === "gap-return" ? <>
       <button className="btn primary" disabled={busy} onClick={() => void answer("keep")}>Keep</button>
       <button className="btn" disabled={busy} onClick={() => void answer("move")}>Move</button>
       <button className="btn" disabled={busy} onClick={() => void answer("drop")}>Drop</button>
@@ -90,12 +93,13 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
       }}>Undo</button>}
   </div>;
   // The pinned action, why and cue already sit just above the controls; the card only names what is not on screen.
-  const showContext = !!context?.action && (context.action !== pin.action || context.sufficientFinish !== pin.sufficientFinish || context.portion !== pin.portion);
-  const record = offer !== "gap-return" ? recoveryRecordText(s.recoveryRecord?.focusMs ?? spent, s.recoveryRecord?.awayMs, view.hiddenTime) : "";
+  const showContext = offer !== "stale-round" && !!context?.action && (context.action !== pin.action || context.sufficientFinish !== pin.sufficientFinish || context.portion !== pin.portion);
+  const record = offer !== "gap-return" && offer !== "stale-round" ? recoveryRecordText(s.recoveryRecord?.focusMs ?? spent, s.recoveryRecord?.awayMs, view.hiddenTime) : "";
   const showSpent = !!record;
-  const body = offer === "gap-return" || (offer && (showContext || showSpent)) || message ? <>
+  const body = offer === "gap-return" || offer === "stale-round" || (offer && (showContext || showSpent)) || message ? <>
     {offer === "gap-return" && <p className="recovery-action">{pin.action || "Choose a next action whenever you’re ready."}</p>}
-    {offer && offer !== "gap-return" && showContext && <>
+    {offer === "stale-round" && <p className="muted small">{s.round} of {view.longEvery} focus blocks completed in this set.</p>}
+    {offer && offer !== "gap-return" && offer !== "stale-round" && showContext && <>
       {context?.taskTitle && <p className="muted small">Task: {context.taskTitle}</p>}
       <p className="recovery-action">{context?.action}</p>
       {context?.why && <p className="muted small">{context.why}</p>}
@@ -107,8 +111,8 @@ export function RecoveryCard({ onChooseTask, fallback }: { onChooseTask: () => v
     {message && <p className="muted small" role="status">{message}</p>}
   </> : null;
   return <FocusCard title={offer ? title : "Next action cleared"} icon={offer === "gap-return" ? "sun" : "clock"}
-    label={offer === "gap-return" ? "Return to your next action" : offer === "re-entry" ? "Session context" : offer === "missed-end" ? "Finished block" : "Next action cleared"}
-    note={offer === "gap-return" ? "Choose what you want to pick up." : offer === "missed-end" ? "Choose your next block or take a break." : offer === "re-entry" ? "Your place is saved." : "You can undo this change."}
+    label={offer === "gap-return" ? "Return to your next action" : offer === "re-entry" ? "Session context" : offer === "missed-end" ? "Finished block" : offer === "stale-round" ? "Pomodoro progress" : "Next action cleared"}
+    note={offer === "gap-return" ? "Choose what you want to pick up." : offer === "missed-end" ? "Choose your next block or take a break." : offer === "re-entry" ? "Your place is saved." : offer === "stale-round" ? "Continuing may lead to a long break after the next focus." : "You can undo this change."}
     onClose={() => { if (offer) void answer("dismiss"); else setUndo(null); }} actions={buttons}>
     {body}
   </FocusCard>;

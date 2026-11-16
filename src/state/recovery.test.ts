@@ -155,7 +155,7 @@ it("C3 lifecycle native wake settles first and defers the gap behind recovery", 
   modules.startTicker(); await Promise.resolve(); await Promise.resolve();
   modules.timerActions.start();
   const old = Date.now();
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: old, pendingGap: null, acknowledgedGap: null, uncertain: false });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: old, pendingGap: null, acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
   vi.setSystemTime(old + 3 * 86_400_000);
   modules.checkRecoveryLifecycle(true);
   expect(modules.returnActivity.get().pendingGap).toBe(`gap:${old}`);
@@ -165,7 +165,7 @@ it("C3 lifecycle native wake settles first and defers the gap behind recovery", 
 });
 it.each(["keep", "move", "drop"] as const)("C3/C6 gap %s is acknowledged once and never changes tasks/history", action => {
   const before = modules.tasks.get();
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:old", acknowledgedGap: null, uncertain: false });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:old", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
   const command = modules.recoveryCommand();
   expect(modules.answerRecovery(command, action)).toBe(true);
   expect(modules.answerRecovery(command, action)).toBe(false);
@@ -220,7 +220,7 @@ it("C6 v1 backup still imports; saved context is additive while gap metadata sta
 it("C3 a multi-day running process evaluates at cadence, queues during work, and focus alone never counts as activity", async () => {
   modules.startTicker(); await Promise.resolve(); await Promise.resolve();
   const last = Date.now() - 3 * 86_400_000;
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: last, pendingGap: null, acknowledgedGap: null, uncertain: false });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: last, pendingGap: null, acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
   vi.advanceTimersByTime(30_000);
   expect(modules.returnActivity.get().pendingGap).toBe(`gap:${last}`);
   expect(modules.recoveryOffer()).toBe("gap-return");
@@ -235,7 +235,7 @@ it("C3 a multi-day running process evaluates at cadence, queues during work, and
 });
 it("C3 an unexplained clock change suppresses a pending gap until purposeful action rebases", () => {
   modules.checkReturnActivity();
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now(), pendingGap: null, acknowledgedGap: null, uncertain: false });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now(), pendingGap: null, acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
   vi.setSystemTime(Date.now() - 48 * 3_600_000); modules.checkReturnActivity();
   expect(modules.returnActivity.get()).toMatchObject({ pendingGap: null, uncertain: true });
   modules.purposefulAction();
@@ -287,7 +287,7 @@ it("C3 cloud/backup receives do not count as purposeful task edits", async () =>
 it("C4 a return offer cannot bypass Hard mode with an optional short block", () => {
   modules.settings.set({ ...modules.settings.get(), timer: { ...modules.settings.get().timer, hardMode: true } });
   modules.timerActions.goTo("short"); modules.timerActions.start();
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:locked", acknowledgedGap: null, uncertain: false });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:locked", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
   const before = modules.timer.get();
   expect(modules.answerRecovery(modules.recoveryCommand(), "short-block")).toBe(false);
   expect(modules.timer.get()).toBe(before);
@@ -315,7 +315,7 @@ it("review2 P2: idle Start captures a remote intent with equal revision and newe
 });
 it("review2 P2: a native wake reconciles suspension after ordinary checks already latched uncertainty", () => {
   const last = Date.now();
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: last, pendingGap: null, acknowledgedGap: null, uncertain: false });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: last, pendingGap: null, acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
   modules.checkReturnActivity(false, last, 100);
   modules.checkReturnActivity(false, last + 3 * 86_400_000, 200);
   expect(modules.returnActivity.get()).toMatchObject({ uncertain: true, pendingGap: null });
@@ -325,7 +325,7 @@ it("review2 P2: a native wake reconciles suspension after ordinary checks alread
 });
 it("review2 P2: native wake never clears backwards-clock or pre-existing uncertainty", () => {
   const last = Date.now();
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: last, pendingGap: null, acknowledgedGap: null, uncertain: true });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: last, pendingGap: null, acknowledgedGap: null, acknowledgedRound: null, uncertain: true });
   modules.checkReturnActivity(false, last, 100);
   modules.checkReturnActivity(false, last + 3 * 86_400_000, 200);
   modules.checkReturnActivity(true, last + 3 * 86_400_000 + 1, 201);
@@ -436,13 +436,13 @@ it("round3 auto-run focus without takeover has no Resume card", () => {
 
 it.each(["move", "drop"] as const)("round3 gap %s clears the whole intent document", action => {
   modules.updateIntent({ reward: "Tea" });
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:old", acknowledgedGap: null, uncertain: false });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:old", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
   expect(modules.answerRecovery(modules.recoveryCommand(), action)).toBe(true);
   expect(modules.intent.get()).toMatchObject({ action: "", why: "", cue: undefined, reward: undefined });
 });
 it("round3 Keep rebases purposeful activity so another gap can be detected", () => {
   const now = Date.now();
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: now - 3 * 86_400_000, pendingGap: "gap:old", acknowledgedGap: null, uncertain: false });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: now - 3 * 86_400_000, pendingGap: "gap:old", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
   expect(modules.answerRecovery(modules.recoveryCommand(), "keep")).toBe(true);
   expect(modules.returnActivity.get().lastPurposefulAt).toBe(now);
   modules.checkReturnActivity(false, now + 2 * 86_400_000, performance.now() + 2 * 86_400_000);
@@ -451,7 +451,7 @@ it("round3 Keep rebases purposeful activity so another gap can be detected", () 
 it("round3 suspect web sleep is conservative, and purposeful activity restores future gap detection", () => {
   window.desktop = undefined;
   const now = Date.now(), mono = performance.now();
-  modules.returnActivity.set({ version: 1, lastPurposefulAt: now, pendingGap: null, acknowledgedGap: null, uncertain: false });
+  modules.returnActivity.set({ version: 1, lastPurposefulAt: now, pendingGap: null, acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
   modules.checkReturnActivity(false, now, mono);
   modules.checkReturnActivity(false, now + 3 * 86_400_000, mono + 1);
   expect(modules.returnActivity.get()).toMatchObject({ uncertain: true, pendingGap: null });
@@ -612,4 +612,162 @@ it.each(["single", "group"])("Gemini 1: toggling a %s task is purposeful device 
   expect(modules.returnActivity.get().pendingGap).toBeNull();
 });
 
+
+  it("task2: stale-round offered only under R2 conditions", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "stale", round: 2 });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:old", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    expect(modules.recoveryOffer()).toBe("stale-round");
+    // non-pomodoro
+    modules.settings.set({ ...modules.settings.get(), timer: { ...modules.settings.get().timer, mode: "countdown" } });
+    expect(modules.recoveryOffer()).not.toBe("stale-round");
+    modules.settings.set({ ...modules.settings.get(), timer: { ...modules.settings.get().timer, mode: "pomodoro" } });
+    // round 0
+    modules.timer.set({ ...modules.timer.get(), round: 0 });
+    expect(modules.recoveryOffer()).not.toBe("stale-round");
+    modules.timer.set({ ...modules.timer.get(), round: 2 });
+    // no pending gap
+    modules.returnActivity.set({ ...modules.returnActivity.get(), pendingGap: null });
+    expect(modules.recoveryOffer()).not.toBe("stale-round");
+    modules.returnActivity.set({ ...modules.returnActivity.get(), pendingGap: "gap:old", acknowledgedRound: null });
+    // already acknowledged
+    modules.returnActivity.set({ ...modules.returnActivity.get(), acknowledgedRound: "gap:old" });
+    expect(modules.recoveryOffer()).not.toBe("stale-round");
+    modules.returnActivity.set({ ...modules.returnActivity.get(), acknowledgedRound: null });
+    // boundary
+    modules.timer.set({ ...modules.timer.get(), boundary: { id: "b", ended: "focus", at: Date.now(), missed: false } });
+    expect(modules.recoveryOffer()).toBe("missed-end");
+    modules.timer.set({ ...modules.timer.get(), boundary: undefined });
+    // reentry
+    modules.timer.set({ ...modules.timer.get(), reentry: "re" });
+    expect(modules.recoveryOffer()).toBe("re-entry");
+    modules.timer.set({ ...modules.timer.get(), reentry: undefined });
+    // running focus
+    modules.timer.set({ ...modules.timer.get(), startedAt: Date.now() });
+    expect(modules.recoveryOffer()).not.toBe("stale-round");
+    modules.timer.set({ ...modules.timer.get(), startedAt: null });
+    // expired running guard already covered by loading; check expired null
+    expect(modules.recoveryOffer()).toBe("stale-round");
+  });
+
+  it("task2: answerRecovery stale-round resume keeps round and acks, pendingGap remains", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "stale2", round: 3 });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:tok", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    const cmd = modules.recoveryCommand();
+    expect(cmd.offerId).toBe("gap:tok");
+    const beforeRound = modules.timer.get().round;
+    const statsBefore = modules.stats.get();
+    expect(modules.answerRecovery(cmd, "resume")).toBe(true);
+    expect(modules.timer.get().round).toBe(beforeRound);
+    expect(modules.returnActivity.get().acknowledgedRound).toBe("gap:tok");
+    expect(modules.returnActivity.get().pendingGap).toBe("gap:tok");
+    expect(modules.stats.get()).toBe(statsBefore);
+    // second call stale
+    expect(modules.answerRecovery(cmd, "resume")).toBe(false);
+  });
+
+  it("task2: answerRecovery stale-round reset-round sets round 0 only and acks", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "stale3", round: 4 });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:tok2", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    const cmd = modules.recoveryCommand();
+    const statsBefore = modules.stats.get();
+    const chunksBefore = modules.stats.get().chunks.length;
+    expect(modules.answerRecovery(cmd, "reset-round")).toBe(true);
+    expect(modules.timer.get().round).toBe(0);
+    expect(modules.returnActivity.get().acknowledgedRound).toBe("gap:tok2");
+    expect(modules.returnActivity.get().pendingGap).toBe("gap:tok2");
+    expect(modules.stats.get().chunks.length).toBe(chunksBefore);
+    expect(modules.stats.get()).toBe(statsBefore);
+  });
+
+  it("task2: answerRecovery stale-round dismiss keeps round and acks", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "stale4", round: 2 });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:tok3", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    const cmd = modules.recoveryCommand();
+    expect(modules.answerRecovery(cmd, "dismiss")).toBe(true);
+    expect(modules.timer.get().round).toBe(2);
+    expect(modules.returnActivity.get().acknowledgedRound).toBe("gap:tok3");
+  });
+
+  it("task2: reset refuses when hardLocked", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "staleHL", round: 2, hardLocked: true });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:hl", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    // hardLocked makes hardModeLocked true; offer may still be stale-round? runningFocus false, so yes.
+    expect(modules.recoveryOffer()).toBe("stale-round");
+    const cmd = modules.recoveryCommand();
+    const beforeRound = modules.timer.get().round;
+    const beforeAct = modules.returnActivity.get();
+    expect(modules.answerRecovery(cmd, "reset-round")).toBe(false);
+    expect(modules.timer.get().round).toBe(beforeRound);
+    expect(modules.returnActivity.get()).toBe(beforeAct);
+  });
+
+  it("task2: reset refuses when boundary present (no mutation)", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "staleB", round: 2, boundary: { id: "b", ended: "focus", at: Date.now(), missed: false } });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:b", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    const before = modules.timer.get();
+    const beforeAct = modules.returnActivity.get();
+    // offer is missed-end, not stale-round
+    expect(modules.recoveryOffer()).toBe("missed-end");
+    const cmd = modules.recoveryCommand();
+    expect(modules.answerRecovery(cmd, "reset-round")).toBe(false);
+    expect(modules.timer.get()).toBe(before);
+    expect(modules.returnActivity.get()).toBe(beforeAct);
+  });
+
+  it("task2: reset refuses when reentry present (no mutation)", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "staleR", round: 2, reentry: "re" });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:r", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    const before = modules.timer.get();
+    const beforeAct = modules.returnActivity.get();
+    expect(modules.recoveryOffer()).toBe("re-entry");
+    const cmd = modules.recoveryCommand();
+    expect(modules.answerRecovery(cmd, "reset-round")).toBe(false);
+    expect(modules.timer.get()).toBe(before);
+    expect(modules.returnActivity.get()).toBe(beforeAct);
+  });
+
+  it("task2: reset refuses when startedAt !== null (defensive, running break) no mutation/no ack", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "staleSA", segment: "short", startedAt: Date.now(), round: 2 });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:sa", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    expect(modules.recoveryOffer()).toBe("stale-round");
+    const cmd = modules.recoveryCommand();
+    const beforeTimer = modules.timer.get();
+    const beforeActivity = modules.returnActivity.get();
+    expect(modules.answerRecovery(cmd, "reset-round")).toBe(false);
+    expect(modules.timer.get()).toBe(beforeTimer);
+    expect(modules.returnActivity.get()).toBe(beforeActivity);
+  });
+
+  it("task2: invalid action returns false no mutation", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "stale5", round: 2 });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:tok4", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    const cmd = modules.recoveryCommand();
+    const beforeTimer = modules.timer.get();
+    const beforeActivity = modules.returnActivity.get();
+    expect(modules.answerRecovery(cmd, "keep")).toBe(false);
+    expect(modules.timer.get()).toBe(beforeTimer);
+    expect(modules.returnActivity.get()).toBe(beforeActivity);
+  });
+
+  it("task2: stale command/offerId mismatch no mutation", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "stale6", round: 2 });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:tok5", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    const cmd = modules.recoveryCommand();
+    const before = modules.timer.get();
+    const beforeAct = modules.returnActivity.get();
+    expect(modules.answerRecovery({ ...cmd, offerId: "old" }, "resume")).toBe(false);
+    expect(modules.timer.get()).toBe(before);
+    expect(modules.returnActivity.get()).toBe(beforeAct);
+  });
+
+  it("task2: after ack gap-return can follow", () => {
+    modules.timer.set({ ...modules.INITIAL_TIMER, segId: "stale8", round: 2 });
+    modules.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:tok7", acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    const cmd = modules.recoveryCommand();
+    expect(modules.answerRecovery(cmd, "resume")).toBe(true);
+    // pendingGap remains; acknowledgedRound set but acknowledgedGap still null so gap-return should be offered next
+    expect(modules.returnActivity.get().pendingGap).toBe("gap:tok7");
+    expect(modules.returnActivity.get().acknowledgedGap).toBeNull();
+    expect(modules.recoveryOffer()).toBe("gap-return");
+  });
 });

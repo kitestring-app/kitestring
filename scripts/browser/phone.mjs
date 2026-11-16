@@ -14,7 +14,9 @@ async function settle() { await ev('document.fonts.ready'); await delay(100); }
 async function seed(look, view) {
   await ev(`Promise.all([import('/src/state/settings.ts'),import('/src/state/timer.ts'),import('/src/state/intent.ts'),import('/src/state/tasks.ts'),import('/src/state/returnActivity.ts'),import('/src/state/parkingReview.ts'),import('/src/state/notes.ts')]).then(async([s,t,i,k,a,p,n])=>{
     await s.calmFoundationReady; t.timerActions.stop();
-    a.returnActivity.set({...a.returnActivity.get(),pendingGap:null});p.parkingReview.set({...p.parkingReview.get(),review:null});
+    // Each view seeds a fresh set: leftover round tally must not turn a gap-return fixture into a stale-round card.
+    t.timer.set({...t.timer.get(),round:0});
+    a.returnActivity.set({...a.returnActivity.get(),pendingGap:null,acknowledgedRound:null});p.parkingReview.set({...p.parkingReview.get(),review:null});
     const next=structuredClone(s.DEFAULT_SETTINGS); next.dash=${JSON.stringify(view==='home'||view==='ambient'?view:'focus')};next.appearance.look=${JSON.stringify(look)};
     next.clock={...next.clock,format:'24',seconds:false};next.lastTab=${JSON.stringify(view.startsWith('settings-')?view.slice(9):'themes')};
     next.extras={...next.extras,reduceMotion:true,preventSleep:false,clearMode:false,disableAnimated:true};

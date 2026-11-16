@@ -178,8 +178,10 @@ it.each([0x60c10c, 0xc0ffee])("seeded real two-tab owner history, seed %i", asyn
     expect(now, `elapsed rolled back in ${current.segId}`).toBeGreaterThanOrEqual(last);
     elapsedSeen.set(current.segId, now);
     const offer = tab.clock.recoveryOffer();
+    const ra = tab.activity.returnActivity.get();
+    const roundStale = tab.settings.settings.get().timer.mode === "pomodoro" && current.round > 0 && !!ra.pendingGap && ra.acknowledgedRound !== ra.pendingGap;
     const expected = current.boundary ? "missed-end" : current.reentry ? "re-entry" : current.startedAt !== null && current.segment === "focus" ? null :
-      tab.activity.returnActivity.get().pendingGap ? "gap-return" : tab.parking.parkingReview.get().review && !tab.parking.parkingReview.get().deferred ? "parking-review" : null;
+      roundStale ? "stale-round" : ra.pendingGap ? "gap-return" : tab.parking.parkingReview.get().review && !tab.parking.parkingReview.get().deferred ? "parking-review" : null;
     expect(offer).toBe(expected);
     for (const renderer of tabs) {
       expect(Number(!!renderer.clock.recoveryOffer()) + Number(!!renderer.transition.transitionStore.get()), `only one recovery surface is visible in ${renderer.label}`).toBeLessThanOrEqual(1);
