@@ -1,0 +1,5 @@
+/* Featured 45 · 12 chess rhythm callout, additive to the existing preset row. */
+#chess-rhythm { display: grid; gap: 4px; margin: 0 0 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--surface-sunk); }
+#chess-rhythm h4 { margin: 0; font: 700 22px/1.2 var(--display); font-variant-numeric: tabular-nums; }
+#chess-rhythm p.help { margin: 0; }
+#chess-rhythm .btn { justify-self: start; margin-top: 6px; }

@@ -141,3 +141,19 @@ it("edits the focus done and break over reminder text", async () => {
   expect(settings.get().timer.focusDoneText).toBe("Stretch, now");
   expect(settings.get().timer.breakOverText).toBe("");
 });
+
+it("features the 45 · 12 chess rhythm preset and applies the same lengths as the preset row", async () => {
+  await settings.ready; vi.stubGlobal("window", {}); settings.set(DEFAULT_SETTINGS);
+  const tree = TimerTab();
+  const callout = elements(tree).find(el => el.props.id === "chess-rhythm")!;
+  expect(callout).toBeDefined();
+  expect((callout.props as Record<string, unknown>)["aria-label"]).toBe("Chess rhythm preset");
+  expect(elements(tree).some(el => typeof el.props.children === "string" && el.props.children.includes("a steady board pace"))).toBe(true);
+  const button = elements(tree).find(el => el.type === "button" && el.props.children === "Use 45 · 12")!;
+  expect(button).toBeDefined();
+  button.props.onClick!();
+  expect(settings.get().timer.lengths).toMatchObject({ pomodoro: 45, short: 12, long: 25 });
+  expect(settings.get().timer.longEvery).toBe(4);
+  const pressed = (elements(TimerTab()).find(el => el.type === "button" && el.props.children === "Use 45 · 12")!.props as Record<string, unknown>)["aria-pressed"];
+  expect(pressed).toBe(true);
+});

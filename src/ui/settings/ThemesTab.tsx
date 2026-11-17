@@ -78,6 +78,8 @@ export function ThemesTab() {
     pick({ kind: "library", id });
     const patch = themeTimerPatch(id);
     if (!patch) return;
+    const themeName = findTheme(id)?.name ?? name;
+    setMessage(`Applied ${themeName} wallpaper and its 45 · 12 rhythm.`);
     settings.set(current => ({ ...current, timer: { ...current.timer, lengths: { ...current.timer.lengths, ...patch.lengths }, longEvery: patch.longEvery } }));
   };
 

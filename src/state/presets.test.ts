@@ -16,6 +16,14 @@ describe("Pomodoro presets", () => {
     expect(matchPreset({ pomodoro: 25.5, short: 5, long: 15 })).toBe("custom");
     expect(PRESETS.at(-1)?.label).toBe("Custom");
   });
+  it("ships the featured 45-12-25 preset and the chess wallpaper patch returns it", () => {
+    const row = PRESETS.find((p) => p.id === CHESS_PRESET_ID);
+    expect(row).toBeDefined();
+    expect(row?.label).toBe("45 · 12");
+    expect(row?.lengths).toEqual({ pomodoro: 45, short: 12, long: 25 });
+    expect(row?.longEvery).toBe(4);
+    expect(themeTimerPatch(CHESS_THEME_ID)).toEqual({ lengths: { pomodoro: 45, short: 12, long: 25 }, longEvery: 4 });
+  });
   it("matches the 45/12/25 preset and keeps near misses custom", () => {
     expect(matchPreset({ pomodoro: 45, short: 12, long: 25 })).toBe(CHESS_PRESET_ID);
     for (const combo of [

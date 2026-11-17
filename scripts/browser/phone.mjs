@@ -140,7 +140,7 @@ try {
   assert.equal(await ev(`document.querySelector('meta[name="viewport"]').content.includes('viewport-fit=cover')`),true);
   assert.equal(await ev(`document.querySelector('meta[name="apple-mobile-web-app-capable"]').content`),'yes');
   assert.equal(await ev(`navigator.serviceWorker.getRegistrations().then(r=>r.length)`),0);
-  for(const [width,height]of phoneSizes)for(const look of ['classic','glass','sketch','companion','sunrise']){
+  for(const [width,height]of phoneSizes)for(const look of ['classic','glass','sketch','companion','sunrise', 'chessboard']){
     await c.send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true});
     await seed(look,'focus-idle');await startAlarm();
     assert.equal(await ev('innerWidth'),width,'phone viewport must not expand to fit overflow');
@@ -149,7 +149,7 @@ try {
     await c.waitFor("!document.querySelector('.alarm-toast')");
   }
   const views=['home','focus-idle','focus-running','focus-reentry','focus-gap','ambient','settings-themes','settings-clock','settings-timer','tasks','sounds','notes'];
-  for(const [width,height]of phoneSizes)for(const look of ['classic','glass','sketch','companion','sunrise'])for(const view of views){
+  for(const [width,height]of phoneSizes)for(const look of ['classic','glass','sketch','companion','sunrise', 'chessboard'])for(const view of views){
     await c.send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true});await seed(look,view);
     if(view.startsWith('settings-')){await ev(`document.querySelector('[aria-label="Settings (S)"]').click()`);await c.waitFor("document.querySelector('.drawer')");}
     else if(['tasks','sounds','notes'].includes(view)){await ev(`document.querySelector('[data-panel="${view}"]').click()`);await c.waitFor("document.querySelector('.panel:not([hidden])')");if(view==='sounds')await c.waitFor(`!document.querySelector('.sounds-panel').textContent.includes('Loading your mixes')`);}

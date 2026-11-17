@@ -61,7 +61,7 @@ it("picks whichever ink reads better, judged in sRGB like the browser blends", (
 
 it("switches paper looks to light ink only when Dim really darkens the paper", () => {
   const any = color("#000000");
-  for (const look of ["sketch", "companion", "sunrise"] as const) {
+  for (const look of ["sketch", "companion", "sunrise", "chessboard"] as const) {
     expect(wallpaperIsLight(any, "none", 1, look)).toBe(true);
     expect(wallpaperIsLight(any, "dim", 0.3, look)).toBe(true);
     expect(wallpaperIsLight(any, "dim", 1, look)).toBe(false);
@@ -70,5 +70,5 @@ it("switches paper looks to light ink only when Dim really darkens the paper", (
 
 it("gives dimmed paper looks a light ink token", () => {
   const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
-  expect(css).toMatch(/html\.paper-dimmed:is\(\[data-look="sketch"\], \[data-look="companion"\], \[data-look="sunrise"\]\) \{\n  --on-bg: #fbf7ef;/);
+  expect(css).toMatch(/html\.paper-dimmed:is\(\[data-look="sketch"\], \[data-look="companion"\], \[data-look="sunrise"\], \[data-look="chessboard"\]\) \{\n  --on-bg: #fbf7ef;/);
 });

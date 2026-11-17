@@ -22,7 +22,7 @@ describe.skipIf(process.env.BACKUP_BROWSER !== "1")("factual records and Hide st
   it("shows neutral daily/weekly records in all five looks at desktop and phone widths", async () => {
     await chrome.evaluate("document.querySelector('[aria-label=\"Settings (S)\"]').click()");
     await chrome.waitFor("document.querySelector('.stats-records')");
-    for (const look of ['classic','glass','sketch','companion','sunrise']) for (const width of [1280,600,390,320]) {
+    for (const look of ['classic','glass','sketch','companion','sunrise','chessboard']) for (const width of [1280,600,390,320]) {
       await chrome.send('Emulation.setDeviceMetricsOverride',{width,height:820,deviceScaleFactor:1,mobile:false});
       await page(`s.settingsUpdate('appearance',{look:'${look}'});`);
       await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);

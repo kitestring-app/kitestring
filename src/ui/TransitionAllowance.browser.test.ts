@@ -55,7 +55,7 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('separate transition allowanc
     expect(await chrome.evaluate("document.activeElement.getAttribute('aria-label')")).toBe('Estimate for Draft outline');
     expect(await page('return t.totalMs();')).toBe(total); expect(await page('return JSON.stringify(h.stats.get());')).toBe(history);
     const shots = process.env.SHOTS_DIR ?? join(tmpdir(), 'job93-allowance-shots'); await mkdir(shots, { recursive: true });
-    for (const width of [1280, 390, 320]) for (const look of ['classic', 'glass', 'sketch', 'companion', 'sunrise']) {
+    for (const width of [1280, 390, 320]) for (const look of ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard']) {
       await chrome.send('Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: width < 500 });
       await page(`s.settingsUpdate('appearance',{look:'${look}'});`);
       await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);

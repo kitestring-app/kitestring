@@ -10,9 +10,10 @@ import { FACES } from "../timer/faces";
 import { Choices, Toggle } from "./SettingsDrawer";
 import { useEffect, useState } from "react";
 import { companionAvailable, testCompanion } from "../../audio/companion";
-import { matchPreset, PRESETS } from "../../state/presets";
+import { CHESS_PRESET_ID, matchPreset, PRESETS } from "../../state/presets";
 import { TallyPreview } from "../FocusView";
 import { IdleNudgeCard } from "./IdleNudgeCard";
+import "./TimerTab.css";
 
 /** Shows whether the macOS companion is running (alerts even with Chrome closed) and lets you test it. */
 function CompanionStatus({ volume, alertSound }: { volume: number; alertSound: AlertSound }) {
@@ -158,6 +159,18 @@ export function TimerTab() {
           </select>
         </div>
         <h3 style={{ marginTop: 24 }}>Timer lengths</h3>
+        {(t.mode === "pomodoro" || t.mode === "animedoro") && (
+          <div id="chess-rhythm" role="group" aria-label="Chess rhythm preset">
+            <p className="card-kicker">Chess rhythm</p>
+            <h4>45 · 12</h4>
+            <p className="help">45 min focus · 12 min break · 25 min long break — a steady board pace.</p>
+            <button type="button" className="btn small primary" aria-pressed={preset === CHESS_PRESET_ID} onClick={() => {
+              const row = PRESETS.find((p) => p.id === CHESS_PRESET_ID)!;
+              setCustom(false);
+              if (row.lengths) set({ lengths: { ...t.lengths, ...row.lengths }, longEvery: row.longEvery });
+            }}>Use 45 · 12</button>
+          </div>
+        )}
         {(t.mode === "pomodoro" || t.mode === "animedoro") && (
           <div className="row" role="group" aria-label="Pomodoro presets" style={{ flexWrap: "wrap" }}>
             {PRESETS.map((p) => (

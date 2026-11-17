@@ -54,7 +54,7 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('optional sufficient finish',
     await chrome.reload("document.querySelector('.next-action-finish')"); await owner();
     expect(await page("return s.settings.get().timer.display;")).toBe("hidden");
     const shots = process.env.SHOTS_DIR ?? join(tmpdir(), 'job93-enough-shots'); await mkdir(shots, { recursive: true });
-    for (const width of [1280, 390, 320]) for (const look of ['classic', 'glass', 'sketch', 'companion', 'sunrise']) {
+    for (const width of [1280, 390, 320]) for (const look of ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard']) {
       await chrome.send('Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: width < 500 });
       await page(`s.settingsUpdate('appearance',{look:'${look}'});`);
       await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);

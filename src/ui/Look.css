@@ -12,6 +12,8 @@ html.paper-dark .look-bg-sunrise .pb-ring1 { fill: #2f1f13; }
 html.paper-dark .look-bg-sunrise .pb-ring2 { fill: #3b2616; }
 html.paper-dark .look-bg-sunrise .pb-ring3 { fill: #4a2e18; }
 html.paper-dark .look-bg-sunrise .pb-cloud { fill: #33231a; }
+.look-bg-chessboard { background-color: #e9efe3; background-image: repeating-conic-gradient(rgb(47 90 66 / 18%) 0 25%, transparent 0 50%); background-size: 32px 32px; }
+html.paper-dark .look-bg-chessboard { background-color: #1a2418; background-image: repeating-conic-gradient(rgb(232 239 227 / 12%) 0 25%, transparent 0 50%); }
 .look-bg-sunrise .sun { transform-origin: 600px 990px; animation: sun-breathe 14s ease-in-out infinite alternate; }
 @keyframes sun-breathe { from { transform: scale(1); } to { transform: scale(1.035); } }
 .reduce-motion .look-bg-sunrise .sun { animation: none; }

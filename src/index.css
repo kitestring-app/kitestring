@@ -149,6 +149,36 @@
   color-scheme: light;
 }
 
+/* Chessboard: tournament board. Forest/walnut squares, brass-green accent, monospaced clock, crisp corners. */
+:root[data-look="chessboard"] {
+  --state-focus: #2f7d5a; --state-break: #8a6a3f; --state-long: #4a6fa5; --state-ink: #f4f7f0;
+  --bg: #e9efe3;
+  --on-bg: #1f3a2a; --on-bg-dim: #3a5546; --on-bg-faint: #4a6656; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #1f3a2a; --fg-dim: #425a4d; --fg-faint: #526b5e;
+  --surface: #f4f7f0; --surface-hover: #e6ecdf;
+  --surface-strong: #f4f7f0; --surface-sunk: #dde5d6; --surface-solid: #f4f7f0;
+  --canvas: #e9efe3;
+  --border: transparent; --line: rgb(31 58 42 / 14%);
+  --blur: none; --blur-strong: none;
+  --highlight: inset 0 1px 0 #ffffff;
+  --shadow: var(--highlight), 0 8px 22px -16px rgb(31 58 42 / 35%);
+  --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(31 58 42 / 45%);
+  --accent: #2f7d5a; --accent-fg: #f4f7f0; --accent-soft: rgb(47 125 90 / 14%); --accent-ink: #1f5a3f;
+  --sel: #1f3a2a; --sel-fg: #f4f7f0; --ring: #2f7d5a;
+  --tile: #e6ecdf; --tile-border: transparent; --tile-on: #2f7d5a; --tile-on-fg: #f4f7f0; --tile-icon: #3a5546;
+  --track: #d4ddcc; --progress: #2f7d5a;
+  --good: #2f7d5a; --warn: #8a6a3f; --danger: #a0402f; --danger-bg: #f8e4df; --danger-fg: #6e2618;
+  --scrim: none;
+  --radius: 12px; --r-ctl: 8px; --r-seg: 8px;
+  --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  --timer-font: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --timer-weight: 700; --timer-track: -0.02em; --headline-weight: 600; --icon-stroke: 1.7;
+  --press: scale(0.98);
+  --board-light: #e9efe3; --board-dark: #2f5a42; --board-square: rgb(47 90 66 / 18%); --board-line: rgb(31 58 42 / 14%);
+  color-scheme: light;
+}
+
 /* Paper looks at night: chosen by Dark, or by System when the OS is dark (html.paper-dark). Same personality,
    same accents, on dark paper. Auto keeps the light paper, because the paper is the wallpaper. */
 html.paper-dark[data-look="sketch"] {
@@ -204,6 +234,35 @@ html.paper-dark[data-look="sunrise"] {
   --tile: #3a2a1d; --tile-on: #ff9a52; --tile-on-fg: #24180f; --tile-icon: #ffb27a;
   --track: #4a3522; --progress: #ff9a52;
   --good: #7fd3a8; --warn: #f2c46e; --danger: #f49379; --danger-bg: #3d2117; --danger-fg: #ffd6c9;
+  color-scheme: dark;
+}
+
+html.paper-dark[data-look="chessboard"] {
+  --state-focus: #4fb08a; --state-break: #c49a5a; --state-long: #7fa0d4; --state-ink: #1a2418;
+  --bg: #1a2418;
+  --on-bg: #e8efe3; --on-bg-dim: #c4d4c8; --on-bg-faint: #a8bba8; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #e8efe3; --fg-dim: #c4d4c8; --fg-faint: #a8bba8;
+  --surface: #243028; --surface-hover: #2f3c32;
+  --surface-strong: #243028; --surface-sunk: #1e2820; --surface-solid: #243028;
+  --canvas: #1a2418;
+  --border: #2f3c32; --line: #2f3c32;
+  --blur: none; --blur-strong: none;
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 6%);
+  --shadow: var(--highlight), 0 8px 22px -16px rgb(0 0 0 / 60%);
+  --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(0 0 0 / 70%);
+  --accent: #4fb08a; --accent-fg: #1a2418; --accent-soft: rgb(79 176 138 / 16%); --accent-ink: #8fd4b4;
+  --sel: #e8efe3; --sel-fg: #1a2418; --ring: #4fb08a;
+  --tile: #2f3c32; --tile-on: #4fb08a; --tile-on-fg: #1a2418; --tile-icon: #c4d4c8;
+  --track: #2f3c32; --progress: #4fb08a;
+  --good: #7fd3a8; --warn: #e8bd6e; --danger: #ee8f7d; --danger-bg: #3b211b; --danger-fg: #ffd5cb;
+  --scrim: none;
+  --radius: 12px; --r-ctl: 8px; --r-seg: 8px;
+  --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  --timer-font: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --timer-weight: 700; --timer-track: -0.02em; --headline-weight: 600; --icon-stroke: 1.7;
+  --press: scale(0.98);
+  --board-light: #243028; --board-dark: #1a2418; --board-square: rgb(232 239 227 / 8%); --board-line: rgb(232 239 227 / 10%);
   color-scheme: dark;
 }
 
@@ -388,7 +447,7 @@ input, textarea, select { font: inherit; color: inherit; }
 select.input { -webkit-appearance: none; appearance: none; padding-right: 38px; cursor: pointer; background-image: var(--chevron); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; }
 :root { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7d6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 :root[data-look="glass"] { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e8ebee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
-:root.theme-light, :root:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"]) { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a4760' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+:root.theme-light, :root:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"]) { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a4760' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 select.input option { color: CanvasText; background: Canvas; }
 .input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .switch { appearance: none; width: 46px; height: 26px; border-radius: 99px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); position: relative; cursor: pointer; flex: none; transition: background 0.2s; margin: 0; }
@@ -504,7 +563,7 @@ input[type="checkbox"]:not(.switch), input[type="radio"] { accent-color: var(--a
 :root[data-look="sunrise"] :is(.iconbtn, .btn, .seg):active:not(:disabled) { box-shadow: 0 1px 0 var(--sunrise-ledge, #f3d9b6); }
 
 /* Paper looks under a strong Dim: the paper turns dark, so wallpaper text switches to light ink. */
-html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"]) {
+html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"]) {
   --on-bg: #fbf7ef; --on-bg-dim: rgb(251 247 239 / 82%); --on-bg-faint: rgb(251 247 239 / 66%); --on-bg-shadow: 0 1px 2px rgb(0 0 0 / 35%);
 }
 
@@ -522,6 +581,8 @@ html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="
 :root[data-look="sketch"] :is(.btn, .choice, .sound-tile, .sounds-station, .radio-station)[aria-pressed="true"], :root[data-look="sketch"] .sound-tile.active { border-color: transparent; box-shadow: none; }
 /* Sketchbook: the paper and its dots continue behind Settings. */
 :root[data-look="sketch"] .drawer main { background-image: radial-gradient(circle, var(--paper-dot, rgb(51 48 43 / 7%)) 0.9px, transparent 1px); background-size: 18px 18px; }
+:root[data-look="chessboard"] :is(.panel-body, .drawer main) { background-image: repeating-conic-gradient(var(--board-square) 0 25%, transparent 0 50%); background-size: 32px 32px; }
+:root[data-look="chessboard"] :is(.panel, .card) { border-radius: var(--radius); }
 /* Sunrise: buttons inside white panels keep a visible fill and a small flat shadow. */
 :root[data-look="sunrise"] :is(.panel, .ambient-timer, .drawer, .card) :is(.iconbtn, .btn:not(.primary)) { box-shadow: 0 2px 0 var(--sunrise-ledge, #f3d9b6); }
 /* The pinned next action label, readable over any wallpaper. */
@@ -668,8 +729,8 @@ html[data-look="glass"] .sounds-panel { background: var(--surface-strong, var(--
 html:not(.theme-light) { color-scheme: dark; }
 html.theme-light { color-scheme: light; }
 /* Paper looks carry their own scheme: light paper unless paper-dark. */
-html:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"]) { color-scheme: light; }
-html.paper-dark:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"]) { color-scheme: dark; }
+html:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"]) { color-scheme: light; }
+html.paper-dark:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"]) { color-scheme: dark; }
 /* More is a real control: a quiet chip, not a stray glyph. */
 .controls .iconbtn.controls-more-toggle { width: 44px; height: 44px; align-self: center; background: var(--surface); border-color: var(--border); color: var(--on-bg); }
 .controls.idle::before { width: 44px; }

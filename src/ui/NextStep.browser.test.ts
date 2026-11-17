@@ -27,7 +27,7 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('voluntary leave a next step'
   await page('t.timerActions.pause();await f.flushReadyStores();');
   const before=await page("return {timer:t.timer.get(),stats:(await import('/src/state/stats.ts')).stats.get(),tasks:(await import('/src/state/tasks.ts')).tasks.get(),intent:i.intent.get()};");
   const shots=process.env.SHOTS_DIR??join(tmpdir(),'job94-nextstep');await mkdir(shots,{recursive:true});
-  for(const width of [1280,720,390,320])for(const look of ['classic','glass','sketch','companion','sunrise']){
+  for(const width of [1280,720,390,320])for(const look of ['classic','glass','sketch','companion','sunrise','chessboard']){
    await chrome.send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<500});await page(`s.settingsUpdate('appearance',{look:'${look}'});`);await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);
    expect(await chrome.evaluate("(()=>{const entry=document.querySelector('.next-action-leave').getBoundingClientRect();return [...document.querySelectorAll('.next-action-buttons-closeout button:not(.next-action-leave)')].every(b=>{const r=b.getBoundingClientRect();return !(entry.left<r.right&&entry.right>r.left&&entry.top<r.bottom&&entry.bottom>r.top)})})()")).toBe(true);
    await click('Leave a next step');expect(await chrome.evaluate("document.querySelector('.next-action').textContent")).toContain('Current next action: Read chapter');
@@ -85,7 +85,7 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('voluntary leave a next step'
   await chrome.send('Page.navigate',{url:chrome.origin});
   await chrome.waitFor("document.querySelector('.next-action') && import('/src/state/timer.ts').then(async t=>{await t.timerHydrationReady;return true})");
   await page("s.settingsUpdate('dash','focus');s.settingsUpdate('timer',{...s.CALM_PATCH,display:'remaining'});s.settingsUpdate('quotes',{inFocus:true});");
-  for(const [width,height] of [[375,500],[320,568],[720,540]])for(const look of ['classic','glass','sketch','companion','sunrise']){
+  for(const [width,height] of [[375,500],[320,568],[720,540]])for(const look of ['classic','glass','sketch','companion','sunrise','chessboard']){
    await chrome.send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<500});
    await chrome.send('Emulation.setTouchEmulationEnabled',{enabled:width<500});
    await page(`s.settingsUpdate('appearance',{look:'${look}'});i.updateIntent({action:'Read chapter',why:'Understand'});`);
@@ -119,7 +119,7 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('voluntary leave a next step'
   await chrome.send('Emulation.setDeviceMetricsOverride',{width:1280,height:820,deviceScaleFactor:1,mobile:false});
   await page("s.settingsUpdate('dash','focus');i.updateIntent({action:'Read chapter'});");
   await chrome.evaluate("document.documentElement.style.setProperty('--ui','monospace')");
-  try{for(const look of ['classic','glass','sketch','companion','sunrise']){
+  try{for(const look of ['classic','glass','sketch','companion','sunrise','chessboard']){
    await page(`s.settingsUpdate('appearance',{look:'${look}'});`);await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);
    expect(await chrome.evaluate("(()=>{const entry=document.querySelector('.next-action-leave').getBoundingClientRect();return [...document.querySelectorAll('.next-action-buttons-closeout button:not(.next-action-leave)')].every(b=>{const r=b.getBoundingClientRect();return !(entry.left<r.right&&entry.right>r.left&&entry.top<r.bottom&&entry.bottom>r.top)})})()")).toBe(true);
   }}finally{await chrome.evaluate("document.documentElement.style.removeProperty('--ui')")}

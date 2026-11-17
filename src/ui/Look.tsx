@@ -5,7 +5,7 @@ import "./Look.css";
 import { installFullscreenTransition } from "./fullscreenTransition";
 
 /** Looks drawn on paper bring their own backdrop instead of the photo wallpaper. Light paper by default; html.paper-dark turns it to night paper. */
-export const PAPER_LOOKS: readonly LookId[] = ["sketch", "companion", "sunrise"];
+export const PAPER_LOOKS: readonly LookId[] = ["sketch", "companion", "sunrise", "chessboard"];
 
 /** Puts the current look on <html data-look> so every token in index.css follows it. */
 /** Point <meta theme-color> (the Mac title bar and browser UI) at the --bg now in force. Call after any change to data-look or the scheme classes. */
@@ -91,6 +91,7 @@ export function LookBackdrop({ look }: { look: LookId }) {
       </svg>
     );
   }
+  if (look === "chessboard") return <div className="look-bg look-bg-chessboard" aria-hidden="true" />;
   return null;
 }
 
