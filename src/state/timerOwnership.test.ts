@@ -53,7 +53,7 @@ it.each(["running", "paused", "paused-hard", "frozen-zero", "stats-only"])("foll
   await vi.waitFor(() => expect(commandChannel().postMessage).toHaveBeenCalledWith({ type: "timer-result", id: "follower-restore", result: { ok: true, keptTimer: true } }));
 });
 it("round5 follower gap checks cannot overwrite an acknowledgement; purposeful edits forward only a timestamp", async () => {
-  const stale = { version: 1 as const, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:old", acknowledgedGap: null, uncertain: false };
+  const stale = { version: 1 as const, lastPurposefulAt: Date.now() - 3 * 86_400_000, pendingGap: "gap:old", acknowledgedGap: null, acknowledgedRound: null, uncertain: false };
   Channel.all[0].receive({ type: "write", entries: [["returnActivity", stale]] });
   m.checkReturnActivity();
   expect(m.returnActivity.get()).toEqual(stale);

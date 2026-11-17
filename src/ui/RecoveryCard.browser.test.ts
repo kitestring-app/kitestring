@@ -336,7 +336,8 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
       t.timerActions.stop(); s.settingsUpdate('dash','focus'); s.settingsUpdate('timer',{interruptionPrompt:false});
       i.updateIntent({action:'Undo this action',why:'Its reason',cue:'After lunch',reward:'Tea',sufficientFinish:'One paragraph'});
       p.parked.set([]); p.parkThought('Waiting review',{segment:'focus'}); r.openParkingReview();
-      a.returnActivity.set({...a.returnActivity.get(),pendingGap:'gap:undo'});
+      t.timer.set({...t.timer.get(),round:0});
+      a.returnActivity.set({...a.returnActivity.get(),pendingGap:'gap:undo',acknowledgedRound:null});
     })`);
     await waitFor("document.querySelector('[aria-label=\"Return to your next action\"]')");
     await click("Drop");
@@ -425,9 +426,10 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
       }
       // A stale follower cannot revive a gap after the owner has answered it.
       socket=ownerSocket;
-      await evaluate(`Promise.all([import('/src/state/returnActivity.ts'),import('/src/lib/store.ts')]).then(async([a,f])=>{
+      await evaluate(`Promise.all([import('/src/state/timer.ts'),import('/src/state/returnActivity.ts'),import('/src/lib/store.ts')]).then(async([t,a,f])=>{
         const last=Date.now()-3*86400000;
-        a.returnActivity.set({version:1,lastPurposefulAt:last,pendingGap:'gap:'+last,acknowledgedGap:null,uncertain:false});
+        t.timer.set({...t.timer.get(),round:0});
+        a.returnActivity.set({version:1,lastPurposefulAt:last,pendingGap:'gap:'+last,acknowledgedGap:null,acknowledgedRound:null,uncertain:false});
         await f.flushReadyStores();
       })`);
       socket=follower; await send('Page.navigate',{url:origin});
@@ -453,7 +455,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
       await evaluate(`Promise.all([import('/src/state/settings.ts'),import('/src/state/timer.ts'),import('/src/state/parkingReview.ts'),import('/src/state/returnActivity.ts')]).then(([s,t,r,a])=>{
         window.desktop = ${native ? "{armAlarm:async()=>true,disarmAlarm(){},release(){},cancelSpeech(){}}" : "undefined"};
         t.timerActions.stop(); r.parkingReview.set({...r.parkingReview.get(),review:null});
-        a.returnActivity.set({...a.returnActivity.get(),pendingGap:null});
+        a.returnActivity.set({...a.returnActivity.get(),pendingGap:null,lastPurposefulAt:Date.now()});
         s.settingsUpdate('dash','${dash}');
         s.settingsUpdate('timer',{takeover:true,autoRun:'${autoRun}',interruptionPrompt:false,speak:false,notify:false,bringToFront:false,focusDoneSound:'none',breakOverSound:'none'});
         t.timerActions.goTo('short'); t.timerActions.start();
@@ -475,7 +477,8 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
         s.settingsUpdate('dash','${dash}'); s.settingsUpdate('timer',{autoRun:'off'});
         t.timerActions.goTo('short'); t.timerActions.start();
         const last=Date.now()-3*86400000;
-        a.returnActivity.set({version:1,lastPurposefulAt:last,pendingGap:'gap:'+last,acknowledgedGap:null,uncertain:false});
+        t.timer.set({...t.timer.get(),round:0});
+        a.returnActivity.set({version:1,lastPurposefulAt:last,pendingGap:'gap:'+last,acknowledgedGap:null,acknowledgedRound:null,uncertain:false});
         t.timer.set({...t.timer.get(),startedAt:Date.now()-1000,frozen:true,frozenTotal:1000});
         t.timerActions.complete(t.timer.get().segId);
       })`);
@@ -494,7 +497,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
         window.desktop=${native ? "{armAlarm:async()=>true,disarmAlarm(){},release(){},cancelSpeech(){}}" : "undefined"};
         t.timerActions.stop(); s.settingsUpdate('dash','focus');
         s.settingsUpdate('timer',{takeover:true,autoRun:'${autoRun}',interruptionPrompt:false,speak:false,notify:false,bringToFront:false,focusDoneSound:'none',breakOverSound:'none'});
-        a.returnActivity.set({...a.returnActivity.get(),pendingGap:null});
+        a.returnActivity.set({...a.returnActivity.get(),pendingGap:null,lastPurposefulAt:Date.now()});
         r.parkingReview.set({...r.parkingReview.get(),review:null});
         p.parked.set([]); p.parkThought('Review after takeover',{segment:'focus'}); r.chooseReviewBoundary('block');
         t.timerActions.start(); t.timer.set({...t.timer.get(),startedAt:Date.now()-1000,frozen:true,frozenTotal:1000});
@@ -615,6 +618,55 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     } finally {
       await send("Page.removeScriptToEvaluateOnNewDocument", { identifier: injection.identifier });
     }
+  }, 30000);
+
+
+  it("stale pomodoro round carry-over offers resume and reset", async () => {
+    await send("Page.navigate", { url: "about:blank" });
+    await send("Storage.clearDataForOrigin", { origin, storageTypes: "all" });
+    await send("Page.navigate", { url: origin });
+    await waitFor("document.querySelector('[data-tip]')"); await waitForOwner();
+    await evaluate(`Promise.all([import('/src/state/settings.ts'), import('/src/state/timer.ts'), import('/src/state/returnActivity.ts'), import('/src/lib/store.ts')]).then(async ([s,t,a,p]) => {
+      await s.calmFoundationReady;
+      s.settingsUpdate('dash', 'focus');
+      s.settingsUpdate('timer', { mode: 'pomodoro', longEvery: 4, lengths: { pomodoro: 25, short: 5, long: 15 } });
+      t.timerActions.stop();
+      t.timer.set({ ...t.timer.get(), segment: 'focus', startedAt: null, elapsedBefore: 0, round: 3, boundary: undefined, reentry: undefined });
+      a.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3*86400000, pendingGap: 'gap:' + (Date.now() - 3*86400000), acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+      await p.flushReadyStores();
+    })`);
+    await waitFor("document.querySelector('[aria-label=\"Pomodoro progress\"]')");
+    expect(await evaluate("document.querySelector('.recovery-card').textContent")).toContain("3 of 4 focus blocks completed in this set");
+    expect(await evaluate("[...document.querySelectorAll('.recovery-card button')].map(b=>b.textContent.trim())")).toEqual(expect.arrayContaining(["Resume pomodoro","Reset progress"]));
+    await click("Reset progress");
+    await waitFor("!document.querySelector('[aria-label=\"Pomodoro progress\"]')");
+    expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().round)")).toBe(0);
+    await evaluate(`import('/src/state/returnActivity.ts').then(a => a.returnActivity.set({ ...a.returnActivity.get(), pendingGap: null, acknowledgedGap: a.returnActivity.get().acknowledgedRound ?? a.returnActivity.get().acknowledgedGap }))`);
+    await waitFor("!document.querySelector('[aria-label=\"Return to your next action\"]')");
+
+    await evaluate(`Promise.all([import('/src/state/timer.ts'), import('/src/state/returnActivity.ts')]).then(([t,a]) => {
+      t.timer.set({ ...t.timer.get(), segment: 'focus', startedAt: null, elapsedBefore: 0, round: 2, boundary: undefined, reentry: undefined });
+      a.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3*86400000, pendingGap: 'gap:resume', acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    })`);
+    await waitFor("document.querySelector('[aria-label=\"Pomodoro progress\"]')");
+    await click("Resume pomodoro");
+    await waitFor("!document.querySelector('[aria-label=\"Pomodoro progress\"]')");
+    expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().round)")).toBe(2);
+    await evaluate(`import('/src/state/returnActivity.ts').then(a => a.returnActivity.set({ ...a.returnActivity.get(), pendingGap: null, acknowledgedGap: a.returnActivity.get().acknowledgedRound ?? a.returnActivity.get().acknowledgedGap }))`);
+    await waitFor("!document.querySelector('[aria-label=\"Return to your next action\"]')");
+
+    // close/dismiss ack: no re-prompt for same acknowledged token
+    await evaluate(`Promise.all([import('/src/state/timer.ts'), import('/src/state/returnActivity.ts')]).then(([t,a]) => {
+      t.timer.set({ ...t.timer.get(), segment: 'focus', startedAt: null, elapsedBefore: 0, round: 1, boundary: undefined, reentry: undefined });
+      a.returnActivity.set({ version: 1, lastPurposefulAt: Date.now() - 3*86400000, pendingGap: 'gap:dismiss', acknowledgedGap: null, acknowledgedRound: null, uncertain: false });
+    })`);
+    await waitFor("document.querySelector('[aria-label=\"Pomodoro progress\"]')");
+    expect(await evaluate(`(() => { const b = document.querySelector('.recovery-card [aria-label=\"Close\"]'); b?.click(); return !!b; })()`)).toBe(true);
+    await waitFor("!document.querySelector('[aria-label=\"Pomodoro progress\"]')");
+    expect(await evaluate("import('/src/state/timer.ts').then(t => t.timer.get().round)")).toBe(1);
+    expect(await evaluate("import('/src/state/returnActivity.ts').then(a => a.returnActivity.get().acknowledgedRound === 'gap:dismiss' && a.returnActivity.get().pendingGap === 'gap:dismiss')")).toBe(true);
+    await delay(200);
+    expect(await evaluate("!!document.querySelector('[aria-label=\"Pomodoro progress\"]')")).toBe(false);
   }, 30000);
 
 });

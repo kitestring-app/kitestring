@@ -3,7 +3,7 @@ import { timerAnnouncement, timerDisplay } from "./timerDisplay";
 import { intent, updateIntent } from "./intent";
 import { longerOfferAvailable, recordTinyFinish, settleLongerOffer, tinyStarts } from "./tinyStarts";
 import { answerParkingReview, chooseReviewBoundary, closeParkingReview, deferParkingReview, openParkingReview, parkingReview, queueParkingReview, registerReviewOwner, type ReviewBoundary } from "./parkingReview";
-import { acknowledgeGap, checkReturnActivity, purposefulAction, registerActivityOwner, returnActivity } from "./returnActivity";
+import { acknowledgeGap, acknowledgeRound, checkReturnActivity, purposefulAction, registerActivityOwner, returnActivity } from "./returnActivity";
 import { continueDuration, isRecoveryBoundary, isSessionContext, selectRecovery } from "./recoveryPolicy";
 import type { SessionContext } from "./recoveryPolicy";
 import { cleanThought } from "../lib/parked";
@@ -1038,8 +1038,10 @@ export function recoveryOffer() {
   if (["timer", "stats", "settings", "tasks", "intent", "returnActivity", "parkingReview", "parked", "clockPresence"].some(key => storeSource(key) === "loading")) return null;
   const s = timer.get(), total = totalMs(s);
   if (!s.boundary && s.startedAt !== null && total !== null && E.elapsed(s, Date.now()) >= total) return null;
-  return selectRecovery({ boundary: !!s.boundary, reentry: !!s.reentry, gap: !!returnActivity.get().pendingGap,
-    review: !!parkingReview.get().review && !parkingReview.get().deferred, runningFocus: s.segment === "focus" && s.startedAt !== null });
+  const ra = returnActivity.get();
+  const roundStale = T().mode === "pomodoro" && s.round > 0 && !!ra.pendingGap && ra.acknowledgedRound !== ra.pendingGap;
+  return selectRecovery({ boundary: !!s.boundary, reentry: !!s.reentry, gap: !!ra.pendingGap,
+    review: !!parkingReview.get().review && !parkingReview.get().deferred, runningFocus: s.segment === "focus" && s.startedAt !== null, roundStale });
 }
 export interface RecoveryCommand {
   expectedSegId: string;
@@ -1051,11 +1053,11 @@ export interface RecoveryCommand {
 }
 export function recoveryCommand(): RecoveryCommand {
   const s = timer.get(), pin = intent.get(), offer = recoveryOffer();
-  return { expectedSegId: s.segId, offerId: offer === "missed-end" ? s.boundary!.id : offer === "re-entry" ? s.reentry! : offer === "gap-return" ? returnActivity.get().pendingGap : offer === "parking-review" ? parkingReview.get().review!.id : null,
+  return { expectedSegId: s.segId, offerId: offer === "missed-end" ? s.boundary!.id : offer === "re-entry" ? s.reentry! : (offer === "gap-return" || offer === "stale-round") ? returnActivity.get().pendingGap : offer === "parking-review" ? parkingReview.get().review!.id : null,
     actionId: s.context?.actionId ?? "", actionRevision: s.context?.actionRevision ?? 0,
     intentRevision: pin.rev, intentUpdatedAt: pin.updatedAt };
 }
-export type RecoveryAnswer = "continue" | "break" | "stop" | "resume" | "dismiss" | "keep" | "move" | "drop" | "short-block";
+export type RecoveryAnswer = "continue" | "break" | "stop" | "resume" | "dismiss" | "keep" | "move" | "drop" | "short-block" | "reset-round";
 export function answerRecovery(expected: RecoveryCommand, action: RecoveryAnswer, override?: number): boolean {
   if (!canWriteClockStore("timer")) return false;
   const actual = recoveryCommand();
@@ -1088,6 +1090,15 @@ export function answerRecovery(expected: RecoveryCommand, action: RecoveryAnswer
     transitionStore.dismiss(); void timerActions.stopSound(); window.desktop?.release?.();
     if (s.startedAt === null) timerActions.start();
     else timer.set({ ...s, reentry: undefined });
+    return true;
+  }
+  if (offer === "stale-round") {
+    if (!["resume", "reset-round", "dismiss"].includes(action)) return false;
+    const token = expected.offerId;
+    if (!token) return false;
+    if (action === "reset-round" && (s.startedAt !== null || hardModeLocked(s) || !!s.boundary || !!s.reentry)) return false;
+    if (!acknowledgeRound(token)) return false;
+    if (action === "reset-round") timer.set(cur => ({ ...cur, round: 0 }));
     return true;
   }
   if (offer !== "gap-return" || !["keep", "move", "drop", "dismiss", "short-block"].includes(action)) return false;
