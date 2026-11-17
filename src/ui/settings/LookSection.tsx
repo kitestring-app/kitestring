@@ -11,7 +11,7 @@ export const LOOK_INFO: Record<LookId, { name: string; blurb: string; bg: string
   sketch: { name: "Sketchbook", blurb: "Paper, ink outlines and a marigold highlighter.", bg: "radial-gradient(circle, rgb(51 48 43 / 9%) 1px, transparent 1.2px) 0 0 / 12px 12px, #faf5ea", ink: "#33302b", chip: "#fffdf6", chipInk: "#33302b", accent: "#f2b63c", accentInk: "#33302b", font: "var(--preview-round)", weight: 800 },
   companion: { name: "Companion", blurb: "Warm paper, terracotta and sage, serif digits.", bg: "radial-gradient(circle at 85% 15%, #f2e3d4 0 30%, transparent 31%), #f9f2e9", ink: "#35201a", chip: "#fcf8f1", chipInk: "#35201a", accent: "#ba4b4c", accentInk: "#fbf8f2", font: "var(--preview-serif)", weight: 400 },
   sunrise: { name: "Sunrise", blurb: "Warm cream, sunny orange, round shapes.", bg: "radial-gradient(circle at 50% 130%, #ffa25e 0 25%, #ffc887 26% 40%, #ffe1b8 41% 55%, transparent 56%), #fff4e4", ink: "#2a2014", chip: "#ffffff", chipInk: "#2a2014", accent: "#ff8a3d", accentInk: "#2a2014", font: "var(--preview-round)", weight: 800 },
-  chessboard: { name: "Chessboard", blurb: "Forest board, crisp squares, brass-green accent, chess-clock digits.", bg: "repeating-conic-gradient(rgb(47 90 66 / 18%) 0 25%, transparent 0 50%) 0 0 / 32px 32px, #e9efe3", ink: "#1f3a2a", chip: "#f4f7f0", chipInk: "#1f3a2a", accent: "#2f7d5a", accentInk: "#f4f7f0", font: "var(--preview-mono, var(--preview-sans))", weight: 700 },
+  chessboard: { name: "Chessboard", blurb: "Tournament cloth, brass clock, score-sheet surfaces.", bg: "radial-gradient(ellipse 70% 60% at 50% 46%, #F5EFE1 0 60%, transparent 100%), #EFE6D2", ink: "#141C17", chip: "#F5EFE1", chipInk: "#141C17", accent: "#C6A15B", accentInk: "#141C17", font: "var(--preview-mono, var(--preview-sans))", weight: 600 },
   "sweet-tape": { name: "Sweet Tape", blurb: "Candy strips, sticker cards, rounded Nunito type.", bg: "repeating-linear-gradient(135deg, #FF7B5F 0 12px, #F7D000 12px 24px, #b6fe00 24px 36px, #50CBFF 36px 48px, #2E3EAC 48px 60px, #F6EFDE 60px 72px) 0 0 / 72px 72px, #F6EFDE", ink: "#2f2f2f", chip: "#fdf7ed", chipInk: "#2f2f2f", accent: "#FF7B5F", accentInk: "#2f2f2f", font: "var(--preview-round)", weight: 800 },
 };
 
@@ -41,14 +41,23 @@ const FX_INFO: Record<WallpaperFx, { name: string; blurb: string }> = {
   dim: { name: "Dim", blurb: "Lowers a bright wallpaper evenly." },
 };
 
+export function pickLook(look: LookId) {
+  settingsUpdate("appearance", { look });
+  // A look brings its own timer face/tally on first pick, but never overrides an explicit user choice.
+  const timer = settings.get().timer;
+  if (look === "chessboard") {
+    if (timer.style === "default") settingsUpdate("timer", { style: "clock" });
+    if (timer.tally === "dots") settingsUpdate("timer", { tally: "chess" });
+  } else if (look === "sweet-tape") {
+    if (timer.style === "default") settingsUpdate("timer", { style: "tape" });
+  }
+  // A look brings its own timer type; a font picked later in Clock still wins.
+  settingsUpdate("clock", { font: "look" });
+  applyFont("look");
+}
+
 export function LookSection() {
   const a = useStore(settings, (s) => s.appearance);
-  const pickLook = (look: LookId) => {
-    settingsUpdate("appearance", { look });
-    // A look brings its own timer type; a font picked later in Clock still wins.
-    settingsUpdate("clock", { font: "look" });
-    applyFont("look");
-  };
   return (
     <>
       <div className="card look-card">

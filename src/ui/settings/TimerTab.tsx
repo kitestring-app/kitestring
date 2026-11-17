@@ -228,9 +228,9 @@ export function TimerTab() {
         <Choices<TimerStyle>
           value={t.style}
           onChange={(v) => set({ style: v })}
-          options={(["default", "flip", "bar", "gauge", "dots", "pie"] as TimerStyle[]).map((id) => {
+          options={(["default", "flip", "bar", "gauge", "dots", "pie", "clock", "tape"] as TimerStyle[]).map((id) => {
             const F = FACES[id];
-            return { id, label: { default: "Default", flip: "Flip Clock", bar: "Progress Bar", gauge: "Gauge", dots: "Dot Matrix", pie: "Pie" }[id], preview: <div style={{ fontSize: 22, minHeight: 64, display: "grid", placeItems: "center" }}><F display="25:00" progress={0.4} showNumbers big={false} /></div> };
+            return { id, label: { default: "Default", flip: "Flip Clock", bar: "Progress Bar", gauge: "Gauge", dots: "Dot Matrix", pie: "Pie", clock: "Chess Clock", tape: "Tape Roll" }[id], preview: <div style={{ fontSize: 22, minHeight: 64, display: "grid", placeItems: "center" }}><F display="25:00" progress={0.4} showNumbers big={false} /></div> };
           })}
         />
         {t.style === "flip" && <FlipPalettePicker />}
@@ -327,6 +327,7 @@ export function TimerTab() {
             { id: "tree", label: "Growing tree", preview: <TallyPreview id="tree" /> },
             { id: "tokyo", label: "Trip to Tokyo", preview: <TallyPreview id="tokyo" /> },
             { id: "stem", label: "STEM", preview: <TallyPreview id="stem" /> },
+            { id: "chess", label: "Chess", preview: <TallyPreview id="chess" /> },
           ]}
         />
       </div>

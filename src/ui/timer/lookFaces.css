@@ -1,0 +1,41 @@
+/* Look hero faces: real SVG clock/tape art layered behind the shared time digits.
+   The root has NO fixed height — only the in-flow `.timer` digits define height,
+   so the app's focus-fit/layout contract is preserved. */
+
+.timer-face { position: relative; display: grid; place-items: center; }
+.timer-face .face-time { position: relative; z-index: 1; }
+
+.hero-art { position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+
+/* ---- Chess clock (Chessboard look) ---- */
+.face-clock .clock-art { gap: 4px; opacity: 0.9; }
+.face-clock .clock-dial { display: inline-grid; place-items: center; }
+.face-clock .clock-dial svg { width: clamp(44px, 6vw, 64px); height: auto; display: block; }
+.face-clock .dial-rim { stroke: var(--board-dark, var(--accent)); stroke-width: 3; }
+.face-clock .dial-face { fill: var(--surface-solid); }
+.face-clock .dial-ticks { stroke: var(--fg-faint); stroke-width: 2; stroke-linecap: round; }
+.face-clock .dial-hand path { stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transform-origin: 50px 50px; transform: rotate(var(--sweep, 0deg)); }
+.face-clock .dial-flag { fill: var(--state-long, var(--danger)); transform-box: fill-box; transform-origin: 0% 100%; }
+.face-clock .clock-dial[data-active="true"] .dial-flag { transform: rotate(0deg); }
+.face-clock .clock-dial[data-active="false"] .dial-flag { transform: rotate(-78deg); opacity: 0.8; }
+.face-clock .clock-dial[data-active="false"] { opacity: 0.6; }
+.face-clock .dial-pivot { fill: var(--accent); }
+.face-clock .clock-side { font: 600 9px/1 var(--ui); letter-spacing: 0.06em; color: var(--fg-dim); }
+.face-clock .clock-lever { width: 6px; height: 26px; border-radius: 3px; background: var(--board-dark, var(--accent)); box-shadow: inset 0 0 0 1px rgb(239 230 210 / 25%); }
+
+/* ---- Tape roll (Sweet Tape look): strip pays out with --tape-progress ---- */
+.face-tape .hero-art { transform: translateX(-18%); }
+.face-tape .tape-art { width: min(240px, 52vw); height: auto; }
+.face-tape .tape-roll { fill: var(--accent); }
+.face-tape .tape-core { stroke: var(--fg); stroke-width: 3; }
+.face-tape .tape-strip { fill: var(--tape-lime, var(--accent)); transform-box: fill-box; transform-origin: left center; transform: scaleX(max(0.04, var(--tape-progress, 0))); }
+.face-tape .tape-tear { fill: var(--tape-yellow, var(--accent)); transform: translateX(calc((var(--tape-progress, 0) * 132px) - 8px)); }
+.face-tape .face-time { background: var(--surface-solid); padding: 1px 8px; border-radius: 8px; }
+
+/* Reduced motion: no transitions anywhere in these faces (art is driven by progress, not animation). */
+.reduce-motion .face-clock :is(.dial-hand path, .dial-flag),
+.reduce-motion .face-tape :is(.tape-strip, .tape-tear) { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .face-clock :is(.dial-hand path, .dial-flag),
+  .face-tape :is(.tape-strip, .tape-tear) { transition: none; }
+}

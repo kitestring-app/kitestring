@@ -29,6 +29,7 @@ const STORY: Record<Exclude<TallyId, "dots">, GlyphName[]> = {
   tree: ["sprout", "leaf", "trees", "tree-pine", "mountain", "sun"],
   tokyo: ["plane", "tower-control", "utensils", "castle", "coffee", "mountain-snow"],
   stem: ["flask-conical", "telescope", "dna", "cog", "calculator", "rocket"],
+  chess: ["chess-pawn", "chess-knight", "chess-bishop", "chess-rook", "chess-queen", "chess-king"],
 };
 /** Four markers, two filled: the preview used in Settings > Timer. */
 export function TallyPreview({ id }: { id: TallyId }) {
@@ -57,10 +58,18 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
   const started = v.running || !!v.state.frozen || v.state.elapsedBefore > 0 || !!v.state.boundary;
   const [pipMsg, setPipMsg] = useState("");
   const t = useStore(settings, (s) => s.timer);
+  const look = useStore(settings, (s) => s.appearance.look);
   const size = useStore(settings, (s) => s.clock.size);
   const showQuote = useStore(settings, (s) => s.quotes.inFocus);
   const task = useStore(tasks, (all) => currentTask(all));
-  const Face = FACES[t.style];
+  // A look's signature face is the default when the timer style has not been
+  // explicitly chosen. Derived at render time so restored settings, dev ?look=
+  // URLs and imports also show the hero; explicit user choices are preserved.
+  // The hero root is zero-height (art layered behind in-flow digits), so this
+  // does not change the focus layout contract.
+  const effectiveStyle = t.style === "default" && look === "chessboard" ? "clock"
+    : t.style === "default" && look === "sweet-tape" ? "tape" : t.style;
+  const Face = FACES[effectiveStyle];
 
   const segs: Segment[] =
     t.mode === "5217" ? ["focus", "short"] : t.mode === "animedoro" ? ["focus", "long"] : t.mode === "pomodoro" ? ["focus", "short", "long"] : ["focus"];
@@ -92,7 +101,8 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
       )}
       <div className="tallies" aria-label={`${filled} of ${n} focus sessions this round`}>
         {Array.from({ length: n }, (_, i) => {
-          const glyph = tallyGlyph(t.tally, i);
+          const effectiveTally = t.tally === "dots" && look === "chessboard" ? "chess" : t.tally;
+          const glyph = tallyGlyph(effectiveTally, i);
           const on = i < filled;
           const current = !on && i === filled && v.state.segment === "focus";
           const cls = `${on ? "on" : ""} ${current ? "current" : ""}`.trim();
@@ -101,7 +111,7 @@ export function FocusView({ captureOpen, onPark, onCaptureClose, onChooseTask = 
       </div>
       <div className="time-display">
         {v.hiddenTime ? <p className="timer-hidden">{label(v.state.segment)} · {v.running ? "Running" : "Paused"}</p> :
-          <Face display={v.display} progress={v.progress} showNumbers={t.showNumbers} big />}
+          <Face display={v.display} progress={v.progress} showNumbers={t.showNumbers} big segment={v.state.segment} />}
         <button type="button" className="time-display-toggle" aria-label={`Time display: ${{ remaining: "Remaining", elapsed: "Elapsed", hidden: "Hidden" }[t.display]}. Switch to ${{ remaining: "Elapsed", elapsed: "Hidden", hidden: "Remaining" }[t.display]}`}
           title="Tap the timer to switch Remaining, Elapsed or Hidden"
           onClick={() => settingsUpdate("timer", { display: t.display === "remaining" ? "elapsed" : t.display === "elapsed" ? "hidden" : "remaining" })} />
