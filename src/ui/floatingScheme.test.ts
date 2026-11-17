@@ -56,7 +56,7 @@ describe("every look's floating timer passes WCAG AA on any desktop", () => {
   const looks: Record<string, { dark: Record<string, string>; light: Record<string, string> }> = {
     classic: { dark: root, light: { ...root, ...block('html.theme-light:is(:not([data-look]), [data-look="classic"])') } },
     glass: { dark: { ...root, ...block(':root[data-look="glass"]') }, light: { ...root, ...block(':root[data-look="glass"]'), ...block('html.theme-light[data-look="glass"]') } },
-    ...Object.fromEntries(["sketch", "companion", "sunrise"].map(look => {
+    ...Object.fromEntries(["sketch", "companion", "sunrise", "chessboard"].map(look => {
       const day = { ...root, ...block(`:root[data-look="${look}"]`) };
       return [look, { light: day, dark: { ...day, ...block(`html.paper-dark[data-look="${look}"]`) } }];
     })),

@@ -34,7 +34,7 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('task estimates and recorded 
   afterAll(async () => { await chrome.close(); await server?.close(); });
   it('shows neutral comparisons and history, accepts custom and preset guesses in every look without overflow', async () => {
     const shots = process.env.SHOTS_DIR ?? join(tmpdir(), '81-estimates-shots'); await mkdir(shots, { recursive: true });
-    for (const look of ['classic','glass','sketch','companion','sunrise']) {
+    for (const look of ['classic','glass','sketch','companion','sunrise','chessboard']) {
       await page(`s.settingsUpdate('appearance',{look:'${look}'});`);
       await chrome.waitFor("document.querySelector('[data-task-id=old] .task-comparison')");
       expect(await chrome.evaluate("document.querySelector('[data-task-id=old] .task-comparison').textContent")).toContain('Guess: about 20 min');

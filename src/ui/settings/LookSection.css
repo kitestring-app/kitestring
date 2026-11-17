@@ -1,5 +1,5 @@
-.look-card { --preview-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif; --preview-round: "Nunito App", ui-rounded, system-ui, sans-serif; --preview-serif: "Iowan Old Style", "New York", ui-serif, Georgia, serif; }
-.look-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.look-card { --preview-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif; --preview-round: "Nunito App", ui-rounded, system-ui, sans-serif; --preview-serif: "Iowan Old Style", "New York", ui-serif, Georgia, serif; --preview-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.look-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
 .fx-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 900px) { .look-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } .fx-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); } }
 .look-option, .fx-option {

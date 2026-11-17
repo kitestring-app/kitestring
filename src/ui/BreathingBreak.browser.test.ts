@@ -25,7 +25,7 @@ describe.skipIf(process.env.BREATHING_BROWSER !== "1")("optional breathing insid
   },30000);
   afterAll(async()=>{await chrome.close();await server?.close();});
   it("offers both durations, static guidance for both motion preferences, hidden time and immediate keyboard exit in all looks",async()=>{
-    for(const native of [false,true]) for(const look of ['classic','glass','sketch','companion','sunrise']) {
+    for(const native of [false,true]) for(const look of ['classic','glass','sketch','companion','sunrise','chessboard']) {
       await page(`window.desktop=${native ? '{setStatus(){},preventSleep(){}}' : 'undefined'};s.settingsUpdate('appearance',{look:'${look}'});t.timerActions.goTo('short');`);
       await chrome.waitFor("document.querySelector('.breathing-entry')");
       for(const touch of [false,true]) for(const width of [1280,320]) {
@@ -87,7 +87,7 @@ describe.skipIf(process.env.BREATHING_BROWSER !== "1")("optional breathing insid
     }
   },60000);
   it("preserves a running guide across timer Pause and Resume without replacing recovery cards",async()=>{
-    for(const look of ['classic','glass','sketch','companion','sunrise']) {
+    for(const look of ['classic','glass','sketch','companion','sunrise','chessboard']) {
       await page(`s.settingsUpdate('appearance',{look:'${look}'});s.settingsUpdate('timer',{display:'remaining'});t.timerActions.goTo('long');t.timerActions.start();`);
       await chrome.waitFor("document.querySelector('.breathing-entry')");
       await click('Breathe'); await click('Cyclic sigh'); await click('Slower'); await click('Breathe for 5 minutes');
@@ -109,7 +109,7 @@ describe.skipIf(process.env.BREATHING_BROWSER !== "1")("optional breathing insid
     }
   },30000);
   it("keeps active guidance visible and reachable when Clear mode hides other chrome",async()=>{
-    for(const look of ['classic','glass','sketch','companion','sunrise']) {
+    for(const look of ['classic','glass','sketch','companion','sunrise','chessboard']) {
       await page(`s.settingsUpdate('appearance',{look:'${look}'});s.settingsUpdate('extras',{clearMode:true,reduceMotion:false});t.timerActions.goTo('short');t.timerActions.start();`);
       await chrome.waitFor("document.querySelector('.breathing-entry')");
       await click('Breathe'); await click('Breathe for 1 minute');

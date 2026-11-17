@@ -36,7 +36,7 @@ describe.skipIf(process.env.AMBIENT_BROWSER !== "1")("hidden time on shared web 
   afterAll(async () => { await chrome.close(); await server?.close(); });
 
   it("cycles with one tap, keeps manual time accessible and hides every face in all five looks", async () => {
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise"]) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"]) {
       await page(`s.settingsUpdate('appearance', {look: '${look}'}); s.settingsUpdate('timer', {display: 'remaining', style: 'default'});`);
       await chrome.waitFor("document.querySelector('[aria-label^=\"Time display: Remaining\"]')");
       await chrome.evaluate("document.querySelector('[aria-label^=\"Time display:\"]').click()");

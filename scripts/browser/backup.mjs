@@ -8,7 +8,7 @@ import { createServer } from 'vite';
 import { Chrome } from '../golden.mjs';
 
 const shots = resolve(process.env.SHOTS_DIR || '.agents/jobs/49-shots');
-const looks = ['classic', 'glass', 'sketch', 'companion', 'sunrise'];
+const looks = ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard'];
 const browser = new Chrome();
 let server, cache;
 const results = [];
