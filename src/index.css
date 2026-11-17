@@ -817,7 +817,7 @@ html[data-look="glass"] .sounds-panel .sound-tile:not(.active) { background: col
 :root[data-look="sweet-tape"] :is(.btn, .iconbtn, .choice) { border-color: var(--fg); border-radius: 14px; }
 :root[data-look="sweet-tape"] .btn.primary { background: var(--accent); color: var(--accent-fg); }
 :root[data-look="sweet-tape"] .progress-line { background: var(--surface-sunk); box-shadow: inset 0 0 0 1px var(--fg); }
-:root[data-look="sweet-tape"] .progress-line i { background: linear-gradient(90deg, var(--tape-coral), var(--tape-yellow), var(--tape-lime), var(--tape-sky)); }
+:root[data-look="sweet-tape"] .progress-line i { position: relative; background: var(--tape-coral); }
 :root[data-look="sweet-tape"] :is(.tabs, .segmented) { border-radius: 999px; }
 :root[data-look="sweet-tape"] .tallies .dot { border-radius: 2px; }
 :root[data-look="sweet-tape"] .tallies .dot.on { background: var(--accent); }
@@ -827,10 +827,100 @@ html[data-look="glass"] .sounds-panel .sound-tile:not(.active) { background: col
 
 
 
-/* Sweet Tape: the active segment tab reads as a strip of washi tape. Colors-only
-   (no height/padding/letter-spacing changes) so the focus-fit contract holds. */
+/* ---------- look-specific UI elements (metric-safe) ----------
+   Paint only: color/background/border-color/border-radius/box-shadow/clip-path/mask,
+   or absolutely-positioned pseudo-elements. `position:relative` below only creates a
+   containing block for those pseudos — it never offsets a box. No height, padding,
+   margin, font-size, letter-spacing, line-height or gap is touched, so the
+   320/390/1000/1280 focus-fit contract is unchanged. Decorations never carry text. */
+
+/* ===== Chessboard — score sheet, ranks and brass clock keys ===== */
+
+/* C1 progress track: eight-square score-sheet rank. */
+:root[data-look="chessboard"] .progress-line { background: repeating-linear-gradient(90deg, var(--board-square) 0 calc(12.5% - 1px), var(--board-line) calc(12.5% - 1px) 12.5%); }
+/* C2 progress fill: the same rank cut in brass. */
+:root[data-look="chessboard"] .progress-line i { background: repeating-linear-gradient(90deg, var(--brass-hi) 0 calc(12.5% - 1px), var(--brass-lo) calc(12.5% - 1px) 12.5%); }
+/* C3 segment tabs: depressed clock keys; unpressed keys keep a file rail. */
+:root[data-look="chessboard"] .focus-center .tabs button[aria-pressed="true"] { border-radius: 3px; box-shadow: inset 0 -3px 0 var(--brass-lo), inset 0 1px 0 var(--brass-hi); }
+:root[data-look="chessboard"] .focus-center .tabs button:not([aria-pressed="true"]) { box-shadow: inset 0 -1px 0 var(--board-line); }
+/* C4 tally dots: square board plinth. */
+:root[data-look="chessboard"] .tallies .dot { border-radius: 2px; background: var(--board-light); box-shadow: inset 0 0 0 1px var(--board-dark); }
+:root[data-look="chessboard"] .tallies .dot.on { background: var(--board-dark); box-shadow: inset 0 0 0 1px var(--board-square); }
+/* C5 current tally: brass ring on an absolute pseudo. */
+:root[data-look="chessboard"] .tallies :is(.tally.current, .dot.current) { position: relative; }
+:root[data-look="chessboard"] .tallies :is(.tally.current, .dot.current)::after { content: ""; position: absolute; inset: -3px; border: 1px solid var(--accent); border-radius: 3px; pointer-events: none; }
+/* C6 headline: brass score rule; the answer prompt colors its existing dotted underline. */
+:root[data-look="chessboard"] .headline.task { background: linear-gradient(var(--brass-lo), var(--brass-lo)) bottom / 100% 2px no-repeat; }
+:root[data-look="chessboard"] .headline-ask { text-decoration-color: var(--brass-lo); }
+/* C7 panel head: brass frame rail. */
+:root[data-look="chessboard"] .panel .panel-head { position: relative; }
+:root[data-look="chessboard"] .panel .panel-head::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--brass-lo), var(--brass-hi), var(--brass-lo)); pointer-events: none; }
+/* C8 panel body / card: component-scoped score ruling. */
+:root[data-look="chessboard"] :is(.panel-body, .card) { background-image: repeating-linear-gradient(0deg, transparent 0 26px, var(--rank-line) 26px 27px); }
+/* C9 brass clock-key buttons (ink stays --accent-fg, AA-safe on brass). */
+:root[data-look="chessboard"] :is(.btn.primary, .iconbtn.primary) { background: linear-gradient(180deg, var(--brass-hi), var(--accent)); color: var(--accent-fg); box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%), 0 1px 0 var(--brass-lo); }
+/* C10 icons: brass top/under edges. */
+:root[data-look="chessboard"] .iconbtn:not(.primary) { border-color: var(--brass-lo); box-shadow: inset 0 1px 0 var(--brass-hi), inset 0 -1px 0 var(--board-line); }
+/* C11 claret flag rail on slips and the adjourned recovery card (inset = no box growth). */
+:root[data-look="chessboard"] :is(.alarm-toast, .delete-undo-toast, .recovery-card) { box-shadow: inset 3px 0 0 var(--state-long); border-radius: 2px; }
+/* C12 mini timer: brass bezel arc. */
+:root[data-look="chessboard"] .mini-timer::before { content: ""; position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border: 2px solid var(--accent); border-radius: 50%; opacity: 0.7; pointer-events: none; }
+/* C13 topbar segment keys: same depressed brass language. */
+:root[data-look="chessboard"] .seg button[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--brass-lo); }
+/* C14 tile tray: alternating board cells, brass ring on the selected piece. */
+:root[data-look="chessboard"] :is(.theme-tile, .sound-tile):nth-child(odd) { background: var(--board-square); }
+:root[data-look="chessboard"] :is(.theme-tile, .sound-tile):nth-child(even):not(.active):not([aria-pressed="true"]) { background: var(--board-line); }
+:root[data-look="chessboard"] :is(.theme-tile, .sound-tile)[aria-pressed="true"],
+:root[data-look="chessboard"] :is(.theme-tile, .sound-tile).active { box-shadow: inset 0 0 0 2px var(--accent); }
+/* C15 case brackets on the time display (the frame is already positioned). */
+:root[data-look="chessboard"] .time-display::before,
+:root[data-look="chessboard"] .time-display::after { content: ""; position: absolute; width: 14px; height: 14px; border: 1px solid var(--brass-lo); opacity: 0.8; pointer-events: none; }
+:root[data-look="chessboard"] .time-display::before { top: -4px; left: -6px; border-right: 0; border-bottom: 0; border-radius: 3px 0 0 0; }
+:root[data-look="chessboard"] .time-display::after { bottom: -4px; right: -6px; border-left: 0; border-top: 0; border-radius: 0 0 3px 0; }
+
+/* ===== Sweet Tape — washi, stickers and torn edges ===== */
+
+/* T1 KILL THE RAINBOW: one coral swatch, dark segment ink (AA in both schemes).
+   --state-ink is the token defined for text on state fills; --fg fails on dark coral. */
 :root[data-look="sweet-tape"] .focus-center .tabs button[aria-pressed="true"] {
-  color: var(--fg);
-  background: linear-gradient(100deg, var(--tape-coral, #FF7B5F) 0 25%, var(--tape-yellow, #F7D000) 25% 50%, var(--tape-lime, #B6FE00) 50% 75%, var(--tape-sky, #50CBFF) 75% 100%);
-  border-radius: 999px 999px 0 0;
+  position: relative; color: var(--state-ink); background: var(--tape-coral);
+  border-radius: 3px 3px 0 0; box-shadow: inset 0 -2px 0 rgb(47 47 47 / 25%);
+}
+/* T2 torn washi tail. */
+:root[data-look="sweet-tape"] .focus-center .tabs button[aria-pressed="true"]::after { content: ""; position: absolute; inset: 100% 2px auto; height: 5px; background: var(--tape-coral); clip-path: polygon(0 0, 100% 0, 96% 60%, 100% 100%, 3% 88%, 0 55%); pointer-events: none; }
+/* T3 peel corner. */
+:root[data-look="sweet-tape"] .focus-center .tabs button[aria-pressed="true"]::before { content: ""; position: absolute; top: 0; right: 0; border-width: 0 7px 7px 0; border-style: solid; border-color: transparent rgb(47 47 47 / 28%) transparent transparent; pointer-events: none; }
+/* T4 torn right cap on the single-color progress fill. */
+:root[data-look="sweet-tape"] .progress-line i::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 10px; background: var(--tape-lime); clip-path: polygon(0 0, 86% 0, 100% 30%, 90% 55%, 100% 100%, 0 100%); pointer-events: none; }
+/* T5 punched confetti dots. */
+:root[data-look="sweet-tape"] .tallies .dot { border-radius: 50% 46% 54% 48%; }
+:root[data-look="sweet-tape"] .tallies .dot.on { background: var(--tape-coral); }
+/* T6 tape tab on cards and the recovery card (panels are already positioned). */
+:root[data-look="sweet-tape"] :is(.card, .recovery-card) { position: relative; }
+:root[data-look="sweet-tape"] :is(.panel, .card, .recovery-card)::before { content: ""; position: absolute; top: 0; left: 18px; width: 34px; height: 12px; background: var(--tape-yellow); border-radius: 1px; transform: rotate(-6deg); pointer-events: none; }
+/* T7 washi strip on panel heads. */
+:root[data-look="sweet-tape"] .panel .panel-head { position: relative; }
+:root[data-look="sweet-tape"] .panel .panel-head::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 5px; background: var(--tape-coral); clip-path: polygon(0 0, 97% 0, 100% 40%, 96% 100%, 2% 100%, 0 60%); pointer-events: none; }
+/* T8 washi underline on a titled focus. */
+:root[data-look="sweet-tape"] .headline.task { position: relative; }
+:root[data-look="sweet-tape"] .headline.task::after { content: ""; position: absolute; left: 8%; right: 8%; bottom: -7px; height: 4px; background: var(--tape-coral); opacity: 0.35; border-radius: 2px; clip-path: polygon(0 0, 100% 0, 97% 55%, 100% 100%, 2% 80%, 0 45%); pointer-events: none; }
+/* T9 adhesive-lip primary, tape-patch icon buttons. */
+:root[data-look="sweet-tape"] :is(.btn.primary, .iconbtn.primary) { background: var(--tape-coral); color: var(--state-ink); box-shadow: 0 3px 0 #C94A30; }
+:root[data-look="sweet-tape"] .iconbtn:not(.primary) { background: var(--surface-solid); border-color: var(--fg); border-radius: 10px; box-shadow: 0 2px 0 var(--accent-soft); }
+/* T10 diagonal repair strips. */
+:root[data-look="sweet-tape"] .next-action-pin { position: relative; }
+:root[data-look="sweet-tape"] .next-action-pin::before,
+:root[data-look="sweet-tape"] .recovery-card::after { content: ""; position: absolute; top: 0; left: 14px; width: 34px; height: 12px; background: var(--tape-sky); opacity: 0.3; transform: rotate(-6deg); pointer-events: none; }
+/* T11 scrap-receipt quote: irregular radius + offset shadow, no rotation. */
+:root[data-look="sweet-tape"] .quote { border-radius: 2px 10px 2px 8px; }
+/* T12 stuck-note toast: yellow fill, segment ink for AA in both schemes. */
+:root[data-look="sweet-tape"] :is(.alarm-toast, .delete-undo-toast) { background: var(--tape-yellow); color: var(--state-ink); box-shadow: 1px 2px 0 rgb(47 47 47 / 20%); border-radius: 2px; }
+/* Static tape transforms are decoration, but honour reduced motion explicitly. */
+:root.reduce-motion[data-look="sweet-tape"] :is(.panel, .card, .recovery-card)::before,
+:root.reduce-motion[data-look="sweet-tape"] .next-action-pin::before,
+:root.reduce-motion[data-look="sweet-tape"] .recovery-card::after { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  :root[data-look="sweet-tape"] :is(.panel, .card, .recovery-card)::before,
+  :root[data-look="sweet-tape"] .next-action-pin::before,
+  :root[data-look="sweet-tape"] .recovery-card::after { transform: none; }
 }

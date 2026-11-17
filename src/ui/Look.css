@@ -1,5 +1,5 @@
 /* Built-in backdrops for the paper looks. They sit where the photo wallpaper would. */
-.look-bg { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.look-bg { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; pointer-events: none; overflow: hidden; }
 .look-bg-sketch { background-color: #faf5ea; background-image: radial-gradient(circle, rgb(51 48 43 / 7%) 0.9px, transparent 1px); background-size: 18px 18px; }
 /* Night paper: the same drawings in dark ink, so Dark and System reach the backdrop too. */
 html.paper-dark .look-bg-sketch { background-color: #1f1d1a; background-image: radial-gradient(circle, rgb(243 236 221 / 7%) 0.9px, transparent 1px); }
@@ -12,25 +12,59 @@ html.paper-dark .look-bg-sunrise .pb-ring1 { fill: #2f1f13; }
 html.paper-dark .look-bg-sunrise .pb-ring2 { fill: #3b2616; }
 html.paper-dark .look-bg-sunrise .pb-ring3 { fill: #4a2e18; }
 html.paper-dark .look-bg-sunrise .pb-cloud { fill: #33231a; }
-/* Chessboard: a quiet board cloth. Plain radial wash only — no repeating-conic, no viewport-wide pattern. */
+/* Chessboard: score sheet on cloth — rails at edges, ruling, faint file band, light centre. */
 .look-bg-chessboard {
-  background-color: #EFE6D2;
-  background-image: radial-gradient(ellipse 70% 60% at 50% 46%, #F5EFE1 0 60%, transparent 100%);
+  background-color: var(--board-light, #EFE6D2);
+  background-image:
+    linear-gradient(90deg, var(--board-dark, #1E3B2F) 0 18px, transparent 18px),
+    linear-gradient(90deg, transparent calc(100% - 18px), var(--board-dark, #1E3B2F) calc(100% - 18px)),
+    repeating-linear-gradient(90deg, transparent 0 31px, rgb(20 28 23 / 7%) 31px 32px),
+    repeating-linear-gradient(0deg, transparent 0 27px, rgb(20 28 23 / 9%) 27px 28px),
+    radial-gradient(ellipse 70% 55% at 50% 46%, var(--surface-strong, #F5EFE1) 0 58%, transparent 100%);
+  background-size: 100% 100%, 100% 100%, 100% 22px, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat, repeat-x, repeat, no-repeat;
 }
 html.paper-dark .look-bg-chessboard {
   background-color: #141C17;
-  background-image: radial-gradient(ellipse 70% 60% at 50% 46%, #1E3B2F 0 60%, transparent 100%);
+  background-image:
+    linear-gradient(90deg, var(--brass-lo, #C6A15B) 0 14px, transparent 14px),
+    linear-gradient(90deg, transparent calc(100% - 14px), var(--brass-lo, #C6A15B) calc(100% - 14px)),
+    repeating-linear-gradient(90deg, transparent 0 31px, rgb(239 230 210 / 5%) 31px 32px),
+    repeating-linear-gradient(0deg, transparent 0 27px, rgb(239 230 210 / 6%) 27px 28px),
+    radial-gradient(ellipse 70% 55% at 50% 46%, #1E3B2F 0 55%, transparent 100%);
 }
-/* Sweet Tape: a calm paper sheet; the candy strips live on actual components
-   below, not painted over the whole viewport. */
+/* Sweet Tape: kraft bench with washi strips at edges. */
 .look-bg-sweet-tape {
-  background-color: #F6EFDE;
-  background-image: radial-gradient(ellipse 62% 58% at 50% 48%, #f9f3e6 0 60%, transparent 100%);
+  background-color: var(--bg, #F6EFDE);
+  background-image:
+    linear-gradient(100deg, transparent 42%, rgb(255 255 255 / 28%) 42% 46%, transparent 46%),
+    linear-gradient(var(--tape-coral, #FF7B5F), var(--tape-coral, #FF7B5F)),
+    linear-gradient(var(--tape-yellow, #F7D000), var(--tape-yellow, #F7D000)),
+    linear-gradient(var(--tape-sky, #50CBFF), var(--tape-sky, #50CBFF)),
+    repeating-linear-gradient(90deg, transparent 0 11px, rgb(47 47 47 / 16%) 11px 12px),
+    radial-gradient(ellipse 60% 50% at 50% 48%, #FDF7ED 0 55%, transparent 100%);
+  background-size: 100% 16px, 100% 14px, 100% 12px, 100% 14px, 100% 10px, 100% 100%;
+  background-position: 0 8px, 0 100%, 0 18px, 100% 34px, 0 calc(100% - 16px), 0 0;
+  background-repeat: no-repeat;
 }
 html.paper-dark .look-bg-sweet-tape {
   background-color: #0E1A10;
-  background-image: radial-gradient(ellipse 62% 58% at 50% 48%, #112016 0 60%, transparent 100%);
+  background-image:
+    linear-gradient(100deg, transparent 42%, rgb(255 255 255 / 16%) 42% 46%, transparent 46%),
+    linear-gradient(var(--tape-coral, #FF9A7A), var(--tape-coral, #FF9A7A)),
+    linear-gradient(var(--tape-yellow, #F7D000), var(--tape-yellow, #F7D000)),
+    linear-gradient(var(--tape-sky, #50CBFF), var(--tape-sky, #50CBFF)),
+    repeating-linear-gradient(90deg, transparent 0 11px, rgb(246 239 222 / 14%) 11px 12px),
+    radial-gradient(ellipse 60% 50% at 50% 48%, #112016 0 55%, transparent 100%);
+  background-size: 100% 14px, 100% 12px, 100% 10px, 100% 12px, 100% 8px, 100% 100%;
+  background-position: 0 0, 0 100%, 0 16px, 100% 30px, 0 calc(100% - 14px), 0 0;
+  background-repeat: no-repeat;
 }
+/* file letters for chess backdrop */
+.look-bg-chessboard .cb-files { position: absolute; inset: auto 96px 82px; display: grid; grid-template-columns: repeat(8, 1fr); margin: 0; font: 600 11px/1 var(--display); letter-spacing: .1em; color: var(--fg-dim); opacity: .85; text-align: center; pointer-events: none; }
+.look-bg-chessboard .cb-files i { font-style: normal; }
+/* cropped tape roll corner */
+.look-bg-sweet-tape .tape-roll-corner { position: absolute; top: 84px; right: 24px; width: 54px; height: 54px; pointer-events: none; }
 .look-bg-sunrise .sun { transform-origin: 600px 990px; animation: sun-breathe 14s ease-in-out infinite alternate; }
 @keyframes sun-breathe { from { transform: scale(1); } to { transform: scale(1.035); } }
 .reduce-motion .look-bg-sunrise .sun { animation: none; }
