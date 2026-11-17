@@ -12,7 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const LOOKS = ['classic', 'glass', 'sketch', 'companion', 'sunrise'];
+const LOOKS = ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard', 'sweet-tape'];
 const VIEWS = ['home', 'focus-idle', 'focus-running', 'focus-reentry', 'ambient', 'settings-themes', 'settings-clock', 'settings-timer', 'tasks-panel', 'sounds-panel'];
 const SIZES = [[1280, 820], [1440, 900]];
 const FIXED_TIME = Date.parse('2026-10-26T09:24:00.000Z');

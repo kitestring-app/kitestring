@@ -826,3 +826,11 @@ html[data-look="glass"] .sounds-panel .sound-tile:not(.active) { background: col
 :root[data-look="sweet-tape"] .mini-timer { border-color: var(--fg); border-radius: 18px; }
 
 
+
+/* Sweet Tape: the active segment tab reads as a strip of washi tape. Colors-only
+   (no height/padding/letter-spacing changes) so the focus-fit contract holds. */
+:root[data-look="sweet-tape"] .focus-center .tabs button[aria-pressed="true"] {
+  color: var(--fg);
+  background: linear-gradient(100deg, var(--tape-coral, #FF7B5F) 0 25%, var(--tape-yellow, #F7D000) 25% 50%, var(--tape-lime, #B6FE00) 50% 75%, var(--tape-sky, #50CBFF) 75% 100%);
+  border-radius: 999px 999px 0 0;
+}
