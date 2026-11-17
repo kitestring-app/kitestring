@@ -90,8 +90,19 @@ export function LookBackdrop({ look }: { look: LookId }) {
       </svg>
     );
   }
-  if (look === "chessboard") return <div className="look-bg look-bg-chessboard" aria-hidden="true" />;
-  if (look === "sweet-tape") return <div className="look-bg look-bg-sweet-tape" aria-hidden="true" />;
+  if (look === "chessboard") return (
+    <div className="look-bg look-bg-chessboard" aria-hidden="true">
+      <span className="cb-files" aria-hidden="true">{"abcdefgh".split("").map((c) => <i key={c}>{c}</i>)}</span>
+    </div>
+  );
+  if (look === "sweet-tape") return (
+    <div className="look-bg look-bg-sweet-tape" aria-hidden="true">
+      <svg className="tape-roll-corner" viewBox="0 0 54 54" aria-hidden="true" focusable="false">
+        <circle cx="27" cy="27" r="24" fill="var(--tape-coral)" opacity="0.9" />
+        <circle cx="27" cy="27" r="9" fill="var(--bg)" />
+      </svg>
+    </div>
+  );
   return null;
 }
 

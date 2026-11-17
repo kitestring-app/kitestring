@@ -47,6 +47,7 @@ export function TapeFace({ display, progress, showNumbers = true, big = true }: 
         <circle className="tape-roll" cx="40" cy="52" r="30" />
         <circle className="tape-core" cx="40" cy="52" r="11" fill="none" />
         <rect className="tape-strip" x="62" y="44" width="132" height="16" rx="2" />
+        <rect className="tape-sheen" x="62" y="44" width="132" height="5" rx="2" />
         <polygon className="tape-tear" points="190,44 199,47 194,50 202,53 195,56 198,59 190,60" />
       </svg>
       {showNumbers && <span className="face-time"><span className="timer">{display}</span></span>}
