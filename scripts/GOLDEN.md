@@ -13,7 +13,7 @@ node scripts/golden.mjs compare .agents/golden/base .agents/golden/candidate
 ```
 
 Capture requires an empty directory so it cannot silently replace a baseline.
-There are **100 PNGs**: five looks, ten views, and 1280x820 / 1440x900 at scale 1.
+There are **140 PNGs**: seven looks, ten views, and 1280x820 / 1440x900 at scale 1. The historical `.agents/job70/golden-main` baseline holds the original 100 images (five looks) and is parked on a Chrome 156→157 rasterisation drift; a full rebaseline with seven looks is a separate, explicitly-approved change.
 Paths look like `1280x820/glass/focus-reentry.png`. The ten views are Home,
 Focus idle, Focus running, Focus re-entry, Ambient, Settings Themes, Settings
 Clock with flip enabled, Settings Timer, Tasks, and Sounds. The Clock settings
