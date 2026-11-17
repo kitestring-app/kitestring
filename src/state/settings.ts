@@ -102,7 +102,7 @@ export function sanitizeQuickPickList(value: unknown, fallback: number[]): numbe
   return [...new Set(clean)].sort((a, b) => a - b).slice(0, QUICK_PICK_MAX);
 }
 
-export const LOOKS = ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"] as const;
+export const LOOKS = ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"] as const;
 export type LookId = (typeof LOOKS)[number];
 export const SCHEMES = ["auto", "system", "light", "dark"] as const;
 export type Scheme = (typeof SCHEMES)[number];

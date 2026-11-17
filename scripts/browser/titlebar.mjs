@@ -6,7 +6,7 @@ import { Chrome } from '../golden.mjs';
 
 const baseline = process.argv.includes('--web-baseline');
 const shots = resolve(process.env.TITLEBAR_SHOTS_DIR || '.agents/jobs/73-evidence/' + (baseline ? 'web-before' : 'candidate'));
-const looks = ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard'];
+const looks = ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard', 'sweet-tape'];
 const c = new Chrome();
 const results = [];
 const startup = [];

@@ -39,7 +39,7 @@ describe.skipIf(process.env.PHONE_BROWSER !== '1')('optional deliberate stop', (
     await start(); expect(await chrome.evaluate("!!document.querySelector('.stopped-card')")).toBe(false); await stop();
     const raw = await snapshot(); expect(raw.stats.chunks.reduce((n: number, c: { ms: number }) => n + c.ms, 0)).toBe(5000);
     const shots = process.env.SHOTS_DIR ?? join(tmpdir(), 'job93-stop-shots'); await mkdir(shots, { recursive: true });
-    for (const width of [1280, 390, 320]) for (const look of ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard']) {
+    for (const width of [1280, 390, 320]) for (const look of ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard', 'sweet-tape']) {
       await chrome.send('Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: width < 500 });
       await page(`s.settingsUpdate('appearance',{look:'${look}'});`); await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);
       expect(await chrome.evaluate("document.querySelector('.stopped-card').textContent")).toContain('Record as deliberately stopped');

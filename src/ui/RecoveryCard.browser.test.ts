@@ -122,7 +122,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     await waitFor("document.querySelector('[aria-label=\"Session context\"]')");
     for (const [width, height] of [[1000, 800], [1280, 720]]) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"]) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"]) {
       await evaluate(`import('/src/state/settings.ts').then(s => s.settingsUpdate('appearance', {look: '${look}'}))`);
       await waitFor(`document.documentElement.dataset.look === '${look}'`);
       await delay(100);
@@ -159,7 +159,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     expect(await evaluate("import('/src/state/stats.ts').then(s => s.stats.get().chunks.filter(c => c.segId === 'closed-run' && c.away).length)")).toBe(1);
     for (const [width, height] of [[1000, 800], [1280, 720]]) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"]) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"]) {
       await evaluate(`import('/src/state/settings.ts').then(s => s.settingsUpdate('appearance', {look: '${look}'}))`);
       await waitFor(`document.documentElement.dataset.look === '${look}'`); await delay(100);
       expect(await evaluate("document.querySelector('.recovery-card').textContent")).toContain("Continue");
@@ -178,7 +178,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     await waitFor("document.querySelector('[aria-label=\"Return to your next action\"]')");
     for (const [width, height] of [[1000, 800], [1280, 720]]) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"]) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"]) {
       await evaluate(`import('/src/state/settings.ts').then(s => s.settingsUpdate('appearance', {look: '${look}'}))`);
       await waitFor(`document.documentElement.dataset.look === '${look}'`); await delay(100);
       expect(await evaluate("document.querySelector('.recovery-card').textContent")).not.toMatch(/lost|reset|overdue|missed|streak|score/i);
@@ -546,7 +546,7 @@ describe.skipIf(!chromePath || process.env.RETURN_BROWSER !== "1")("Recovery and
     await waitFor("document.querySelector('[aria-label=\"Session context\"]')");
     for (const [width,height] of [[1000,800],[1280,720]]) {
       await send("Emulation.setDeviceMetricsOverride", {width,height,deviceScaleFactor:1,mobile:false});
-      for (const look of ["classic","glass","sketch","companion","sunrise","chessboard"]) {
+      for (const look of ["classic","glass","sketch","companion","sunrise","chessboard", "sweet-tape"]) {
         await evaluate(`import('/src/state/settings.ts').then(s=>s.settingsUpdate('appearance',{look:'${look}'}))`);
         await waitFor(`document.documentElement.dataset.look === '${look}'`); await delay(60);
         const layout = await assertFocusFit(evaluate, true);

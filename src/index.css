@@ -179,6 +179,34 @@
   color-scheme: light;
 }
 
+/* Sweet Tape: candy shop. Sand paper, ink, candy accents, rounded Nunito type. */
+:root[data-look="sweet-tape"] {
+  --state-focus: #FF7B5F; --state-break: #b6fe00; --state-long: #50CBFF; --state-ink: #2F2F2F;
+  --bg: #F6EFDE;
+  --on-bg: #2F2F2F; --on-bg-dim: #5a5a5a; --on-bg-faint: #6a6a6a; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #2F2F2F; --fg-dim: #5a5a5a; --fg-faint: #6a6a6a;
+  --surface: #fdf7ed; --surface-hover: #f3e9d6;
+  --surface-strong: #fdf7ed; --surface-sunk: #f0e6d2; --surface-solid: #fdf7ed;
+  --canvas: #F6EFDE;
+  --border: transparent; --line: rgb(47 47 47 / 12%);
+  --blur: none; --blur-strong: none;
+  --highlight: inset 0 1px 0 #ffffff;
+  --shadow: var(--highlight), 0 8px 22px -16px rgb(47 47 47 / 30%);
+  --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(47 47 47 / 40%);
+  --accent: #FF7B5F; --accent-fg: #2F2F2F; --accent-soft: rgb(255 123 95 / 16%); --accent-ink: #c94a30;
+  --sel: #FF7B5F; --sel-fg: #2F2F2F; --ring: #FF7B5F;
+  --tile: #f0e6d2; --tile-border: transparent; --tile-on: #FF7B5F; --tile-on-fg: #2F2F2F; --tile-icon: #5a5a5a;
+  --track: #e8ddc8; --progress: #FF7B5F;
+  --good: #4a8f3a; --warn: #a87a00; --danger: #c94a30; --danger-bg: #fde4dc; --danger-fg: #7a2e1d;
+  --scrim: none;
+  --radius: 24px; --r-ctl: 16px; --r-seg: 999px;
+  --ui: "Nunito App", ui-rounded, -apple-system, system-ui, sans-serif;
+  --display: "Nunito App", ui-rounded, -apple-system, system-ui, sans-serif;
+  --timer-weight: 800; --timer-track: -0.02em; --headline-weight: 800; --icon-stroke: 2.0;
+  --press: translateY(2px);
+  color-scheme: light;
+}
+
 /* Paper looks at night: chosen by Dark, or by System when the OS is dark (html.paper-dark). Same personality,
    same accents, on dark paper. Auto keeps the light paper, because the paper is the wallpaper. */
 html.paper-dark[data-look="sketch"] {
@@ -263,6 +291,33 @@ html.paper-dark[data-look="chessboard"] {
   --timer-weight: 700; --timer-track: -0.02em; --headline-weight: 600; --icon-stroke: 1.7;
   --press: scale(0.98);
   --board-light: #243028; --board-dark: #1a2418; --board-square: rgb(232 239 227 / 8%); --board-line: rgb(232 239 227 / 10%);
+  color-scheme: dark;
+}
+
+html.paper-dark[data-look="sweet-tape"] {
+  --state-focus: #FF9A7A; --state-break: #d4ff5a; --state-long: #7adfff; --state-ink: #0E1A10;
+  --bg: #0E1A10;
+  --on-bg: #F6EFDE; --on-bg-dim: #d4d0c0; --on-bg-faint: #b8b4a0; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #F6EFDE; --fg-dim: #d0ccb8; --fg-faint: #b8b4a0;
+  --surface: #1a2a1c; --surface-hover: #243426;
+  --surface-strong: #1a2a1c; --surface-sunk: #142016; --surface-solid: #1a2a1c;
+  --canvas: #0E1A10;
+  --border: #2a3a2c; --line: #2a3a2c;
+  --blur: none; --blur-strong: none;
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 6%);
+  --shadow: var(--highlight), 0 8px 22px -16px rgb(0 0 0 / 60%);
+  --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(0 0 0 / 70%);
+  --accent: #FF7B5F; --accent-fg: #0E1A10; --accent-soft: rgb(255 123 95 / 18%); --accent-ink: #FF9A7A;
+  --sel: #F6EFDE; --sel-fg: #0E1A10; --ring: #FF7B5F;
+  --tile: #243426; --tile-on: #FF7B5F; --tile-on-fg: #0E1A10; --tile-icon: #d0ccb8;
+  --track: #243426; --progress: #FF7B5F;
+  --good: #7fd3a8; --warn: #f2c46e; --danger: #f49379; --danger-bg: #3d2117; --danger-fg: #ffd6c9;
+  --scrim: none;
+  --radius: 24px; --r-ctl: 16px; --r-seg: 999px;
+  --ui: "Nunito App", ui-rounded, -apple-system, system-ui, sans-serif;
+  --display: "Nunito App", ui-rounded, -apple-system, system-ui, sans-serif;
+  --timer-weight: 800; --timer-track: -0.02em; --headline-weight: 800; --icon-stroke: 2.0;
+  --press: translateY(2px);
   color-scheme: dark;
 }
 
@@ -447,7 +502,7 @@ input, textarea, select { font: inherit; color: inherit; }
 select.input { -webkit-appearance: none; appearance: none; padding-right: 38px; cursor: pointer; background-image: var(--chevron); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; }
 :root { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c9c7d6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 :root[data-look="glass"] { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e8ebee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
-:root.theme-light, :root:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"]) { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a4760' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+:root.theme-light, :root:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"], [data-look="sweet-tape"]) { --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a4760' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 select.input option { color: CanvasText; background: Canvas; }
 .input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .switch { appearance: none; width: 46px; height: 26px; border-radius: 99px; background: var(--track); box-shadow: inset 0 0 0 1px var(--line); position: relative; cursor: pointer; flex: none; transition: background 0.2s; margin: 0; }
@@ -563,7 +618,7 @@ input[type="checkbox"]:not(.switch), input[type="radio"] { accent-color: var(--a
 :root[data-look="sunrise"] :is(.iconbtn, .btn, .seg):active:not(:disabled) { box-shadow: 0 1px 0 var(--sunrise-ledge, #f3d9b6); }
 
 /* Paper looks under a strong Dim: the paper turns dark, so wallpaper text switches to light ink. */
-html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"]) {
+html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"], [data-look="sweet-tape"]) {
   --on-bg: #fbf7ef; --on-bg-dim: rgb(251 247 239 / 82%); --on-bg-faint: rgb(251 247 239 / 66%); --on-bg-shadow: 0 1px 2px rgb(0 0 0 / 35%);
 }
 
@@ -583,6 +638,10 @@ html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="
 :root[data-look="sketch"] .drawer main { background-image: radial-gradient(circle, var(--paper-dot, rgb(51 48 43 / 7%)) 0.9px, transparent 1px); background-size: 18px 18px; }
 :root[data-look="chessboard"] :is(.panel-body, .drawer main) { background-image: repeating-conic-gradient(var(--board-square) 0 25%, transparent 0 50%); background-size: 32px 32px; }
 :root[data-look="chessboard"] :is(.panel, .card) { border-radius: var(--radius); }
+/* Sweet Tape: washi tape tab on panel heads. */
+:root[data-look="sweet-tape"] .panel { overflow: visible; }
+:root[data-look="sweet-tape"] .panel .panel-head { position: relative; }
+:root[data-look="sweet-tape"] .panel .panel-head::after { content: ""; position: absolute; top: -8px; left: 24px; width: 64px; height: 16px; background: linear-gradient(135deg, #FF7B5F, #F7D000); transform: rotate(-3deg); border-radius: 2px; pointer-events: none; opacity: 0.85; box-shadow: 0 2px 4px rgb(0 0 0 / 12%); }
 /* Sunrise: buttons inside white panels keep a visible fill and a small flat shadow. */
 :root[data-look="sunrise"] :is(.panel, .ambient-timer, .drawer, .card) :is(.iconbtn, .btn:not(.primary)) { box-shadow: 0 2px 0 var(--sunrise-ledge, #f3d9b6); }
 /* The pinned next action label, readable over any wallpaper. */
@@ -729,8 +788,8 @@ html[data-look="glass"] .sounds-panel { background: var(--surface-strong, var(--
 html:not(.theme-light) { color-scheme: dark; }
 html.theme-light { color-scheme: light; }
 /* Paper looks carry their own scheme: light paper unless paper-dark. */
-html:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"]) { color-scheme: light; }
-html.paper-dark:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"]) { color-scheme: dark; }
+html:not(.paper-dark):is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"], [data-look="sweet-tape"]) { color-scheme: light; }
+html.paper-dark:is([data-look="sketch"], [data-look="companion"], [data-look="sunrise"], [data-look="chessboard"], [data-look="sweet-tape"]) { color-scheme: dark; }
 /* More is a real control: a quiet chip, not a stray glyph. */
 .controls .iconbtn.controls-more-toggle { width: 44px; height: 44px; align-self: center; background: var(--surface); border-color: var(--border); color: var(--on-bg); }
 .controls.idle::before { width: 44px; }

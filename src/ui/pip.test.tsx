@@ -106,7 +106,7 @@ describe("native floating timer", () => {
 });
 
 describe("web Document PiP", () => {
-  it.each(["classic", "glass", "sunrise", "chessboard"])("starts on the current look %s and uses its background variable", async id => {
+  it.each(["classic", "glass", "sunrise", "chessboard", "sweet-tape"])("starts on the current look %s and uses its background variable", async id => {
     look.value = id;
     const floating = floatingWindow();
     vi.stubGlobal("window", { documentPictureInPicture: { requestWindow: vi.fn().mockResolvedValue(floating), window: null } });

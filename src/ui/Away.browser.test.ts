@@ -44,7 +44,7 @@ describe.skipIf(process.env.RETURN_BROWSER !== "1")("away records in disposable 
     expect(await chrome.evaluate("document.querySelector('.recovery-card').textContent")).toContain("You focused 10 min. Away 1 h 4 min.");
     const snapshot = await chrome.evaluate(`(async () => {const t=await import('/src/state/timer.ts'),s=await import('/src/state/stats.ts');return {running:t.timer.get().startedAt,focus:s.stats.get().chunks.filter(c=>c.kind==='focus').reduce((n,c)=>n+c.ms,0),away:s.stats.get().chunks.filter(c=>c.away).map(c=>c.ms)}})()`);
     expect(snapshot).toEqual({ running: null, focus: 600_000, away: [3_840_000] });
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"]) for (const width of [1280, 390]) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"]) for (const width of [1280, 390]) {
       await chrome.send("Emulation.setDeviceMetricsOverride", { width, height: 820, deviceScaleFactor: 1, mobile: width < 600 });
       await chrome.evaluate(`import('/src/state/settings.ts').then(s=>s.settingsUpdate('appearance',{look:'${look}'}))`);
       await chrome.waitFor(`document.documentElement.dataset.look === '${look}'`);

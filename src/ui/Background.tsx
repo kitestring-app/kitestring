@@ -65,10 +65,10 @@ const contrast = (a: Rgb, b: Rgb) => { const [x, y] = [lumOf(a), lumOf(b)].sort(
 
 /** The paper colour and ink of each paper look's built-in backdrop (see index.css and LookBackdrop). */
 const PAPER: Partial<Record<LookId, { paper: string; ink: string }>> = {
-  sketch: { paper: "#faf5ea", ink: "#33302b" }, companion: { paper: "#f9f2e9", ink: "#35201a" }, sunrise: { paper: "#fff4e4", ink: "#2a2014" }, chessboard: { paper: "#e9efe3", ink: "#1f3a2a" },
+  sketch: { paper: "#faf5ea", ink: "#33302b" }, companion: { paper: "#f9f2e9", ink: "#35201a" }, sunrise: { paper: "#fff4e4", ink: "#2a2014" }, chessboard: { paper: "#e9efe3", ink: "#1f3a2a" }, "sweet-tape": { paper: "#F6EFDE", ink: "#2F2F2F" },
 };
 /** The night paper each paper look draws under html.paper-dark (see Look.css). */
-const NIGHT_PAPER: Partial<Record<LookId, string>> = { sketch: "#1f1d1a", companion: "#1e1714", sunrise: "#24180f", chessboard: "#1a2418" };
+const NIGHT_PAPER: Partial<Record<LookId, string>> = { sketch: "#1f1d1a", companion: "#1e1714", sunrise: "#24180f", chessboard: "#1a2418", "sweet-tape": "#0E1A10" };
 const LIGHT_INK = "#f4f2fb", DARK_INK = "#1a1726", PAPER_LIGHT_INK = "#fbf7ef";
 
 /**

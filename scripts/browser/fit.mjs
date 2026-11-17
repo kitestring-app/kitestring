@@ -5,7 +5,7 @@ import { createServer } from 'vite';
 import { Chrome } from '../golden.mjs';
 
 const shots = process.env.SHOTS_DIR || '.agents/jobs/50-shots';
-const looks = ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard'];
+const looks = ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard', 'sweet-tape'];
 const sizes = [[720,540],[800,600],[1000,700],[1280,820]];
 const c = new Chrome();
 const results = [];

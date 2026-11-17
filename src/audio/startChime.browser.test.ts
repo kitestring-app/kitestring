@@ -48,7 +48,7 @@ describe.skipIf(process.env.START_CUES_BROWSER !== "1")("start chime in disposab
     await chrome.evaluate(`import('/src/state/settings.ts').then(s => { s.settingsUpdate('extras', {defaultTab: 'timer'}); s.localPreferences.set(p => ({...p, muted:false})); document.querySelector('[aria-label="Settings (S)"]').click(); })`);
     await chrome.waitFor("document.querySelector('[aria-label=\"Start sound\"]')");
     await mkdir('/tmp/kitestring89-ui', { recursive: true });
-    for (const look of ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard']) {
+    for (const look of ['classic', 'glass', 'sketch', 'companion', 'sunrise', 'chessboard', 'sweet-tape']) {
       await chrome.evaluate(`import('/src/state/settings.ts').then(s => s.settingsUpdate('appearance', {look: '${look}'}))`);
       await chrome.evaluate(`document.querySelector('[aria-label="Start sound"]').scrollIntoView({block:'center'})`);
       expect(await chrome.evaluate(`document.querySelector('[aria-label="Start sound"]').options.length`)).toBe(3);
