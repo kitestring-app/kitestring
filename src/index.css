@@ -149,61 +149,63 @@
   color-scheme: light;
 }
 
-/* Chessboard: tournament board. Forest/walnut squares, brass-green accent, monospaced clock, crisp corners. */
+/* Chessboard: "Endgame Hall" — tournament green, ivory, brass, claret, ebony, linen. */
 :root[data-look="chessboard"] {
-  --state-focus: #2f7d5a; --state-break: #8a6a3f; --state-long: #4a6fa5; --state-ink: #f4f7f0;
-  --bg: #e9efe3;
-  --on-bg: #1f3a2a; --on-bg-dim: #3a5546; --on-bg-faint: #4a6656; --on-bg-shadow: none; --dot-shadow: 0;
-  --fg: #1f3a2a; --fg-dim: #425a4d; --fg-faint: #526b5e;
-  --surface: #f4f7f0; --surface-hover: #e6ecdf;
-  --surface-strong: #f4f7f0; --surface-sunk: #dde5d6; --surface-solid: #f4f7f0;
-  --canvas: #e9efe3;
-  --border: transparent; --line: rgb(31 58 42 / 14%);
+  --state-focus: #1E3B2F; --state-break: #EFE6D2; --state-long: #8C3A3A; --state-ink: #F5EFE1;
+  --bg: #EFE6D2;
+  --on-bg: #141C17; --on-bg-dim: #3B4A3E; --on-bg-faint: #5C6A5D; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #141C17; --fg-dim: #3B4A3E; --fg-faint: #5C6A5D;
+  --surface: #F5EFE1; --surface-hover: #EDE3CB;
+  --surface-strong: #F5EFE1; --surface-sunk: #E2D7BE; --surface-solid: #F5EFE1;
+  --canvas: #EFE6D2;
+  --border: transparent; --line: rgb(20 28 23 / 16%);
   --blur: none; --blur-strong: none;
   --highlight: inset 0 1px 0 #ffffff;
-  --shadow: var(--highlight), 0 8px 22px -16px rgb(31 58 42 / 35%);
-  --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(31 58 42 / 45%);
-  --accent: #2f7d5a; --accent-fg: #f4f7f0; --accent-soft: rgb(47 125 90 / 14%); --accent-ink: #1f5a3f;
-  --sel: #1f3a2a; --sel-fg: #f4f7f0; --ring: #2f7d5a;
-  --tile: #e6ecdf; --tile-border: transparent; --tile-on: #2f7d5a; --tile-on-fg: #f4f7f0; --tile-icon: #3a5546;
-  --track: #d4ddcc; --progress: #2f7d5a;
-  --good: #2f7d5a; --warn: #8a6a3f; --danger: #a0402f; --danger-bg: #f8e4df; --danger-fg: #6e2618;
+  --shadow: var(--highlight), 0 8px 22px -16px rgb(20 28 23 / 30%);
+  --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(20 28 23 / 38%);
+  --accent: #C6A15B; --accent-fg: #141C17; --accent-soft: rgb(198 161 91 / 18%); --accent-ink: #7A5B1E;
+  --sel: #1E3B2F; --sel-fg: #F5EFE1; --ring: #C6A15B;
+  --tile: #E2D7BE; --tile-border: transparent; --tile-on: #1E3B2F; --tile-on-fg: #F5EFE1; --tile-icon: #3B4A3E;
+  --track: #D8CCB2; --progress: #C6A15B;
+  --good: #1E3B2F; --warn: #7A5B1E; --danger: #8C3A3A; --danger-bg: #F0DAD4; --danger-fg: #5E1F1F;
   --scrim: none;
-  --radius: 12px; --r-ctl: 8px; --r-seg: 8px;
-  --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-  --timer-font: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --timer-weight: 700; --timer-track: -0.02em; --headline-weight: 600; --icon-stroke: 1.7;
-  --press: scale(0.98);
-  --board-light: #e9efe3; --board-dark: #2f5a42; --board-square: rgb(47 90 66 / 18%); --board-line: rgb(31 58 42 / 14%);
+  --radius: 6px; --r-ctl: 4px; --r-seg: 4px;
+  --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --display: ui-serif, "Iowan Old Style", "Baskerville", "Palatino Linotype", "Palatino", "Georgia", serif;
+  --timer-font: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, "Cascadia Mono", Consolas, monospace;
+  --timer-weight: 600; --timer-track: 0.06em; --headline-weight: 600; --icon-stroke: 1.6;
+  --press: translateY(1px);
+  --board-dark: #1E3B2F; --board-light: #EFE6D2; --board-square: rgb(30 59 47 / 10%); --board-line: rgb(20 28 23 / 12%);
+  --brass-hi: #E4C884; --brass-lo: #8A6B2F; --rank-line: rgb(20 28 23 / 12%);
   color-scheme: light;
 }
 
-/* Sweet Tape: candy shop. Sand paper, ink, candy accents, rounded Nunito type. */
+/* Sweet Tape: kraft paper, tape fills, sticker ink. Segment colors are FILLS (never text/thin marks on kraft). */
 :root[data-look="sweet-tape"] {
-  --state-focus: #FF7B5F; --state-break: #b6fe00; --state-long: #50CBFF; --state-ink: #2F2F2F;
+  --state-focus: #FF7B5F; --state-break: #B6FE00; --state-long: #F7D000; --state-ink: #2F2F2F;
   --bg: #F6EFDE;
-  --on-bg: #2F2F2F; --on-bg-dim: #5a5a5a; --on-bg-faint: #6a6a6a; --on-bg-shadow: none; --dot-shadow: 0;
-  --fg: #2F2F2F; --fg-dim: #5a5a5a; --fg-faint: #6a6a6a;
-  --surface: #fdf7ed; --surface-hover: #f3e9d6;
-  --surface-strong: #fdf7ed; --surface-sunk: #f0e6d2; --surface-solid: #fdf7ed;
+  --on-bg: #2F2F2F; --on-bg-dim: #5A5A5A; --on-bg-faint: #6A6A6A; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #2F2F2F; --fg-dim: #5A5A5A; --fg-faint: #6A6A6A;
+  --surface: #FDF7ED; --surface-hover: #F3E9D6;
+  --surface-strong: #FDF7ED; --surface-sunk: #F0E6D2; --surface-solid: #FDF7ED;
   --canvas: #F6EFDE;
   --border: transparent; --line: rgb(47 47 47 / 12%);
   --blur: none; --blur-strong: none;
   --highlight: inset 0 1px 0 #ffffff;
   --shadow: var(--highlight), 0 8px 22px -16px rgb(47 47 47 / 30%);
   --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(47 47 47 / 40%);
-  --accent: #FF7B5F; --accent-fg: #2F2F2F; --accent-soft: rgb(255 123 95 / 16%); --accent-ink: #c94a30;
-  --sel: #FF7B5F; --sel-fg: #2F2F2F; --ring: #FF7B5F;
-  --tile: #f0e6d2; --tile-border: transparent; --tile-on: #FF7B5F; --tile-on-fg: #2F2F2F; --tile-icon: #5a5a5a;
-  --track: #e8ddc8; --progress: #FF7B5F;
-  --good: #4a8f3a; --warn: #a87a00; --danger: #c94a30; --danger-bg: #fde4dc; --danger-fg: #7a2e1d;
+  --accent: #FF7B5F; --accent-fg: #2F2F2F; --accent-soft: rgb(255 123 95 / 16%); --accent-ink: #2F2F2F;
+  --sel: #FF7B5F; --sel-fg: #2F2F2F; --ring: #2E3EAC;
+  --tile: #F0E6D2; --tile-border: transparent; --tile-on: #FF7B5F; --tile-on-fg: #2F2F2F; --tile-icon: #5A5A5A;
+  --track: #E8DDC8; --progress: #FF7B5F;
+  --good: #4A8F3A; --warn: #8A5F00; --danger: #A0402F; --danger-bg: #FDE4DC; --danger-fg: #6E2618;
   --scrim: none;
   --radius: 24px; --r-ctl: 16px; --r-seg: 999px;
   --ui: "Nunito App", ui-rounded, -apple-system, system-ui, sans-serif;
   --display: "Nunito App", ui-rounded, -apple-system, system-ui, sans-serif;
   --timer-weight: 800; --timer-track: -0.02em; --headline-weight: 800; --icon-stroke: 2.0;
   --press: translateY(2px);
+  --tape-coral: #FF7B5F; --tape-lime: #B6FE00; --tape-yellow: #F7D000; --tape-sky: #50CBFF; --tape-cloth: #2E3EAC;
   color-scheme: light;
 }
 
@@ -266,58 +268,60 @@ html.paper-dark[data-look="sunrise"] {
 }
 
 html.paper-dark[data-look="chessboard"] {
-  --state-focus: #4fb08a; --state-break: #c49a5a; --state-long: #7fa0d4; --state-ink: #1a2418;
-  --bg: #1a2418;
-  --on-bg: #e8efe3; --on-bg-dim: #c4d4c8; --on-bg-faint: #a8bba8; --on-bg-shadow: none; --dot-shadow: 0;
-  --fg: #e8efe3; --fg-dim: #c4d4c8; --fg-faint: #a8bba8;
-  --surface: #243028; --surface-hover: #2f3c32;
-  --surface-strong: #243028; --surface-sunk: #1e2820; --surface-solid: #243028;
-  --canvas: #1a2418;
-  --border: #2f3c32; --line: #2f3c32;
+  --state-focus: #2F5A42; --state-break: #EFE6D2; --state-long: #8C3A3A; --state-ink: #F5EFE1;
+  --bg: #141C17;
+  --on-bg: #EFE6D2; --on-bg-dim: #CFC6B4; --on-bg-faint: #A8BBA8; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #EFE6D2; --fg-dim: #CFC6B4; --fg-faint: #A8BBA8;
+  --surface: #1E3B2F; --surface-hover: #254736;
+  --surface-strong: #1E3B2F; --surface-sunk: #16281F; --surface-solid: #1E3B2F;
+  --canvas: #141C17;
+  --border: transparent; --line: rgb(239 230 210 / 14%);
   --blur: none; --blur-strong: none;
   --highlight: inset 0 1px 0 rgb(255 255 255 / 6%);
-  --shadow: var(--highlight), 0 8px 22px -16px rgb(0 0 0 / 60%);
-  --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(0 0 0 / 70%);
-  --accent: #4fb08a; --accent-fg: #1a2418; --accent-soft: rgb(79 176 138 / 16%); --accent-ink: #8fd4b4;
-  --sel: #e8efe3; --sel-fg: #1a2418; --ring: #4fb08a;
-  --tile: #2f3c32; --tile-on: #4fb08a; --tile-on-fg: #1a2418; --tile-icon: #c4d4c8;
-  --track: #2f3c32; --progress: #4fb08a;
-  --good: #7fd3a8; --warn: #e8bd6e; --danger: #ee8f7d; --danger-bg: #3b211b; --danger-fg: #ffd5cb;
+  --shadow: var(--highlight), 0 8px 22px -16px rgb(0 0 0 / 55%);
+  --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(0 0 0 / 65%);
+  --accent: #C6A15B; --accent-fg: #141C17; --accent-soft: rgb(198 161 91 / 18%); --accent-ink: #E4C884;
+  --sel: #EFE6D2; --sel-fg: #141C17; --ring: #C6A15B;
+  --tile: #16281F; --tile-border: transparent; --tile-on: #2F5A42; --tile-on-fg: #F5EFE1; --tile-icon: #CFC6B4;
+  --track: #254736; --progress: #C6A15B;
+  --good: #6FAF8A; --warn: #E4C884; --danger: #C46565; --danger-bg: #3A1F1F; --danger-fg: #F0DAD4;
   --scrim: none;
-  --radius: 12px; --r-ctl: 8px; --r-seg: 8px;
-  --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-  --timer-font: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --timer-weight: 700; --timer-track: -0.02em; --headline-weight: 600; --icon-stroke: 1.7;
-  --press: scale(0.98);
-  --board-light: #243028; --board-dark: #1a2418; --board-square: rgb(232 239 227 / 8%); --board-line: rgb(232 239 227 / 10%);
+  --radius: 6px; --r-ctl: 4px; --r-seg: 4px;
+  --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --display: ui-serif, "Iowan Old Style", "Baskerville", "Palatino Linotype", "Palatino", "Georgia", serif;
+  --timer-font: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, "Cascadia Mono", Consolas, monospace;
+  --timer-weight: 600; --timer-track: 0.06em; --headline-weight: 600; --icon-stroke: 1.6;
+  --press: translateY(1px);
+  --board-dark: #1E3B2F; --board-light: #EFE6D2; --board-square: rgb(239 230 210 / 10%); --board-line: rgb(239 230 210 / 14%);
+  --brass-hi: #E4C884; --brass-lo: #C6A15B; --rank-line: rgb(239 230 210 / 14%);
   color-scheme: dark;
 }
 
 html.paper-dark[data-look="sweet-tape"] {
-  --state-focus: #FF9A7A; --state-break: #d4ff5a; --state-long: #7adfff; --state-ink: #0E1A10;
+  --state-focus: #FF9A7A; --state-break: #D4FF5A; --state-long: #F7D000; --state-ink: #0E1A10;
   --bg: #0E1A10;
-  --on-bg: #F6EFDE; --on-bg-dim: #d4d0c0; --on-bg-faint: #b8b4a0; --on-bg-shadow: none; --dot-shadow: 0;
-  --fg: #F6EFDE; --fg-dim: #d0ccb8; --fg-faint: #b8b4a0;
-  --surface: #1a2a1c; --surface-hover: #243426;
-  --surface-strong: #1a2a1c; --surface-sunk: #142016; --surface-solid: #1a2a1c;
+  --on-bg: #F6EFDE; --on-bg-dim: #D4D0C0; --on-bg-faint: #B8B4A0; --on-bg-shadow: none; --dot-shadow: 0;
+  --fg: #F6EFDE; --fg-dim: #D0CCB8; --fg-faint: #B8B4A0;
+  --surface: #1A2A1C; --surface-hover: #243426;
+  --surface-strong: #1A2A1C; --surface-sunk: #142016; --surface-solid: #1A2A1C;
   --canvas: #0E1A10;
-  --border: #2a3a2c; --line: #2a3a2c;
+  --border: transparent; --line: rgb(246 239 222 / 12%);
   --blur: none; --blur-strong: none;
   --highlight: inset 0 1px 0 rgb(255 255 255 / 6%);
   --shadow: var(--highlight), 0 8px 22px -16px rgb(0 0 0 / 60%);
   --shadow-lg: var(--highlight), 0 24px 50px -30px rgb(0 0 0 / 70%);
-  --accent: #FF7B5F; --accent-fg: #0E1A10; --accent-soft: rgb(255 123 95 / 18%); --accent-ink: #FF9A7A;
-  --sel: #F6EFDE; --sel-fg: #0E1A10; --ring: #FF7B5F;
-  --tile: #243426; --tile-on: #FF7B5F; --tile-on-fg: #0E1A10; --tile-icon: #d0ccb8;
-  --track: #243426; --progress: #FF7B5F;
-  --good: #7fd3a8; --warn: #f2c46e; --danger: #f49379; --danger-bg: #3d2117; --danger-fg: #ffd6c9;
+  --accent: #FF9A7A; --accent-fg: #0E1A10; --accent-soft: rgb(255 154 122 / 18%); --accent-ink: #F6EFDE;
+  --sel: #FF9A7A; --sel-fg: #0E1A10; --ring: #50CBFF;
+  --tile: #243426; --tile-border: transparent; --tile-on: #FF9A7A; --tile-on-fg: #0E1A10; --tile-icon: #D0CCB8;
+  --track: #243426; --progress: #FF9A7A;
+  --good: #7FD3A8; --warn: #F2C46E; --danger: #F49379; --danger-bg: #3D2117; --danger-fg: #FFD6C9;
   --scrim: none;
   --radius: 24px; --r-ctl: 16px; --r-seg: 999px;
   --ui: "Nunito App", ui-rounded, -apple-system, system-ui, sans-serif;
   --display: "Nunito App", ui-rounded, -apple-system, system-ui, sans-serif;
   --timer-weight: 800; --timer-track: -0.02em; --headline-weight: 800; --icon-stroke: 2.0;
   --press: translateY(2px);
+  --tape-coral: #FF9A7A; --tape-lime: #D4FF5A; --tape-yellow: #F7D000; --tape-sky: #50CBFF; --tape-cloth: #2E3EAC;
   color-scheme: dark;
 }
 
@@ -636,12 +640,7 @@ html.paper-dimmed:is([data-look="sketch"], [data-look="companion"], [data-look="
 :root[data-look="sketch"] :is(.btn, .choice, .sound-tile, .sounds-station, .radio-station)[aria-pressed="true"], :root[data-look="sketch"] .sound-tile.active { border-color: transparent; box-shadow: none; }
 /* Sketchbook: the paper and its dots continue behind Settings. */
 :root[data-look="sketch"] .drawer main { background-image: radial-gradient(circle, var(--paper-dot, rgb(51 48 43 / 7%)) 0.9px, transparent 1px); background-size: 18px 18px; }
-:root[data-look="chessboard"] :is(.panel-body, .drawer main) { background-image: repeating-conic-gradient(var(--board-square) 0 25%, transparent 0 50%); background-size: 32px 32px; }
-:root[data-look="chessboard"] :is(.panel, .card) { border-radius: var(--radius); }
-/* Sweet Tape: washi tape tab on panel heads. */
-:root[data-look="sweet-tape"] .panel { overflow: visible; }
-:root[data-look="sweet-tape"] .panel .panel-head { position: relative; }
-:root[data-look="sweet-tape"] .panel .panel-head::after { content: ""; position: absolute; top: -8px; left: 24px; width: 64px; height: 16px; background: linear-gradient(135deg, #FF7B5F, #F7D000); transform: rotate(-3deg); border-radius: 2px; pointer-events: none; opacity: 0.85; box-shadow: 0 2px 4px rgb(0 0 0 / 12%); }
+/* Look-specific surface primitives are defined in the scoped block near the end of this file. */
 /* Sunrise: buttons inside white panels keep a visible fill and a small flat shadow. */
 :root[data-look="sunrise"] :is(.panel, .ambient-timer, .drawer, .card) :is(.iconbtn, .btn:not(.primary)) { box-shadow: 0 2px 0 var(--sunrise-ledge, #f3d9b6); }
 /* The pinned next action label, readable over any wallpaper. */
@@ -797,3 +796,33 @@ html.paper-dark:is([data-look="sketch"], [data-look="companion"], [data-look="su
 html[data-look="glass"] .sounds-panel .sound-tile:not(.active) { background: color-mix(in srgb, var(--surface-solid) 72%, transparent); }
 .preset-card .preset-text { display: grid; gap: 4px; min-width: 0; flex: 1 1 280px; }
 .preset-card .preset-text .help { margin: 0; }
+
+
+
+/* ---------- look identity, metric-safe (color/surface/radius/font only) ---------- */
+:root[data-look="chessboard"] :is(.panel, .card, .recovery-card, .ambient-timer) { border-color: var(--line); border-radius: var(--radius); }
+:root[data-look="chessboard"] :is(.btn, .iconbtn, .choice, .seg button, .tiny-chip) { border-color: var(--line); border-radius: var(--r-ctl); }
+:root[data-look="chessboard"] .btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+:root[data-look="chessboard"] .progress-line { background: var(--surface-sunk); box-shadow: inset 0 0 0 1px var(--board-dark); }
+:root[data-look="chessboard"] .progress-line i { background: var(--progress); }
+:root[data-look="chessboard"] :is(.tabs, .seg) { border-radius: var(--r-seg); }
+:root[data-look="chessboard"] .focus-center .tabs button[aria-pressed="true"] { background: var(--sel); color: var(--sel-fg); }
+:root[data-look="chessboard"] .tallies .dot.on { background: var(--board-dark, var(--accent)); }
+:root[data-look="chessboard"] .headline { font-family: var(--display); font-weight: var(--headline-weight); }
+:root[data-look="chessboard"] .timer { font-family: var(--timer-font); }
+:root[data-look="chessboard"] :is(.input, select.input, .num-field) { border-color: var(--line); border-radius: var(--r-ctl); background: var(--surface-sunk); }
+:root[data-look="chessboard"] .mini-timer { border-color: var(--line); border-radius: var(--radius); }
+
+:root[data-look="sweet-tape"] :is(.panel, .card, .recovery-card, .ambient-timer, .next-action-pin) { border-color: var(--fg); border-radius: 18px; background: var(--surface-strong); }
+:root[data-look="sweet-tape"] :is(.btn, .iconbtn, .choice) { border-color: var(--fg); border-radius: 14px; }
+:root[data-look="sweet-tape"] .btn.primary { background: var(--accent); color: var(--accent-fg); }
+:root[data-look="sweet-tape"] .progress-line { background: var(--surface-sunk); box-shadow: inset 0 0 0 1px var(--fg); }
+:root[data-look="sweet-tape"] .progress-line i { background: linear-gradient(90deg, var(--tape-coral), var(--tape-yellow), var(--tape-lime), var(--tape-sky)); }
+:root[data-look="sweet-tape"] :is(.tabs, .segmented) { border-radius: 999px; }
+:root[data-look="sweet-tape"] .tallies .dot { border-radius: 2px; }
+:root[data-look="sweet-tape"] .tallies .dot.on { background: var(--accent); }
+:root[data-look="sweet-tape"] .headline { font-family: var(--display); font-weight: var(--headline-weight); }
+:root[data-look="sweet-tape"] .timer { font-family: var(--timer-font); }
+:root[data-look="sweet-tape"] .mini-timer { border-color: var(--fg); border-radius: 18px; }
+
+

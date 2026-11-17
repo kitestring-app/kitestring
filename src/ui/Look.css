@@ -12,10 +12,25 @@ html.paper-dark .look-bg-sunrise .pb-ring1 { fill: #2f1f13; }
 html.paper-dark .look-bg-sunrise .pb-ring2 { fill: #3b2616; }
 html.paper-dark .look-bg-sunrise .pb-ring3 { fill: #4a2e18; }
 html.paper-dark .look-bg-sunrise .pb-cloud { fill: #33231a; }
-.look-bg-chessboard { background-color: #e9efe3; background-image: repeating-conic-gradient(rgb(47 90 66 / 18%) 0 25%, transparent 0 50%); background-size: 32px 32px; }
-html.paper-dark .look-bg-chessboard { background-color: #1a2418; background-image: repeating-conic-gradient(rgb(232 239 227 / 12%) 0 25%, transparent 0 50%); }
-.look-bg-sweet-tape { background-color: #F6EFDE; background-image: repeating-linear-gradient(135deg, rgb(255 123 95 / 18%) 0 16px, transparent 16px 48px), repeating-linear-gradient(45deg, rgb(247 208 0 / 16%) 0 12px, transparent 12px 40px); }
-html.paper-dark .look-bg-sweet-tape { background-color: #0E1A10; background-image: repeating-linear-gradient(135deg, rgb(255 123 95 / 14%) 0 16px, transparent 16px 48px), repeating-linear-gradient(45deg, rgb(182 254 0 / 10%) 0 12px, transparent 12px 40px); }
+/* Chessboard: a quiet board cloth. Plain radial wash only — no repeating-conic, no viewport-wide pattern. */
+.look-bg-chessboard {
+  background-color: #EFE6D2;
+  background-image: radial-gradient(ellipse 70% 60% at 50% 46%, #F5EFE1 0 60%, transparent 100%);
+}
+html.paper-dark .look-bg-chessboard {
+  background-color: #141C17;
+  background-image: radial-gradient(ellipse 70% 60% at 50% 46%, #1E3B2F 0 60%, transparent 100%);
+}
+/* Sweet Tape: a calm paper sheet; the candy strips live on actual components
+   below, not painted over the whole viewport. */
+.look-bg-sweet-tape {
+  background-color: #F6EFDE;
+  background-image: radial-gradient(ellipse 62% 58% at 50% 48%, #f9f3e6 0 60%, transparent 100%);
+}
+html.paper-dark .look-bg-sweet-tape {
+  background-color: #0E1A10;
+  background-image: radial-gradient(ellipse 62% 58% at 50% 48%, #112016 0 60%, transparent 100%);
+}
 .look-bg-sunrise .sun { transform-origin: 600px 990px; animation: sun-breathe 14s ease-in-out infinite alternate; }
 @keyframes sun-breathe { from { transform: scale(1); } to { transform: scale(1.035); } }
 .reduce-motion .look-bg-sunrise .sun { animation: none; }

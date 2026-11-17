@@ -71,15 +71,24 @@ export async function openPip(): Promise<string | null> {
   // The PiP window gets the same look as the app it came from.
   // ...and follows it when the look changes while the window is open.
   const syncLook = () => {
-    w.document.documentElement.dataset.look = settings.get().appearance.look;
-    w.document.documentElement.classList.toggle("reduce-motion", settings.get().extras.reduceMotion);
+    const root = w.document.documentElement;
+    const s = settings.get();
+    root.dataset.look = s.appearance.look;
+    root.classList.toggle("reduce-motion", s.extras.reduceMotion);
+    const main = document.documentElement.classList;
+    if (main) {
+      root.classList.toggle("theme-light", main.contains("theme-light"));
+      root.classList.toggle("paper-dark", main.contains("paper-dark"));
+      root.classList.toggle("theme-forced", main.contains("theme-forced"));
+    }
   };
   syncLook();
   const offLook = settings.subscribe(syncLook);
   extra.textContent = `body{overflow:hidden;background:var(--bg);color:var(--fg);display:grid;place-items:center;height:100vh}
-  .mini-timer{text-align:center}.pip-seg{color:var(--fg-dim);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
-  .pip-time{font-size:64px}.pip-bar{height:4px;width:220px;margin:8px auto 0;background:var(--track);border-radius:9px;overflow:hidden}
-  .pip-bar i{display:block;height:100%;background:var(--accent)}`;
+  .mini-timer{text-align:center}.pip-seg{color:var(--fg-dim);font:600 13px/1 var(--ui, system-ui);text-transform:uppercase;letter-spacing:.06em}
+  .pip-time{font-size:64px;font-family:var(--user-timer-font, var(--timer-font, inherit));font-weight:var(--user-timer-weight, var(--timer-weight, 700));color:var(--on-bg, var(--fg))}
+  .pip-bar{height:4px;width:220px;margin:8px auto 0;background:var(--track);border-radius:9px;overflow:hidden}
+  .pip-bar i{display:block;height:100%;background:var(--progress, var(--accent))}`;
   w.document.head.appendChild(extra);
   const mount = w.document.createElement("div");
   w.document.body.appendChild(mount);

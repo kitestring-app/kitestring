@@ -89,6 +89,22 @@ it("retains independent event choices on reload and import", () => {
   expect(sanitizeSettings(migrated)).toEqual(migrated);
 });
 
+describe("timer style and tally new ids", () => {
+  it.each(["clock", "tape"] as const)("preserves timer style %s", (style) => {
+    expect(sanitizeSettings({ timer: { style } }).timer.style).toBe(style);
+    expect(sanitizeSettings({ timer: { style } })).toEqual(sanitizeSettings(sanitizeSettings({ timer: { style } })));
+  });
+  it("rejects unknown timer styles", () => {
+    expect(sanitizeSettings({ timer: { style: "nope" } }).timer.style).toBe("default");
+  });
+  it("preserves tally chess", () => {
+    expect(sanitizeSettings({ timer: { tally: "chess" } }).timer.tally).toBe("chess");
+  });
+  it("rejects unknown tallies", () => {
+    expect(sanitizeSettings({ timer: { tally: "nope" } }).timer.tally).toBe("dots");
+  });
+});
+
 describe("look backdrop preference", () => {
   it("keeps old settings on their look backdrop and rejects non-booleans", () => {
     for (const lookBackdrop of [undefined, null, 0, "false", {}, []]) expect(sanitizeSettings({ appearance: { lookBackdrop } }).appearance.lookBackdrop).toBe(true);

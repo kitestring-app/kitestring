@@ -1,12 +1,15 @@
 // Timer faces. Each style renders the same props. Default is here; the rest live in ./styles/*.
 import type { TimerStyle } from "../../state/settings";
+import type { Segment } from "../../state/timerEngine";
 import { FlipFace, BarFace, GaugeFace, DotsFace, PieFace } from "./styles";
+import { ClockFace, TapeFace } from "./lookFaces";
 
 export interface FaceProps {
   display: string; // "24:58" or "1:02:03"
   progress: number; // 0..1 elapsed fraction (0 for stopwatch)
   showNumbers: boolean;
   big?: boolean; // dashboard size vs. compact (PiP, previews)
+  segment?: Segment; // optional segment channel (clock face active/flag logic)
 }
 
 export function DefaultFace({ display, big = true }: FaceProps) {
@@ -20,4 +23,6 @@ export const FACES: Record<TimerStyle, (p: FaceProps) => React.ReactNode> = {
   gauge: GaugeFace,
   dots: DotsFace,
   pie: PieFace,
+  clock: ClockFace,
+  tape: TapeFace,
 };

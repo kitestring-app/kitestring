@@ -1,5 +1,6 @@
 // Generated from Lucide (lucide-static 0.460.0, ISC License; see public/LICENSES.md).
 // Only the icons the app uses. Regenerate rather than hand-edit.
+// Self-authored look glyphs (the chess pieces) live in glyphs.lookdata.ts and are NOT Lucide.
 export type GlyphElement = ["path" | "circle" | "rect" | "line" | "polyline" | "polygon" | "ellipse", Record<string, string>];
 export const GLYPH_DATA = {
   "activity": [["path",{"d":"M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"}]],

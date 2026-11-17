@@ -3,12 +3,12 @@ import { dbGet, dbKeys, storageMode } from "../lib/db";
 import { cleanAlertText } from "../audio/alertText";
 
 export type TimerMode = "pomodoro" | "countdown" | "stopwatch" | "animedoro" | "5217";
-export type TimerStyle = "default" | "flip" | "bar" | "gauge" | "dots" | "pie";
+export type TimerStyle = "default" | "flip" | "bar" | "gauge" | "dots" | "pie" | "clock" | "tape";
 export type Size = "small" | "regular" | "huge";
 export type DashMode = "home" | "focus" | "ambient";
 export type SettingsTab = "themes" | "clock" | "timer" | "stats" | "quotes" | "extras" | "data" | "about";
 export type FontId = "look" | "sans" | "rounded" | "mono" | "serif" | "heavy" | "digital";
-export type TallyId = "dots" | "tomato" | "check" | "star" | "tree" | "tokyo" | "stem";
+export type TallyId = "dots" | "tomato" | "check" | "star" | "tree" | "tokyo" | "stem" | "chess";
 
 export interface ThemeRef {
   kind: "library" | "custom" | "color";
@@ -222,7 +222,7 @@ export function sanitizeSettings(stored: unknown): Settings {
     },
     longEvery: clamp(t.longEvery, 1, 12, d.timer.longEvery),
     display: oneOf(t.display, ["remaining", "elapsed", "hidden"] as const, "remaining"),
-    style: oneOf(t.style, ["default", "flip", "bar", "gauge", "dots", "pie"] as const, d.timer.style),
+    style: oneOf(t.style, ["default", "flip", "bar", "gauge", "dots", "pie", "clock", "tape"] as const, d.timer.style),
     alertSound: oneOf(t.alertSound, ["signature", "bell", "chime", "digital", "wood", "none"] as const, d.timer.alertSound),
     focusDoneSound: oneOf(rawTimer?.focusDoneSound ?? oldSound, sounds, oldSound),
     breakOverSound: oneOf(rawTimer?.breakOverSound ?? oldSound, sounds, oldSound),
@@ -237,7 +237,7 @@ export function sanitizeSettings(stored: unknown): Settings {
     focusDoneText: cleanAlertText(t.focusDoneText),
     breakOverText: cleanAlertText(t.breakOverText),
     bringToFront: typeof t.bringToFront === "boolean" ? t.bringToFront : d.timer.bringToFront,
-    tally: oneOf(t.tally, ["dots", "tomato", "check", "star", "tree", "tokyo", "stem"] as const, d.timer.tally),
+    tally: oneOf(t.tally, ["dots", "tomato", "check", "star", "tree", "tokyo", "stem", "chess"] as const, d.timer.tally),
     quickPicks: {
       enabled: typeof t.quickPicks.enabled === "boolean" ? t.quickPicks.enabled : false,
       focus: sanitizeQuickPickList(t.quickPicks.focus, d.timer.quickPicks.focus),
