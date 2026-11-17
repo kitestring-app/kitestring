@@ -35,7 +35,7 @@ describe.skipIf(process.env.NOTEPAD_BROWSER !== '1')('voluntary explain from mem
     expect(await chrome.evaluate("document.querySelector('.note-recall').textContent")).toContain('exports that include Focus data');
     expect(await chrome.evaluate("document.querySelector('.note-recall button[type=submit]').disabled")).toBe(true);
     const shots=process.env.SHOTS_DIR??join(tmpdir(),'job94-recall');await mkdir(shots,{recursive:true});
-    for(const width of [1280,390,320])for(const look of ['classic','glass','sketch','companion','sunrise','chessboard']){
+    for(const width of [1280,390,320])for(const look of ['classic','glass','sketch','companion','sunrise','chessboard', 'sweet-tape']){
       await chrome.send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<500});
       await page(`s.settingsUpdate('appearance',{look:'${look}'});`);
       await chrome.waitFor(`document.documentElement.dataset.look==='${look}'`);

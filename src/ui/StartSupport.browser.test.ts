@@ -120,7 +120,7 @@ describe.skipIf(!chromePath || process.env.START_CUES_BROWSER !== "1")("Start cu
     })`);
     for (const [width, height] of [[1000, 800], [1280, 720]]) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"]) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"]) {
       await evaluate(`import('/src/state/settings.ts').then(s => s.settingsUpdate('appearance', {look: '${look}'}))`);
       await waitFor(`document.documentElement.dataset.look === '${look}'`); await delay(100);
       expect(await evaluate("document.querySelector('.next-action-cue').textContent")).toContain("after lunch");
@@ -161,7 +161,7 @@ describe.skipIf(!chromePath || process.env.START_CUES_BROWSER !== "1")("Start cu
     await waitFor("document.querySelector('[aria-label=\"Review parked thoughts\"]')");
     for (const [width, height] of [[1000, 800], [1280, 720]]) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"]) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"]) {
       await evaluate(`import('/src/state/settings.ts').then(s => s.settingsUpdate('appearance', {look: '${look}'}))`);
       await waitFor(`document.documentElement.dataset.look === '${look}'`); await delay(100);
       expect(await evaluate("document.querySelector('.recovery-card').textContent")).toContain("Check the meeting notes");
@@ -183,7 +183,7 @@ describe.skipIf(!chromePath || process.env.START_CUES_BROWSER !== "1")("Start cu
     await waitFor("document.querySelector('.reward-moment')");
     for (const [width, height] of [[1000, 800], [1280, 720]]) {
     await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"]) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"]) {
       await evaluate(`import('/src/state/settings.ts').then(s => s.settingsUpdate('appearance', {look: '${look}'}))`);
       await waitFor(`document.documentElement.dataset.look === '${look}'`); await delay(100);
       expect(await evaluate("document.querySelector('.reward-moment').textContent")).toContain("Make a cup of tea");
@@ -196,7 +196,7 @@ describe.skipIf(!chromePath || process.env.START_CUES_BROWSER !== "1")("Start cu
     await waitFor("document.querySelector('[aria-label=\"Usual length offer\"]')");
     for (const [width,height] of [[1000,800],[1280,720]]) {
       await send("Emulation.setDeviceMetricsOverride", {width,height,deviceScaleFactor:1,mobile:false});
-      for (const look of ["classic","glass","sketch","companion","sunrise","chessboard"]) {
+      for (const look of ["classic","glass","sketch","companion","sunrise","chessboard", "sweet-tape"]) {
         await evaluate(`import('/src/state/settings.ts').then(s=>s.settingsUpdate('appearance',{look:'${look}'}))`);
         await waitFor(`document.documentElement.dataset.look === '${look}'`); await delay(60);
         await assertFocusFit(evaluate);
@@ -209,7 +209,7 @@ describe.skipIf(!chromePath || process.env.START_CUES_BROWSER !== "1")("Start cu
     // Small-screen and reduced-motion layout remain usable in every look.
     await send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
     await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"]) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"]) {
       await evaluate(`import('/src/state/settings.ts').then(s => s.settingsUpdate('appearance', {look: '${look}'}))`);
       await waitFor(`document.documentElement.dataset.look === '${look}'`);
       expect(await evaluate("document.documentElement.scrollWidth <= innerWidth"), await evaluate("JSON.stringify({look:document.documentElement.dataset.look,width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].map(e=>({tag:e.tagName,cls:e.className,x:e.getBoundingClientRect().x,right:e.getBoundingClientRect().right})).filter(r=>r.x<0||r.right>innerWidth).slice(0,15)})")).toBe(true);

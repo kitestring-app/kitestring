@@ -170,7 +170,7 @@ it("gives every textless button in the rendered dashboard and panels an accessib
   try {
     tasks.set([{ id: "tooltip-task", title: "Review chapter", done: false, createdAt: 0 }]);
     let checked = 0;
-    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard"] as const) for (const hideStats of [false, true]) for (const dash of ["home", "focus", "ambient"] as const) {
+    for (const look of ["classic", "glass", "sketch", "companion", "sunrise", "chessboard", "sweet-tape"] as const) for (const hideStats of [false, true]) for (const dash of ["home", "focus", "ambient"] as const) {
       settings.set({ ...DEFAULT_SETTINGS, dash, appearance: { ...DEFAULT_SETTINGS.appearance, look }, extras: { ...DEFAULT_SETTINGS.extras, hideStats } });
       const views = [createElement(App), createElement(TasksPanel, { onClose() {} }), createElement(NotepadPanel, { onClose() {} }), createElement(SoundsPanel, { open: true, onClose() {} }), createElement(SettingsDrawer, { onClose() {} }), createElement(StatsTab)];
       for (const view of views) {
